@@ -129,8 +129,10 @@ export const groupsAPI = {
   }
 };
 
-export default {
+const api = {
   auth: authAPI,
   schedule: scheduleAPI,
   groups: groupsAPI
 };
+
+export default api;
