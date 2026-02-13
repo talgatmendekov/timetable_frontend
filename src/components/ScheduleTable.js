@@ -1,49 +1,13 @@
 // src/components/ScheduleTable.js
-import React, { useState, useEffect } from 'react';
+
+import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSchedule } from '../context/ScheduleContext';
 import './ScheduleTable.css';
 
-const ScheduleTable = ({ selectedDay: propSelectedDay, onDayChange, selectedTeacher, onEditClass, onDeleteGroup }) => {
+const ScheduleTable = ({ selectedDay, selectedTeacher, onEditClass, onDeleteGroup }) => {
   const { isAuthenticated } = useAuth();
   const { groups, timeSlots, days, getClassByKey } = useSchedule();
-  
-  // Состояние для выбранного дня
-  const [selectedDay, setSelectedDay] = useState('');
-
-  // Устанавливаем сегодняшний день при загрузке
-  useEffect(() => {
-    // Получаем сегодняшний день (0-6, где 0 - воскресенье)
-    const today = new Date().getDay();
-    
-    // Маппинг дней недели
-    const dayMap = {
-      1: 'Monday',
-      2: 'Tuesday',
-      3: 'Wednesday',
-      4: 'Thursday',
-      5: 'Friday',
-      6: 'Saturday',
-      0: 'Sunday'
-    };
-    
-    const todayDay = dayMap[today];
-    
-    // Устанавливаем сегодняшний день
-    setSelectedDay(todayDay);
-    
-    // Сообщаем родительскому компоненту о сегодняшнем дне
-    if (onDayChange) {
-      onDayChange(todayDay);
-    }
-  }, [onDayChange]); // Зависимость от onDayChange
-
-  // Обновляем локальное состояние, если проп изменился
-  useEffect(() => {
-    if (propSelectedDay) {
-      setSelectedDay(propSelectedDay);
-    }
-  }, [propSelectedDay]);
 
   const daysToShow = selectedDay ? [selectedDay] : days;
 
@@ -68,15 +32,6 @@ const ScheduleTable = ({ selectedDay: propSelectedDay, onDayChange, selectedTeac
       onDeleteGroup(group);
     }
   };
-
-  // Показываем загрузку, пока день не установлен
-  if (!selectedDay) {
-    return (
-      <div className="schedule-container">
-        <div className="loading">Loading schedule...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="schedule-container">
