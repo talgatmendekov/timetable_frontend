@@ -10,13 +10,22 @@ import ScheduleTable from './components/ScheduleTable';
 import ClassModal from './components/ClassModal';
 import './App.css';
 
+
+// Returns today's name if it's a schedule day (Mon-Sat), otherwise empty string
+const getTodayScheduleDay = () => {
+  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const scheduleDays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const today = dayNames[new Date().getDay()];
+  return scheduleDays.includes(today) ? today : '';
+};
+
 const AppContent = () => {
   const { isAuthenticated } = useAuth();
   const { addGroup, clearSchedule, exportSchedule, importSchedule, deleteGroup } = useSchedule();
   const { t } = useLanguage();
 
   const [guestMode, setGuestMode] = useState(false);
-  const [selectedDay, setSelectedDay] = useState('');
+  const [selectedDay, setSelectedDay] = useState(getTodayScheduleDay);
   const [selectedTeacher, setSelectedTeacher] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
