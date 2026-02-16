@@ -7,9 +7,7 @@ const ScheduleContext = createContext();
 
 export const useSchedule = () => {
   const context = useContext(ScheduleContext);
-  if (!context) {
-    throw new Error('useSchedule must be used within a ScheduleProvider');
-  }
+  if (!context) throw new Error('useSchedule must be used within a ScheduleProvider');
   return context;
 };
 
@@ -19,27 +17,19 @@ export const ScheduleProvider = ({ children }) => {
   const [teachers, setTeachers] = useState(new Set());
 
   useEffect(() => {
-    // Load schedule from localStorage
     const savedSchedule = localStorage.getItem('universitySchedule');
     const savedGroups = localStorage.getItem('universityGroups');
-    
     if (savedSchedule) {
-      const parsedSchedule = JSON.parse(savedSchedule);
-      setSchedule(parsedSchedule);
-      extractTeachers(parsedSchedule);
+      const parsed = JSON.parse(savedSchedule);
+      setSchedule(parsed);
+      extractTeachers(parsed);
     }
-    if (savedGroups) {
-      setGroups(JSON.parse(savedGroups));
-    }
+    if (savedGroups) setGroups(JSON.parse(savedGroups));
   }, []);
 
   const extractTeachers = (scheduleData) => {
     const teacherSet = new Set();
-    Object.values(scheduleData).forEach(entry => {
-      if (entry.teacher) {
-        teacherSet.add(entry.teacher);
-      }
-    });
+    Object.values(scheduleData).forEach(e => { if (e.teacher) teacherSet.add(e.teacher); });
     setTeachers(teacherSet);
   };
 
@@ -51,23 +41,35 @@ export const ScheduleProvider = ({ children }) => {
 
   const addOrUpdateClass = (group, day, time, classData) => {
     const key = `${group}-${day}-${time}`;
-    const newSchedule = {
-      ...schedule,
-      [key]: {
-        ...classData,
-        group,
-        day,
-        time
-      }
-    };
-    saveSchedule(newSchedule);
+    saveSchedule({ ...schedule, [key]: { ...classData, group, day, time } });
   };
 
   const deleteClass = (group, day, time) => {
-    const key = `${group}-${day}-${time}`;
     const newSchedule = { ...schedule };
-    delete newSchedule[key];
+    delete newSchedule[`${group}-${day}-${time}`];
     saveSchedule(newSchedule);
+  };
+
+  // Move a class from one slot to another (drag & drop)
+  const moveClass = (fromGroup, fromDay, fromTime, toGroup, toDay, toTime) => {
+    const fromKey = `${fromGroup}-${fromDay}-${fromTime}`;
+    const toKey = `${toGroup}-${toDay}-${toTime}`;
+    const classData = schedule[fromKey];
+    if (!classData) return { success: false, error: 'Source class not found' };
+
+    const newSchedule = { ...schedule };
+
+    // If destination is occupied, swap
+    const destData = schedule[toKey];
+    if (destData) {
+      newSchedule[fromKey] = { ...destData, group: fromGroup, day: fromDay, time: fromTime };
+    } else {
+      delete newSchedule[fromKey];
+    }
+
+    newSchedule[toKey] = { ...classData, group: toGroup, day: toDay, time: toTime };
+    saveSchedule(newSchedule);
+    return { success: true };
   };
 
   const addGroup = (groupName) => {
@@ -80,42 +82,25 @@ export const ScheduleProvider = ({ children }) => {
     const newGroups = groups.filter(g => g !== groupName);
     setGroups(newGroups);
     localStorage.setItem('universityGroups', JSON.stringify(newGroups));
-    
-    // Delete all classes for this group
     const newSchedule = {};
     Object.entries(schedule).forEach(([key, value]) => {
-      if (value.group !== groupName) {
-        newSchedule[key] = value;
-      }
+      if (value.group !== groupName) newSchedule[key] = value;
     });
     saveSchedule(newSchedule);
   };
 
-  const clearSchedule = () => {
-    saveSchedule({});
-  };
+  const clearSchedule = () => saveSchedule({});
 
-  const getClassByKey = (group, day, time) => {
-    const key = `${group}-${day}-${time}`;
-    return schedule[key] || null;
-  };
+  const getClassByKey = (group, day, time) => schedule[`${group}-${day}-${time}`] || null;
 
-  const getScheduleByDay = (day) => {
-    return Object.entries(schedule).filter(([_, value]) => value.day === day);
-  };
+  const getScheduleByDay = (day) =>
+    Object.entries(schedule).filter(([_, v]) => v.day === day);
 
-  const getScheduleByTeacher = (teacher) => {
-    return Object.entries(schedule).filter(([_, value]) => value.teacher === teacher);
-  };
+  const getScheduleByTeacher = (teacher) =>
+    Object.entries(schedule).filter(([_, v]) => v.teacher === teacher);
 
-  const exportSchedule = () => {
-    const data = {
-      groups,
-      schedule,
-      exportDate: new Date().toISOString()
-    };
-    return JSON.stringify(data, null, 2);
-  };
+  const exportSchedule = () =>
+    JSON.stringify({ groups, schedule, exportDate: new Date().toISOString() }, null, 2);
 
   const importSchedule = (jsonData) => {
     try {
@@ -127,27 +112,20 @@ export const ScheduleProvider = ({ children }) => {
         return { success: true };
       }
       return { success: false, error: 'Invalid data format' };
-    } catch (error) {
+    } catch {
       return { success: false, error: 'Invalid JSON' };
     }
   };
 
   const value = {
-    groups,
-    schedule,
+    groups, schedule,
     teachers: Array.from(teachers),
     timeSlots: TIME_SLOTS,
     days: DAYS,
-    addOrUpdateClass,
-    deleteClass,
-    addGroup,
-    deleteGroup,
-    clearSchedule,
-    getClassByKey,
-    getScheduleByDay,
-    getScheduleByTeacher,
-    exportSchedule,
-    importSchedule
+    addOrUpdateClass, deleteClass, moveClass,
+    addGroup, deleteGroup, clearSchedule,
+    getClassByKey, getScheduleByDay, getScheduleByTeacher,
+    exportSchedule, importSchedule
   };
 
   return <ScheduleContext.Provider value={value}>{children}</ScheduleContext.Provider>;

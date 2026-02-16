@@ -1,0 +1,124 @@
+/* ConflictPage.css */
+
+.conflict-page { padding: 0; }
+
+.conflict-page-header {
+  display: flex; justify-content: space-between;
+  align-items: flex-start; flex-wrap: wrap; gap: 16px;
+  margin-bottom: 12px;
+}
+
+.conflict-title {
+  font-size: 1.4rem; font-weight: 800; color: var(--text-primary);
+}
+
+.conflict-stats { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.stat-chip {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 8px 16px; border-radius: 10px;
+  border: 2px solid; min-width: 70px;
+}
+.stat-total   { border-color: #ef4444; background: rgba(239,68,68,0.07); }
+.stat-teacher { border-color: #f59e0b; background: rgba(245,158,11,0.07); }
+.stat-room    { border-color: #8b5cf6; background: rgba(139,92,246,0.07); }
+
+.stat-num   { font-size: 1.5rem; font-weight: 900; }
+.stat-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+.stat-total .stat-num   { color: #ef4444; }
+.stat-teacher .stat-num { color: #f59e0b; }
+.stat-room .stat-num    { color: #8b5cf6; }
+
+.conflict-subtitle {
+  color: var(--text-secondary); font-size: 0.9rem;
+  margin-bottom: 28px; line-height: 1.6;
+}
+
+/* ── No Conflicts ─────────────────────────────── */
+.no-conflicts {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 80px 20px; text-align: center;
+}
+.no-conflicts-icon { font-size: 4rem; margin-bottom: 16px; }
+.no-conflicts h3   { font-size: 1.4rem; font-weight: 800; color: #16a34a; margin-bottom: 8px; }
+.no-conflicts p    { color: var(--text-secondary); max-width: 400px; }
+
+/* ── Conflict Sections ────────────────────────── */
+.conflict-section { margin-bottom: 32px; }
+
+.conflict-section-title {
+  font-size: 1rem; font-weight: 800; color: var(--text-primary);
+  margin-bottom: 14px; display: flex; align-items: center; gap: 10px;
+}
+
+.section-count {
+  background: var(--bg-main); border: 1px solid var(--border);
+  color: var(--text-secondary); font-size: 0.78rem; font-weight: 700;
+  padding: 2px 8px; border-radius: 20px;
+}
+
+.conflict-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 14px;
+}
+
+/* ── Conflict Card ────────────────────────────── */
+.conflict-card {
+  background: var(--bg-card); border-radius: 12px;
+  padding: 16px; border: 1px solid var(--border);
+  transition: box-shadow 0.2s ease;
+}
+.conflict-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.15); }
+.conflict-card-teacher { border-top: 3px solid #f59e0b; }
+.conflict-card-room    { border-top: 3px solid #8b5cf6; }
+
+.conflict-card-header {
+  display: flex; justify-content: space-between;
+  align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 6px;
+}
+
+.conflict-badge {
+  font-size: 0.75rem; font-weight: 800; padding: 3px 10px;
+  border-radius: 20px; text-transform: uppercase; letter-spacing: 0.4px;
+}
+.badge-teacher { background: rgba(245,158,11,0.15); color: #d97706; }
+.badge-room    { background: rgba(139,92,246,0.15); color: #7c3aed; }
+
+.conflict-time-pill {
+  font-size: 0.78rem; color: var(--text-secondary);
+  background: var(--bg-main); padding: 3px 10px;
+  border-radius: 20px; border: 1px solid var(--border);
+  font-weight: 600;
+}
+
+.conflict-value {
+  font-size: 1rem; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 8px;
+  flex-wrap: wrap;
+}
+.conflict-value strong { color: var(--text-primary); }
+.conflict-clash-label {
+  font-size: 0.82rem; color: #ef4444; font-weight: 600;
+}
+
+/* ── Conflict Entries ─────────────────────────── */
+.conflict-entries { display: flex; flex-direction: column; gap: 6px; }
+
+.conflict-entry {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; background: var(--bg-main);
+  border-radius: 8px; border: 1px solid var(--border);
+  cursor: pointer; transition: all 0.18s ease;
+  font-size: 0.83rem;
+}
+.conflict-entry:hover {
+  border-color: var(--primary); background: rgba(37,99,235,0.06);
+  transform: translateX(3px);
+}
+
+.ce-group  { font-weight: 800; color: var(--primary); min-width: 90px; font-size: 0.78rem; }
+.ce-course { flex: 1; font-weight: 600; color: var(--text-primary); }
+.ce-detail { color: var(--text-secondary); font-size: 0.75rem; }
+.ce-jump   { color: var(--text-secondary); font-size: 0.9rem; margin-left: auto; opacity: 0.5; }
+.conflict-entry:hover .ce-jump { opacity: 1; color: var(--primary); }

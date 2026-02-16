@@ -20,21 +20,6 @@
   gap: 15px;
 }
 
-
-.header-title div {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-
-}
-
-.logo {
-  width: 150px;
-  height: 150px;
-  object-fit: contain;
-  
-}
-
 .header-title h1 {
   font-size: 1.8rem;
   background: linear-gradient(135deg, var(--primary), var(--accent));

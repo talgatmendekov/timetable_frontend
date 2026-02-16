@@ -240,3 +240,36 @@
   background: #d97706;
   transform: translateY(-2px);
 }
+
+/* Subject type selector */
+.type-selector {
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px;
+  background: var(--bg-main);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.type-btn {
+  padding: 7px 14px;
+  border: 2px solid;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 0.83rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.type-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+.type-btn.active { box-shadow: 0 3px 10px rgba(0,0,0,0.2); }
+
+.type-badge {
+  border: 1.5px solid;
+  font-weight: 700;
+  font-size: 0.78rem !important;
+}

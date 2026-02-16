@@ -5,7 +5,6 @@ import { useAuth } from '../context/AuthContext';
 import { useSchedule } from '../context/ScheduleContext';
 import { useLanguage } from '../context/LanguageContext';
 import { LANGUAGE_OPTIONS } from '../data/i18n';
-import logo from '../assets/logo.png.avif';
 import './Header.css';
 
 // Get today's day name in English
@@ -39,11 +38,7 @@ const Header = ({
     <div className="header">
       <div className="header-top">
         <div className="header-title">
-          <div>
-            <img src={logo} alt="Logo" className="logo" />
-            <h1>{t('appTitle')}</h1>
-          </div>
-          
+          <h1>{t('appTitle')}</h1>
           <p className="subtitle">{t('appSubtitle')}</p>
         </div>
 
@@ -145,8 +140,8 @@ const Header = ({
         {isAuthenticated && (
           <div className="admin-actions">
             <button onClick={onAddGroup} className="btn btn-primary">{t('addGroup')}</button>
-            <button onClick={onExport} className="btn btn-success">{t('export')}</button>
-            <button onClick={onImport} className="btn btn-info">{t('import')}</button>
+            <button onClick={onExport} className="btn btn-success" title="Export as .xlsx">📊 {t('export')}</button>
+            <button onClick={onImport} className="btn btn-info" title="Import from .xlsx">📂 {t('import')}</button>
             <button onClick={onClearAll} className="btn btn-danger">{t('clearAll')}</button>
           </div>
         )}

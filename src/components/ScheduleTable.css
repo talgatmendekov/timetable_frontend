@@ -270,3 +270,120 @@
 .conflict-text {
   color: #ef4444 !important;
 }
+
+/* ── Type pill inside cell ─────────────────────────── */
+.type-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+/* ── Legend bar ────────────────────────────────────── */
+.type-legend {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 16px;
+  background: var(--bg-card);
+  border-radius: 10px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-drag-hint {
+  margin-left: auto;
+  color: var(--text-secondary);
+  font-style: italic;
+  font-weight: 400;
+}
+
+/* ── Drag & Drop states ────────────────────────────── */
+.schedule-cell {
+  position: relative;
+  cursor: default;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
+}
+
+.schedule-cell.editable { cursor: pointer; }
+
+.schedule-cell.filled .drag-handle {
+  display: none;
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  font-size: 0.9rem;
+  color: rgba(255,255,255,0.7);
+  cursor: grab;
+  line-height: 1;
+  z-index: 2;
+}
+
+.schedule-cell.filled:hover .drag-handle {
+  display: block;
+}
+
+/* Cell being dragged */
+.drag-source {
+  opacity: 0.4 !important;
+  transform: scale(0.97);
+}
+
+/* Drop target — empty cell */
+.drag-over-empty {
+  background: rgba(37,99,235,0.12) !important;
+  border: 2px dashed #2563eb !important;
+  box-shadow: inset 0 0 0 2px rgba(37,99,235,0.2);
+}
+
+.drag-over-empty .empty-cell { display: none; }
+
+/* Drop target — occupied cell (swap) */
+.drag-over-filled {
+  outline: 2px dashed #f59e0b !important;
+  outline-offset: -2px;
+  box-shadow: 0 0 0 3px rgba(245,158,11,0.2);
+}
+
+/* Drop indicator text */
+.drop-indicator {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #2563eb;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  pointer-events: none;
+}
+
+/* Drag cursor for filled cells */
+.schedule-cell[draggable="true"] { cursor: grab; }
+.schedule-cell[draggable="true"]:active { cursor: grabbing; }

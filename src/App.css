@@ -127,3 +127,104 @@ body {
     padding: 10px;
   }
 }
+
+/* Import overlay */
+.import-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(4px);
+}
+
+.import-spinner {
+  background: var(--bg-card);
+  padding: 24px 40px;
+  border-radius: 16px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* ── Tab Bar ──────────────────────────────────── */
+.tab-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+  background: var(--bg-card);
+  padding: 8px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+  flex-wrap: wrap;
+}
+
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 20px;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  white-space: nowrap;
+}
+
+.tab-btn:hover {
+  background: var(--bg-main);
+  color: var(--text-primary);
+}
+
+.tab-btn.active {
+  background: var(--primary);
+  color: #fff;
+  box-shadow: 0 3px 12px rgba(37,99,235,0.35);
+}
+
+.tab-icon { font-size: 1rem; }
+.tab-label { font-weight: 600; }
+
+.tab-badge {
+  position: absolute;
+  top: 4px; right: 4px;
+  min-width: 18px; height: 18px;
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.65rem; font-weight: 800;
+  padding: 0 4px;
+}
+
+.tab-badge-warn {
+  background: #ef4444;
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(239,68,68,0.5);
+}
+
+.tab-content {
+  min-height: 400px;
+}
+
+@media (max-width: 600px) {
+  .tab-bar { gap: 4px; }
+  .tab-btn { padding: 8px 12px; font-size: 0.8rem; }
+  .tab-label { display: none; }
+  .tab-icon  { font-size: 1.2rem; }
+  .tab-btn.active .tab-label { display: inline; }
+}

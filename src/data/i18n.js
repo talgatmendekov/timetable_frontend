@@ -3,7 +3,7 @@
 export const translations = {
   en: {
     // Header
-    appTitle: 'Ala-Too International University',
+    appTitle: 'University Schedule Builder',
     appSubtitle: 'Timetable Management System',
     guestMode: 'Guest Mode (View Only)',
     logout: 'Logout',
@@ -78,7 +78,7 @@ export const translations = {
 
   ru: {
     // Header
-    appTitle: 'Mеждународный Университет Ала-Тоо',
+    appTitle: 'Расписание Университета',
     appSubtitle: 'Система Управления Расписанием',
     guestMode: 'Режим Гостя (Только Просмотр)',
     logout: 'Выйти',
@@ -153,7 +153,7 @@ export const translations = {
 
   ky: {
     // Header
-    appTitle: 'Ала-Тоо Эларалык Университети',
+    appTitle: 'Университет Жадыбалы',
     appSubtitle: 'Жадыбалды Башкаруу Системасы',
     guestMode: 'Конок Режими (Жалаң Көрүү)',
     logout: 'Чыгуу',
@@ -231,4 +231,19 @@ export const LANGUAGE_OPTIONS = [
   { code: 'en', label: 'English', flag: '🇬🇧' },
   { code: 'ru', label: 'Русский', flag: '🇷🇺' },
   { code: 'ky', label: 'Кыргызча', flag: '🇰🇬' },
+];
+
+// Subject type translations (appended)
+// Add these keys to each language object manually, or use the helper below
+export const SUBJECT_TYPE_LABELS = {
+  en: { lecture: 'Lecture', lab: 'Lab', seminar: 'Seminar', other: 'Other' },
+  ru: { lecture: 'Лекция', lab: 'Лабораторная', seminar: 'Семинар', other: 'Другое' },
+  ky: { lecture: 'Лекция', lab: 'Лабораториялык', seminar: 'Семинар', other: 'Башка' },
+};
+
+export const SUBJECT_TYPES = [
+  { value: 'lecture', color: '#2563eb', light: 'rgba(37,99,235,0.13)', icon: '📖' },
+  { value: 'lab',     color: '#16a34a', light: 'rgba(22,163,74,0.13)',  icon: '🔬' },
+  { value: 'seminar', color: '#ea580c', light: 'rgba(234,88,12,0.13)',  icon: '💬' },
+  { value: 'other',   color: '#7c3aed', light: 'rgba(124,58,237,0.13)', icon: '📌' },
 ];
