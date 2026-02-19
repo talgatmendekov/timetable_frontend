@@ -63,10 +63,10 @@ export const authAPI = {
 export const scheduleAPI = {
   getAll: () => apiCall('/schedules'),
 
-  save: (group, day, time, course, teacher, room, subjectType) =>
+  save: (group, day, time, course, teacher, room, subjectType, duration = 1) =>
     apiCall('/schedules', {
       method: 'POST',
-      body: JSON.stringify({ group, day, time, course, teacher, room, subjectType }),
+      body: JSON.stringify({ group, day, time, course, teacher, room, subjectType, duration }),
     }),
 
   delete: (group, day, time) =>

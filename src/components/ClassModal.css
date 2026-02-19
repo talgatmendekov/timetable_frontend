@@ -273,3 +273,50 @@
   font-weight: 700;
   font-size: 0.78rem !important;
 }
+
+/* Duration UI */
+.duration-badge {
+  background: rgba(124,58,237,0.1) !important;
+  color: #7c3aed !important;
+  border-color: #7c3aed !important;
+}
+
+.duration-info {
+  background: rgba(37,99,235,0.08);
+  border-left: 3px solid #2563eb;
+  padding: 10px 14px;
+  margin: 12px 20px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+}
+
+.duration-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-main);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.duration-select:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.duration-hint {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.conflict-item.conflict-occupied {
+  background: rgba(239,68,68,0.1);
+  border-left-color: #ef4444;
+}

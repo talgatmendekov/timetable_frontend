@@ -48,14 +48,14 @@ export const ScheduleProvider = ({ children }) => {
 
   // â”€â”€ Schedule mutations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   const addOrUpdateClass = async (group, day, time, classData) => {
-    const { course, teacher, room, subjectType } = classData;
+    const { course, teacher, room, subjectType, duration = 1 } = classData;
     try {
-      await scheduleAPI.save(group, day, time, course, teacher, room, subjectType);
+      await scheduleAPI.save(group, day, time, course, teacher, room, subjectType, duration);
       // Optimistic update
       const key = `${group}-${day}-${time}`;
       setSchedule(prev => ({
         ...prev,
-        [key]: { group, day, time, course, teacher: teacher||'', room: room||'', subjectType: subjectType||'lecture' }
+        [key]: { group, day, time, course, teacher: teacher||'', room: room||'', subjectType: subjectType||'lecture', duration }
       }));
     } catch (err) {
       alert(`Failed to save class: ${err.message}`);

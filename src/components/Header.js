@@ -1,10 +1,8 @@
-// src/components/Header.js
-
-import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSchedule } from '../context/ScheduleContext';
 import { useLanguage } from '../context/LanguageContext';
 import { LANGUAGE_OPTIONS } from '../data/i18n';
+import logo from '../assets/logo.png';
 import './Header.css';
 
 // Get today's day name in English
@@ -37,9 +35,14 @@ const Header = ({
   return (
     <div className="header">
       <div className="header-top">
+        
         <div className="header-title">
-          <h1>{t('appTitle')}</h1>
-          <p className="subtitle">{t('appSubtitle')}</p>
+          <div>
+             <img src={logo} alt="University Logo" className="logo" />
+              <h1>{t('appTitle')}</h1>
+             
+          </div>
+        <p className="subtitle">{t('appSubtitle')}</p>
         </div>
 
         <div className="header-right">

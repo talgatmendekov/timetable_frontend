@@ -74,46 +74,6 @@ export const translations = {
 
     // Language selector
     language: 'Language',
-
-    // New tabs and features
-    tabSchedule: 'Schedule',
-    tabPrint: 'Print / PDF',
-    tabDashboard: 'Teacher Stats',
-    tabConflicts: 'Conflicts',
-    dragHint: 'Drag to move',
-    day: 'Day',
-    selectGroup: 'Select Group:',
-    selectDay: 'Select Day:',
-    printNow: 'Print / Save as PDF',
-    printedOn: 'Printed on',
-    printByGroup: 'By Group',
-    printByDay: 'By Day',
-    printExport: 'Print / PDF Export',
-    teacherDashboard: 'Teacher Workload Dashboard',
-    noTeachersYet: 'No teachers yet',
-    addClassesFirst: 'Add some classes with teacher names to see the dashboard.',
-    classesPerWeek: 'classes/week',
-    freeDays: 'Free Days',
-    totalClasses: 'Total Classes',
-    workDays: 'Work Days',
-    bySubjectType: 'By Subject Type',
-    byDay: 'Classes Per Day',
-    weeklyHeatmap: 'Weekly Schedule Heatmap',
-    free: 'Free',
-    busy: 'Busy',
-    allClasses: 'All Classes This Week',
-    conflictSummary: 'Conflict Summary',
-    noConflicts: 'No conflicts found!',
-    timetableClean: 'Your timetable is clean. No teacher or room double-bookings detected.',
-    totalConflicts: 'Total Conflicts',
-    teacherConflicts: 'Teacher Conflicts',
-    roomConflicts: 'Room Conflicts',
-    conflictDescription: 'The following conflicts were detected across the entire timetable. Click any entry to jump to it.',
-    teacherDoubleBooked: 'is double-booked',
-    roomDoubleBooked: 'is double-booked',
-    clickToJump: 'Click to jump to this class',
-    loadingData: 'Loading data...',
-    importing: 'Importing...',
   },
 
   ru: {
@@ -189,46 +149,6 @@ export const translations = {
 
     // Language selector
     language: 'Язык',
-
-    // New tabs and features
-    tabSchedule: 'Расписание',
-    tabPrint: 'Печать / PDF',
-    tabDashboard: 'Статистика',
-    tabConflicts: 'Конфликты',
-    dragHint: 'Перетащите',
-    day: 'День',
-    selectGroup: 'Выберите группу:',
-    selectDay: 'Выберите день:',
-    printNow: 'Печать / Сохранить как PDF',
-    printedOn: 'Напечатано',
-    printByGroup: 'По группам',
-    printByDay: 'По дням',
-    printExport: 'Печать / Экспорт PDF',
-    teacherDashboard: 'Нагрузка преподавателей',
-    noTeachersYet: 'Пока нет преподавателей',
-    addClassesFirst: 'Добавьте занятия с именами преподавателей.',
-    classesPerWeek: 'занятий/нед',
-    freeDays: 'Свободные дни',
-    totalClasses: 'Всего занятий',
-    workDays: 'Рабочих дней',
-    bySubjectType: 'По типу занятий',
-    byDay: 'Занятий в день',
-    weeklyHeatmap: 'Недельная карта',
-    free: 'Свободно',
-    busy: 'Занято',
-    allClasses: 'Все занятия на неделе',
-    conflictSummary: 'Сводка конфликтов',
-    noConflicts: 'Конфликтов не найдено!',
-    timetableClean: 'Ваше расписание чистое. Нет двойных бронирований.',
-    totalConflicts: 'Всего конфликтов',
-    teacherConflicts: 'Конфликты преподавателей',
-    roomConflicts: 'Конфликты аудиторий',
-    conflictDescription: 'Обнаружены следующие конфликты. Нажмите для перехода.',
-    teacherDoubleBooked: 'забронирован дважды',
-    roomDoubleBooked: 'забронирована дважды',
-    clickToJump: 'Нажмите для перехода',
-    loadingData: 'Загрузка данных...',
-    importing: 'Импорт...',
   },
 
   ky: {
@@ -304,46 +224,6 @@ export const translations = {
 
     // Language selector
     language: 'Тил',
-
-    // New tabs and features
-    tabSchedule: 'Расписание',
-    tabPrint: 'Басып чыгаруу',
-    tabDashboard: 'Статистика',
-    tabConflicts: 'Конфликттер',
-    dragHint: 'Жылдырыңыз',
-    day: 'Күн',
-    selectGroup: 'Топту тандаңыз:',
-    selectDay: 'Күндү тандаңыз:',
-    printNow: 'Басып чыгаруу',
-    printedOn: 'Басылды',
-    printByGroup: 'Топ боюнча',
-    printByDay: 'Күн боюнча',
-    printExport: 'Басып чыгаруу / PDF',
-    teacherDashboard: 'Мугалимдердин жүктөмү',
-    noTeachersYet: 'Мугалимдер жок',
-    addClassesFirst: 'Сабактарды мугалимдер менен кошуңуз.',
-    classesPerWeek: 'сабак/жума',
-    freeDays: 'Бош күндөр',
-    totalClasses: 'Бардыгы сабак',
-    workDays: 'Иштөө күндөрү',
-    bySubjectType: 'Сабак түрү боюнча',
-    byDay: 'Күнүнө сабак',
-    weeklyHeatmap: 'Жумалык картасы',
-    free: 'Бош',
-    busy: 'Бош эмес',
-    allClasses: 'Бардык сабактар',
-    conflictSummary: 'Конфликттер',
-    noConflicts: 'Конфликт жок!',
-    timetableClean: 'Расписаниеңиз таза. Конфликттер табылган жок.',
-    totalConflicts: 'Бардыгы конфликт',
-    teacherConflicts: 'Мугалим конфликттери',
-    roomConflicts: 'Аудитория конфликттери',
-    conflictDescription: 'Төмөнкү конфликттер табылды. Өтүү үчүн басыңыз.',
-    teacherDoubleBooked: 'эки жолу броньдалды',
-    roomDoubleBooked: 'эки жолу броньдалды',
-    clickToJump: 'Өтүү үчүн басыңыз',
-    loadingData: 'Жүктөлүүдө...',
-    importing: 'Импорт...',
   }
 };
 
@@ -351,4 +231,19 @@ export const LANGUAGE_OPTIONS = [
   { code: 'en', label: 'English', flag: '🇬🇧' },
   { code: 'ru', label: 'Русский', flag: '🇷🇺' },
   { code: 'ky', label: 'Кыргызча', flag: '🇰🇬' },
+];
+
+// Subject type translations (appended)
+// Add these keys to each language object manually, or use the helper below
+export const SUBJECT_TYPE_LABELS = {
+  en: { lecture: 'Lecture', lab: 'Lab', seminar: 'Seminar', other: 'Other' },
+  ru: { lecture: 'Лекция', lab: 'Лабораторная', seminar: 'Семинар', other: 'Другое' },
+  ky: { lecture: 'Лекция', lab: 'Лабораториялык', seminar: 'Семинар', other: 'Башка' },
+};
+
+export const SUBJECT_TYPES = [
+  { value: 'lecture', color: '#2563eb', light: 'rgba(37,99,235,0.13)', icon: '📖' },
+  { value: 'lab',     color: '#16a34a', light: 'rgba(22,163,74,0.13)',  icon: '🔬' },
+  { value: 'seminar', color: '#ea580c', light: 'rgba(234,88,12,0.13)',  icon: '💬' },
+  { value: 'other',   color: '#7c3aed', light: 'rgba(124,58,237,0.13)', icon: '📌' },
 ];
