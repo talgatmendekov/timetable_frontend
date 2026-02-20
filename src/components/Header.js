@@ -3,6 +3,7 @@ import { useSchedule } from '../context/ScheduleContext';
 import { useLanguage } from '../context/LanguageContext';
 import { LANGUAGE_OPTIONS } from '../data/i18n';
 import logo from '../assets/logo.png';
+import ThemeToggle from './ThemeToggle';
 import './Header.css';
 
 // Get today's day name in English
@@ -46,6 +47,7 @@ const Header = ({
         </div>
 
         <div className="header-right">
+           <ThemeToggle />
           {/* Language Selector */}
           <div className="lang-selector">
             {LANGUAGE_OPTIONS.map(opt => (

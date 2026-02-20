@@ -1,0 +1,19 @@
+/* src/components/ThemeToggle.css */
+.theme-toggle {
+  background: transparent;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+  background: var(--hover-bg);
+  transform: rotate(15deg);
+}
