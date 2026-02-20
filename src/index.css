@@ -1,64 +1,460 @@
-/* Add this to src/index.css - COMPLETELY DIFFERENT DAY/NIGHT PALETTES */
+/* COMPLETE PROJECT THEME - Add to src/index.css */
 
 :root {
   /* ============================================
-     LIGHT MODE - Soft Peach & Mint Pastels
+     DAY MODE - Modern Bright & Clean
      ============================================ */
-  --bg-main: #fff8f0;              /* Warm cream */
+  --bg-main: #f8fafc;              /* Light gray-blue */
   --bg-secondary: #ffffff;         /* Pure white */
-  --bg-tertiary: #fff3e6;          /* Light peach */
-  --text-primary: #2d1810;         /* Deep brown */
-  --text-secondary: #8b6442;       /* Warm brown */
-  --primary: #ff9b71;              /* Coral orange */
-  --primary-light: #ffe4d6;        /* Light peach */
-  --border: #ffd6ba;               /* Peach border */
-  --hover-bg: #fff0e0;             /* Soft peach hover */
-  --success: #a7e6c4;              /* Mint green */
-  --warning: #ffc857;              /* Golden yellow */
-  --error: #ff8585;                /* Soft red */
-  --shadow: rgba(255, 155, 113, 0.15);
+  --bg-tertiary: #f1f5f9;          /* Soft gray */
+  --bg-card: #ffffff;              /* Card backgrounds */
   
-  /* Subject type colors - WARM palette */
-  --lecture-color: #ff8b5a;        /* Warm orange */
-  --lecture-light: #ffe8dc;
-  --lab-color: #4ecdc4;            /* Turquoise */
-  --lab-light: #d5f4f1;
-  --seminar-color: #ffbe0b;        /* Bright yellow */
-  --seminar-light: #fff4d1;
-  --other-color: #a78bfa;          /* Lavender */
+  --text-primary: #0f172a;         /* Deep slate */
+  --text-secondary: #64748b;       /* Medium slate */
+  --text-muted: #94a3b8;           /* Light slate */
+  
+  --primary: #3b82f6;              /* Bright blue */
+  --primary-hover: #2563eb;        /* Darker blue */
+  --primary-light: #dbeafe;        /* Light blue bg */
+  
+  --success: #10b981;              /* Emerald green */
+  --success-light: #d1fae5;
+  --warning: #f59e0b;              /* Amber */
+  --warning-light: #fef3c7;
+  --error: #ef4444;                /* Red */
+  --error-light: #fee2e2;
+  
+  --border: #e2e8f0;               /* Light border */
+  --border-strong: #cbd5e1;        /* Medium border */
+  --hover-bg: #f8fafc;             /* Hover state */
+  --shadow: rgba(0, 0, 0, 0.1);
+  --shadow-lg: rgba(0, 0, 0, 0.15);
+  
+  /* Subject type colors - BRIGHT & VIBRANT */
+  --lecture-color: #3b82f6;        /* Blue */
+  --lecture-light: #dbeafe;
+  --lab-color: #10b981;            /* Green */
+  --lab-light: #d1fae5;
+  --seminar-color: #f59e0b;        /* Orange */
+  --seminar-light: #fef3c7;
+  --other-color: #8b5cf6;          /* Purple */
   --other-light: #ede9fe;
 }
 
 body[data-theme="dark"] {
   /* ============================================
-     DARK MODE - Deep Blue & Purple Galaxy
+     NIGHT MODE - Fusion Gothic (Purple/Pink Neon)
      ============================================ */
-  --bg-main: #0f1419;              /* Deep space blue */
-  --bg-secondary: #1a1f2e;         /* Navy blue */
-  --bg-tertiary: #252b3b;          /* Slate blue */
-  --text-primary: #e6e8f0;         /* Soft white */
-  --text-secondary: #a8b2d1;       /* Periwinkle */
-  --primary: #7c3aed;              /* Bright purple */
-  --primary-light: #3b1f66;        /* Dark purple */
-  --border: #3d4663;               /* Steel blue */
-  --hover-bg: #2a3147;             /* Dark slate hover */
-  --success: #34d399;              /* Bright mint */
-  --warning: #fbbf24;              /* Amber */
-  --error: #f87171;                /* Coral red */
-  --shadow: rgba(124, 58, 237, 0.25);
+  --bg-main: #0a0118;              /* Deep purple-black */
+  --bg-secondary: #150828;         /* Dark purple */
+  --bg-tertiary: #1f0d3a;          /* Medium purple */
+  --bg-card: #1a0a2e;              /* Card purple */
   
-  /* Subject type colors - COOL palette */
-  --lecture-color: #818cf8;        /* Bright indigo */
-  --lecture-light: #312e81;
-  --lab-color: #2dd4bf;            /* Bright cyan */
-  --lab-light: #134e4a;
-  --seminar-color: #fbbf24;        /* Bright amber */
-  --seminar-light: #78350f;
-  --other-color: #c084fc;          /* Bright purple */
-  --other-light: #581c87;
+  --text-primary: #f0e6ff;         /* Bright lavender */
+  --text-secondary: #c4b5fd;       /* Purple-white */
+  --text-muted: #9b87d1;           /* Muted purple */
+  
+  --primary: #c026d3;              /* Neon fuchsia */
+  --primary-hover: #e879f9;        /* Bright pink */
+  --primary-light: #3b0764;        /* Dark fuchsia */
+  
+  --success: #10b981;              /* Neon green */
+  --success-light: #064e3b;
+  --warning: #fbbf24;              /* Gold */
+  --warning-light: #78350f;
+  --error: #f43f5e;                /* Hot pink */
+  --error-light: #881337;
+  
+  --border: #4a1d96;               /* Purple border */
+  --border-strong: #7c3aed;        /* Bright purple */
+  --hover-bg: #2d1b4e;             /* Purple hover */
+  --shadow: rgba(192, 38, 211, 0.3);
+  --shadow-lg: rgba(192, 38, 211, 0.5);
+  
+  /* Subject type colors - NEON GLOW */
+  --lecture-color: #a855f7;        /* Bright purple */
+  --lecture-light: #3b0764;
+  --lab-color: #22d3ee;            /* Cyan neon */
+  --lab-light: #0e4d5c;
+  --seminar-color: #fb923c;        /* Neon orange */
+  --seminar-light: #7c2d12;
+  --other-color: #ec4899;          /* Hot pink */
+  --other-light: #831843;
 }
 
-/* Update ALL components to use CSS variables */
+/* ============================================
+   GLOBAL STYLES - ALL COMPONENTS
+   ============================================ */
+
+* {
+  transition: background-color 0.3s ease, 
+              color 0.3s ease, 
+              border-color 0.3s ease,
+              box-shadow 0.3s ease;
+}
+
+body {
+  background: var(--bg-main);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ============================================
+   HEADER
+   ============================================ */
+.header {
+  background: var(--bg-secondary);
+  border-bottom: 2px solid var(--border);
+  box-shadow: 0 2px 8px var(--shadow);
+}
+
+.header-title h1 {
+  color: var(--text-primary);
+}
+
+.header-title .subtitle {
+  color: var(--text-secondary);
+}
+
+.user-badge {
+  background: var(--primary-light);
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+
+/* Language & Theme buttons */
+.lang-btn,
+.theme-toggle {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 2px solid var(--border);
+}
+
+.lang-btn.active,
+.theme-toggle:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+/* ============================================
+   FILTERS & CONTROLS
+   ============================================ */
+.filters,
+.admin-actions {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 4px var(--shadow);
+}
+
+.filter-group label {
+  color: var(--text-secondary);
+}
+
+select,
+input[type="text"],
+input[type="password"] {
+  background: var(--bg-main);
+  color: var(--text-primary);
+  border: 2px solid var(--border);
+}
+
+select:focus,
+input:focus {
+  border-color: var(--primary);
+  background: var(--bg-secondary);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+/* ============================================
+   BUTTONS
+   ============================================ */
+button {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 2px solid var(--border);
+}
+
+.btn-primary,
+button.primary {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+}
+
+.btn-secondary {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 2px solid var(--border);
+}
+
+.btn-danger {
+  background: var(--error);
+  color: white;
+  border-color: var(--error);
+}
+
+/* ============================================
+   TABLE
+   ============================================ */
+.schedule-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px var(--shadow-lg);
+}
+
+.schedule-table {
+  background: var(--bg-secondary);
+  border-color: var(--border);
+}
+
+.schedule-table th {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 2px solid var(--border);
+  font-weight: 700;
+}
+
+.schedule-table td {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+}
+
+.schedule-cell:hover {
+  background: var(--hover-bg);
+  box-shadow: 0 0 0 2px var(--primary);
+}
+
+.schedule-cell.filled {
+  border-left: 4px solid var(--primary);
+}
+
+.schedule-cell.today-cell {
+  background: var(--primary-light) !important;
+  box-shadow: inset 0 0 0 2px var(--primary);
+}
+
+/* Gothic glow effect for dark mode */
+body[data-theme="dark"] .schedule-cell.filled {
+  box-shadow: 0 0 10px var(--shadow);
+}
+
+body[data-theme="dark"] .schedule-cell:hover {
+  box-shadow: 0 0 20px var(--shadow-lg);
+}
+
+/* Subject type colors */
+.schedule-cell[style*="rgb(219, 234, 254)"] { /* Light blue in light mode */
+  background: var(--lecture-light) !important;
+  border-left-color: var(--lecture-color) !important;
+}
+
+.type-pill.lecture,
+.type-btn.lecture {
+  background: var(--lecture-color) !important;
+}
+
+.type-pill.lab,
+.type-btn.lab {
+  background: var(--lab-color) !important;
+}
+
+.type-pill.seminar,
+.type-btn.seminar {
+  background: var(--seminar-color) !important;
+}
+
+.type-pill.other,
+.type-btn.other {
+  background: var(--other-color) !important;
+}
+
+/* ============================================
+   MODAL
+   ============================================ */
+.modal-overlay {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+body[data-theme="dark"] .modal-overlay {
+  background: rgba(10, 1, 24, 0.9);
+}
+
+.modal-content {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 2px solid var(--border-strong);
+  box-shadow: 0 25px 50px var(--shadow-lg);
+}
+
+body[data-theme="dark"] .modal-content {
+  box-shadow: 0 0 50px var(--shadow-lg), 0 0 100px var(--shadow);
+}
+
+.modal-header {
+  background: var(--bg-tertiary);
+  border-bottom: 3px solid var(--primary);
+}
+
+.modal-body {
+  background: var(--bg-secondary);
+}
+
+.modal-footer {
+  background: var(--bg-tertiary);
+  border-top: 1px solid var(--border);
+}
+
+/* ============================================
+   TABS
+   ============================================ */
+.tabs {
+  background: var(--bg-card);
+  border-bottom: 2px solid var(--border);
+}
+
+.tabs button {
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  border-bottom: 3px solid transparent;
+}
+
+.tabs button:hover {
+  background: var(--hover-bg);
+  color: var(--text-primary);
+}
+
+.tabs button.active {
+  background: var(--primary-light);
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 700;
+}
+
+body[data-theme="dark"] .tabs button.active {
+  box-shadow: 0 0 15px var(--shadow);
+}
+
+/* ============================================
+   CARDS (Dashboard, Conflicts, Print)
+   ============================================ */
+.card,
+.stat-card,
+.conflict-card,
+.print-container {
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px var(--shadow);
+}
+
+body[data-theme="dark"] .card,
+body[data-theme="dark"] .stat-card {
+  border-color: var(--border-strong);
+  box-shadow: 0 0 20px var(--shadow);
+}
+
+/* ============================================
+   LOGIN PAGE
+   ============================================ */
+.login-container {
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  box-shadow: 0 8px 32px var(--shadow-lg);
+}
+
+body[data-theme="dark"] .login-container {
+  box-shadow: 0 0 40px var(--shadow-lg);
+}
+
+.login-title {
+  color: var(--text-primary);
+}
+
+/* ============================================
+   CONFLICTS & WARNINGS
+   ============================================ */
+.conflict-teacher {
+  border: 3px dashed var(--warning) !important;
+  background: var(--warning-light) !important;
+}
+
+.conflict-room {
+  border: 3px dashed var(--error) !important;
+  background: var(--error-light) !important;
+}
+
+.conflicts-container {
+  background: var(--warning-light);
+  border-left: 4px solid var(--warning);
+}
+
+/* ============================================
+   LEGENDS & BADGES
+   ============================================ */
+.type-legend {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.legend-dot {
+  box-shadow: 0 0 8px currentColor;
+}
+
+body[data-theme="dark"] .legend-dot {
+  box-shadow: 0 0 15px currentColor;
+}
+
+.info-badge {
+  background: var(--primary-light);
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+
+/* ============================================
+   SCROLLBARS (Dark mode only)
+   ============================================ */
+body[data-theme="dark"] ::-webkit-scrollbar {
+  width: 12px;
+  background: var(--bg-tertiary);
+}
+
+body[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 6px;
+  box-shadow: 0 0 10px var(--primary);
+}
+
+body[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-hover);
+}
+
+/* ============================================
+   PRINT MODE - Force light colors
+   ============================================ */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  * {
+    background: white !important;
+    color: black !important;
+    border-color: #ddd !important;
+    box-shadow: none !important;
+  }
+}
 
 /* Background colors */
 body {
