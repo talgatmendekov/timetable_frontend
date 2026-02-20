@@ -17,7 +17,7 @@ const getTypeStyle = (subjectType) => {
 
 const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClass, onDeleteGroup }) => {
   const { isAuthenticated } = useAuth();
-  const { groups, timeSlots, days, getClassByKey, schedule, moveClass } = useSchedule();
+  const { groups, timeSlots, days, schedule, moveClass } = useSchedule();
   const { t, lang } = useLanguage();
 
   const todayName = getTodayName();
@@ -26,8 +26,13 @@ const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClas
   const typeLabels = SUBJECT_TYPE_LABELS[lang] || SUBJECT_TYPE_LABELS.en;
 
   const [dragSource, setDragSource] = useState(null);
-  const [dragOver, setDragOver]     = useState(null);
+  const [dragOver, setDragOver] = useState(null);
   const dragNode = useRef(null);
+
+  const getClass = (group, day, time) => {
+    const key = `${group}-${day}-${time}`;
+    return schedule[key] || null;
+  };
 
   const shouldShowCell = (classData) => {
     if (!classData) return true;
@@ -104,21 +109,6 @@ const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClas
     </div>
   );
 
-  // Build skip map for continuation cells WITHIN the render loop
-  const buildSkipMap = (group, day) => {
-    const skipMap = new Set();
-    timeSlots.forEach((time, idx) => {
-      const classData = getClassByKey(group, day, time);
-      if (classData && classData.duration > 1) {
-        const dur = parseInt(classData.duration);
-        for (let i = 1; i < dur && idx + i < timeSlots.length; i++) {
-          skipMap.add(timeSlots[idx + i]);
-        }
-      }
-    });
-    return skipMap;
-  };
-
   return (
     <div className="schedule-container">
       <Legend />
@@ -133,10 +123,7 @@ const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClas
               {daysToShow.map(day => {
                 const isToday = day === todayName;
                 return (
-                  <th key={day}
-                    className={`day-header ${isToday ? 'today-col' : ''}`}
-                    colSpan={timeSlots.length}
-                  >
+                  <th key={day} className={`day-header ${isToday ? 'today-col' : ''}`} colSpan={timeSlots.length}>
                     {t(day)}{isToday && <span className="today-badge"> ★</span>}
                   </th>
                 );
@@ -146,11 +133,7 @@ const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClas
               <th className="group-header" />
               {daysToShow.map(day =>
                 timeSlots.map(time => (
-                  <th key={`${day}-${time}`}
-                    className={`time-header ${day === todayName ? 'today-time' : ''}`}
-                  >
-                    {time}
-                  </th>
+                  <th key={`${day}-${time}`} className={`time-header ${day === todayName ? 'today-time' : ''}`}>{time}</th>
                 ))
               )}
             </tr>
@@ -158,134 +141,114 @@ const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClas
 
           <tbody>
             {groupsToShow.map(group => {
+              const cellsToSkip = new Set();
+              
+              daysToShow.forEach(day => {
+                timeSlots.forEach((time, timeIdx) => {
+                  const classData = getClass(group, day, time);
+                  if (classData?.duration > 1) {
+                    for (let i = 1; i < classData.duration; i++) {
+                      if (timeIdx + i < timeSlots.length) {
+                        cellsToSkip.add(`${day}-${timeSlots[timeIdx + i]}`);
+                      }
+                    }
+                  }
+                });
+              });
+
               return (
                 <tr key={group}>
                   <td className="group-cell">
                     <div className="group-cell-content">
                       <span className="group-name">{group}</span>
                       {isAuthenticated && (
-                        <button
-                          className="delete-group-btn"
-                          title="Delete group"
+                        <button className="delete-group-btn" title="Delete group"
                           onClick={() => {
-                            if (window.confirm(t('confirmDeleteGroup', { group })))
-                              onDeleteGroup(group);
-                          }}
-                        >×</button>
+                            if (window.confirm(t('confirmDeleteGroup', { group }))) onDeleteGroup(group);
+                          }}>×</button>
                       )}
                     </div>
                   </td>
 
-                  {daysToShow.map(day => {
-                    const skipMap = buildSkipMap(group, day);
-                    
-                    return timeSlots.map(time => {
-                      // Skip continuation cells
-                      if (skipMap.has(time)) {
-                        return null;
-                      }
+                  {daysToShow.map(day => timeSlots.map((time) => {
+                    if (cellsToSkip.has(`${day}-${time}`)) return null;
 
-                      const classData = getClassByKey(group, day, time);
-                      const show      = shouldShowCell(classData);
-                      const isToday   = day === todayName;
-                      const conflicts = getCellConflicts(group, day, time, classData);
-                      const hasTeacherConflict = conflicts.includes('teacher');
-                      const hasRoomConflict    = conflicts.includes('room');
+                    const classData = getClass(group, day, time);
+                    const show = shouldShowCell(classData);
+                    const isToday = day === todayName;
+                    const conflicts = getCellConflicts(group, day, time, classData);
+                    const hasTeacherConflict = conflicts.includes('teacher');
+                    const hasRoomConflict = conflicts.includes('room');
+                    const isDragSource = dragSource?.group === group && dragSource?.day === day && dragSource?.time === time;
+                    const isDragOver = dragOver?.group === group && dragOver?.day === day && dragOver?.time === time;
+                    const typeStyle = classData ? getTypeStyle(classData.subjectType) : null;
+                    const duration = classData?.duration ? parseInt(classData.duration) : 1;
 
-                      const isDragSource = dragSource?.group === group && dragSource?.day === day && dragSource?.time === time;
-                      const isDragOver   = dragOver?.group === group && dragOver?.day === day && dragOver?.time === time;
-
-                      const typeStyle = classData ? getTypeStyle(classData.subjectType) : null;
-                      const duration = classData ? parseInt(classData.duration) || 1 : 1;
-
-                      if (!show) {
-                        return (
-                          <td key={`${group}-${day}-${time}`}
-                            className={`schedule-cell filtered-out ${isToday ? 'today-cell' : ''}`}
-                            rowSpan={duration}
-                          >
-                            <div className="filtered-label">{t('filtered')}</div>
-                          </td>
-                        );
-                      }
-
+                    if (!show) {
                       return (
-                        <td
-                          key={`${group}-${day}-${time}`}
-                          className={[
-                            'schedule-cell',
-                            classData ? 'filled' : '',
-                            isAuthenticated ? 'editable' : '',
-                            isToday ? 'today-cell' : '',
-                            hasTeacherConflict ? 'conflict-teacher' : '',
-                            hasRoomConflict ? 'conflict-room' : '',
-                            isDragSource ? 'drag-source' : '',
-                            isDragOver ? (classData ? 'drag-over-filled' : 'drag-over-empty') : '',
-                            duration > 1 ? 'multi-slot' : '',
-                          ].filter(Boolean).join(' ')}
-                          style={classData && typeStyle ? {
-                            background: typeStyle.light,
-                            borderLeft: `3px solid ${typeStyle.color}`,
-                          } : {}}
-                          rowSpan={duration}
-                          onClick={() => {
-                            if (isAuthenticated && !dragSource) onEditClass(group, day, time);
-                          }}
-                          draggable={isAuthenticated && !!classData}
-                          onDragStart={classData ? (e) => handleDragStart(e, group, day, time) : undefined}
-                          onDragEnd={handleDragEnd}
-                          onDragOver={(e) => handleDragOver(e, group, day, time)}
-                          onDragLeave={handleDragLeave}
-                          onDrop={(e) => handleDrop(e, group, day, time)}
-                        >
-                          {classData ? (
-                            <div className="cell-content">
-                              {typeStyle && (
-                                <div className="type-pill" style={{ background: typeStyle.color }}>
-                                  {typeStyle.icon} {typeLabels[classData.subjectType || 'lecture']}
-                                </div>
-                              )}
-
-                              {(hasTeacherConflict || hasRoomConflict) && (
-                                <div className="cell-conflict-icons">
-                                  {hasTeacherConflict && <span title="Teacher conflict">⚠️</span>}
-                                  {hasRoomConflict    && <span title="Room conflict">🚪⚠️</span>}
-                                </div>
-                              )}
-
-                              <div className="course-name">{classData.course}</div>
-                              
-                              {duration > 1 && (
-                                <div className="duration-indicator">
-                                  ⏱ {duration * 40} {t('min') || 'min'}
-                                </div>
-                              )}
-
-                              {classData.teacher && (
-                                <div className={`teacher-name ${hasTeacherConflict ? 'conflict-text' : ''}`}>
-                                  👨‍🏫 {classData.teacher}
-                                </div>
-                              )}
-                              {classData.room && (
-                                <div className={`room-number ${hasRoomConflict ? 'conflict-text' : ''}`}>
-                                  🚪 {classData.room}
-                                </div>
-                              )}
-
-                              {isAuthenticated && (
-                                <div className="drag-handle" title="Drag to move">⠿</div>
-                              )}
-                            </div>
-                          ) : (
-                            <>
-                              {isAuthenticated && <div className="empty-cell">+</div>}
-                              {isDragOver && <div className="drop-indicator">Drop here</div>}
-                            </>
-                          )}
+                        <td key={`${group}-${day}-${time}`} className={`schedule-cell filtered-out ${isToday ? 'today-cell' : ''}`} rowSpan={duration}>
+                          <div className="filtered-label">{t('filtered')}</div>
                         </td>
                       );
-                    });
-                  })}
+                    }
+
+                    return (
+                      <td key={`${group}-${day}-${time}`}
+                        className={[
+                          'schedule-cell', classData ? 'filled' : '', isAuthenticated ? 'editable' : '',
+                          isToday ? 'today-cell' : '', hasTeacherConflict ? 'conflict-teacher' : '',
+                          hasRoomConflict ? 'conflict-room' : '', isDragSource ? 'drag-source' : '',
+                          isDragOver ? (classData ? 'drag-over-filled' : 'drag-over-empty') : '',
+                          duration > 1 ? 'multi-slot' : '',
+                        ].filter(Boolean).join(' ')}
+                        style={classData && typeStyle ? { background: typeStyle.light, borderLeft: `3px solid ${typeStyle.color}` } : {}}
+                        rowSpan={duration}
+                        onClick={() => { if (isAuthenticated && !dragSource) onEditClass(group, day, time); }}
+                        draggable={isAuthenticated && !!classData}
+                        onDragStart={classData ? (e) => handleDragStart(e, group, day, time) : undefined}
+                        onDragEnd={handleDragEnd}
+                        onDragOver={(e) => handleDragOver(e, group, day, time)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, group, day, time)}
+                      >
+                        {classData ? (
+                          <div className="cell-content">
+                            {typeStyle && (
+                              <div className="type-pill" style={{ background: typeStyle.color }}>
+                                {typeStyle.icon} {typeLabels[classData.subjectType || 'lecture']}
+                              </div>
+                            )}
+                            {(hasTeacherConflict || hasRoomConflict) && (
+                              <div className="cell-conflict-icons">
+                                {hasTeacherConflict && <span title="Teacher conflict">⚠️</span>}
+                                {hasRoomConflict && <span title="Room conflict">🚪⚠️</span>}
+                              </div>
+                            )}
+                            <div className="course-name">{classData.course}</div>
+                            {duration > 1 && (
+                              <div className="duration-indicator">⏱ {duration * 40} {t('min') || 'min'}</div>
+                            )}
+                            {classData.teacher && (
+                              <div className={`teacher-name ${hasTeacherConflict ? 'conflict-text' : ''}`}>
+                                👨‍🏫 {classData.teacher}
+                              </div>
+                            )}
+                            {classData.room && (
+                              <div className={`room-number ${hasRoomConflict ? 'conflict-text' : ''}`}>
+                                🚪 {classData.room}
+                              </div>
+                            )}
+                            {isAuthenticated && <div className="drag-handle" title="Drag to move">⠿</div>}
+                          </div>
+                        ) : (
+                          <>
+                            {isAuthenticated && <div className="empty-cell">+</div>}
+                            {isDragOver && <div className="drop-indicator">Drop here</div>}
+                          </>
+                        )}
+                      </td>
+                    );
+                  }))}
                 </tr>
               );
             })}
