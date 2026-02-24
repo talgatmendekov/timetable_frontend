@@ -1,5 +1,5 @@
 // Frontend: src/utils/alatooImport.js
-// Parser for Ala-Too University Excel format
+// Parser for Ala-Too University Excel format - FIXED VERSION
 
 import * as XLSX from 'xlsx';
 
@@ -39,14 +39,21 @@ export const parseAlatooSchedule = (file) => {
           'SATURDAY Spring25'
         ];
 
+        console.log('🔍 Starting Ala-Too parser...');
+
         daySheets.forEach(sheetName => {
-          if (!workbook.SheetNames.includes(sheetName)) return;
+          if (!workbook.SheetNames.includes(sheetName)) {
+            console.log(`⚠️ Sheet "${sheetName}" not found`);
+            return;
+          }
           
           const day = sheetName.split(' ')[0].charAt(0) + sheetName.split(' ')[0].slice(1).toLowerCase();
           const sheet = workbook.Sheets[sheetName];
           const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
 
-          // Find header row with time slots (row 3 typically)
+          console.log(`📄 Processing ${sheetName} (${day})`);
+
+          // Find header row with time slots (row 3, index 2)
           let headerRowIndex = -1;
           let timeColumnStart = -1;
           
@@ -62,21 +69,27 @@ export const parseAlatooSchedule = (file) => {
             if (headerRowIndex !== -1) break;
           }
 
-          if (headerRowIndex === -1) return;
+          if (headerRowIndex === -1) {
+            console.log(`❌ Could not find time header in ${sheetName}`);
+            return;
+          }
 
-          // Parse groups and classes
+          console.log(`✅ Found time header at row ${headerRowIndex + 1}, column ${timeColumnStart + 1}`);
+
+          // Parse groups and classes (start from headerRowIndex + 2)
+          let classCount = 0;
+          
           for (let rowIdx = headerRowIndex + 2; rowIdx < jsonData.length; rowIdx++) {
             const row = jsonData[rowIdx];
             if (!row || row.length < 3) continue;
 
-            // Group name is typically in column 2 (index 2)
+            // Group name is in column 2 (index 2)
             let groupName = '';
-            for (let col = 0; col <= 2; col++) {
-              if (row[col] && row[col].toString().includes('COMSE') || 
-                  row[col] && row[col].toString().includes('COMFCI') ||
-                  row[col] && row[col].toString().includes('COMCEH')) {
-                groupName = row[col].toString().trim();
-                break;
+            if (row[2]) {
+              const cellText = row[2].toString().trim();
+              // Check if it contains a group pattern (COMSE, COMFCI, etc.)
+              if (cellText.match(/^(COMSE|COMFCI|COMCEH|MATDAIS|MATMIE|EEAIR|IEMIT|COM-|MATH-)/i)) {
+                groupName = cellText;
               }
             }
 
@@ -89,7 +102,8 @@ export const parseAlatooSchedule = (file) => {
               if (colIdx >= row.length) break;
 
               const cellValue = row[colIdx];
-              if (!cellValue || cellValue.toString().trim() === '' || 
+              if (!cellValue || 
+                  cellValue.toString().trim() === '' || 
                   cellValue.toString().includes('LUNCH')) continue;
 
               // Parse cell format: "Course\nTeacher Room"
@@ -103,10 +117,12 @@ export const parseAlatooSchedule = (file) => {
               let teacher = '';
               let room = '';
               
-              const parts = teacherRoom.split(/\s+/);
-              if (parts.length > 0) {
-                room = parts[parts.length - 1]; // Last part is usually room
-                teacher = parts.slice(0, -1).join(' '); // Rest is teacher
+              if (teacherRoom) {
+                const parts = teacherRoom.split(/\s+/);
+                if (parts.length > 0) {
+                  room = parts[parts.length - 1]; // Last part is usually room
+                  teacher = parts.slice(0, -1).join(' '); // Rest is teacher
+                }
               }
 
               // Determine subject type
@@ -128,9 +144,15 @@ export const parseAlatooSchedule = (file) => {
                 subjectType: subjectType,
                 duration: 1
               });
+              
+              classCount++;
             }
           }
+          
+          console.log(`📊 Found ${classCount} classes in ${sheetName}`);
         });
+
+        console.log(`✅ Total parsed: ${schedule.length} classes`);
 
         if (schedule.length === 0) {
           reject(new Error('No schedule data found. Please check the file format.'));
@@ -138,6 +160,7 @@ export const parseAlatooSchedule = (file) => {
           resolve(schedule);
         }
       } catch (error) {
+        console.error('❌ Parser error:', error);
         reject(error);
       }
     };
