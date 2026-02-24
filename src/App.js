@@ -12,11 +12,12 @@ import PrintView from './components/PrintView';
 import TeacherDashboard from './components/TeacherDashboard';
 import ConflictPage from './components/ConflictPage';
 import { exportToExcel, importFromExcel } from './utils/excelUtils';
+import GuestBooking from './components/GuestBooking';
 import './App.css';
 
 const getTodayScheduleDay = () => {
-  const dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const scheduleDays = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const scheduleDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const today = dayNames[new Date().getDay()];
   return scheduleDays.includes(today) ? today : '';
 };
@@ -24,18 +25,20 @@ const getTodayScheduleDay = () => {
 const AppContent = () => {
   const { isAuthenticated, loading: authLoading } = useAuth();
   const { addGroup, clearSchedule, importSchedule, deleteGroup,
-          schedule, groups, timeSlots, days,
-          loading: scheduleLoading, error } = useSchedule();
+    schedule, groups, timeSlots, days,
+    loading: scheduleLoading, error } = useSchedule();
   const { t } = useLanguage();
 
-  const [guestMode, setGuestMode]         = useState(false);
-  const [activeTab, setActiveTab]         = useState('schedule');
-  const [selectedDay, setSelectedDay]     = useState(getTodayScheduleDay);
+  const [guestMode, setGuestMode] = useState(false);
+  const [activeTab, setActiveTab] = useState('schedule');
+  const [selectedDay, setSelectedDay] = useState(getTodayScheduleDay);
   const [selectedTeacher, setSelectedTeacher] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('');
-  const [modalOpen, setModalOpen]         = useState(false);
-  const [currentCell, setCurrentCell]     = useState({ group: null, day: null, time: null });
-  const [importing, setImporting]         = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [currentCell, setCurrentCell] = useState({ group: null, day: null, time: null });
+  const [importing, setImporting] = useState(false);
+
+   const [showBooking, setShowBooking] = useState(false);
 
   // Count all conflicts for badge
   const conflictCount = React.useMemo(() => {
@@ -48,14 +51,14 @@ const AppContent = () => {
         if (slot.length < 2) return;
         const tMap = {}, rMap = {};
         slot.forEach(e => {
-          if (e.teacher) { const k = e.teacher.toLowerCase(); tMap[k] = (tMap[k]||0)+1; }
-          if (e.room)    { const k = e.room.toLowerCase();    rMap[k] = (rMap[k]||0)+1; }
+          if (e.teacher) { const k = e.teacher.toLowerCase(); tMap[k] = (tMap[k] || 0) + 1; }
+          if (e.room) { const k = e.room.toLowerCase(); rMap[k] = (rMap[k] || 0) + 1; }
         });
-        Object.entries(tMap).forEach(([k,v]) => {
-          if (v>1 && !seen.has(`t-${k}-${day}-${time}`)) { count++; seen.add(`t-${k}-${day}-${time}`); }
+        Object.entries(tMap).forEach(([k, v]) => {
+          if (v > 1 && !seen.has(`t-${k}-${day}-${time}`)) { count++; seen.add(`t-${k}-${day}-${time}`); }
         });
-        Object.entries(rMap).forEach(([k,v]) => {
-          if (v>1 && !seen.has(`r-${k}-${day}-${time}`)) { count++; seen.add(`r-${k}-${day}-${time}`); }
+        Object.entries(rMap).forEach(([k, v]) => {
+          if (v > 1 && !seen.has(`r-${k}-${day}-${time}`)) { count++; seen.add(`r-${k}-${day}-${time}`); }
         });
       });
     });
@@ -137,8 +140,8 @@ const AppContent = () => {
   }
 
   const tabs = [
-    { id: 'schedule',  icon: '📅', label: t('tabSchedule')  || 'Schedule' },
-    { id: 'print',     icon: '🖨️', label: t('tabPrint')     || 'Print / PDF' },
+    { id: 'schedule', icon: '📅', label: t('tabSchedule') || 'Schedule' },
+    { id: 'print', icon: '🖨️', label: t('tabPrint') || 'Print / PDF' },
     { id: 'dashboard', icon: '📊', label: t('tabDashboard') || 'Teacher Stats' },
     { id: 'conflicts', icon: '⚠️', label: t('tabConflicts') || 'Conflicts', badge: conflictCount },
   ];
@@ -161,15 +164,22 @@ const AppContent = () => {
       )}
 
       <Header
-        selectedDay={selectedDay}        setSelectedDay={setSelectedDay}
+        selectedDay={selectedDay} setSelectedDay={setSelectedDay}
         selectedTeacher={selectedTeacher} setSelectedTeacher={setSelectedTeacher}
-        selectedGroup={selectedGroup}     setSelectedGroup={setSelectedGroup}
+        selectedGroup={selectedGroup} setSelectedGroup={setSelectedGroup}
         onAddGroup={handleAddGroup}
         onExport={handleExport}
         onImport={handleImport}
         onClearAll={handleClearAll}
       />
-
+       {!isAuthenticated && (
+     <>
+       <button onClick={() => setShowBooking(true)} className="btn btn-primary">
+         🏫 {t('bookLab') || 'Book a Lab'}
+       </button>
+       <GuestBooking isOpen={showBooking} onClose={() => setShowBooking(false)} />
+     </>
+   )}
       {/* Tab Bar */}
       <div className="tab-bar">
         {tabs.map(tab => (
@@ -194,7 +204,7 @@ const AppContent = () => {
             onEditClass={handleEditClass} onDeleteGroup={deleteGroup}
           />
         )}
-        {activeTab === 'print'     && <PrintView />}
+        {activeTab === 'print' && <PrintView />}
         {activeTab === 'dashboard' && <TeacherDashboard />}
         {activeTab === 'conflicts' && <ConflictPage onJumpToCell={handleJumpToCell} />}
       </div>

@@ -1,0 +1,43 @@
+/* src/components/GuestBooking.css */
+.guest-booking-modal {
+  max-width: 600px;
+  width: 95vw;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.booking-success {
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.success-icon {
+  font-size: 4rem;
+  margin-bottom: 16px;
+  animation: bounce 0.6s ease;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+}
+
+.booking-success h3 {
+  color: var(--success);
+  margin-bottom: 8px;
+}
+
+.booking-success p {
+  color: var(--text-secondary);
+}

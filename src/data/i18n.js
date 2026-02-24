@@ -110,6 +110,18 @@ export const translations = {
     darkMode: 'Dark',
     feedback: 'Please give us your feedback to help improve this app!',
     feedbackTitle: 'Help us improve the timetable app',
+    bookLab: 'Book a Lab',
+    yourName: 'Your Name',
+    enterName: 'Enter your name',
+    phone: 'Phone',
+    startTime: 'Start Time',
+    purpose: 'Purpose/Reason',
+    describePurpose: 'Describe why you need this lab...',
+    submitRequest: 'Submit Request',
+    bookingSubmitted: 'Request Submitted!',
+    bookingSubmittedMsg: 'Admin will review and approve your booking request.',
+    bookingFailed: 'Booking request failed.',
+    bookingError: 'Network error.',
   },
 
   ru: {
