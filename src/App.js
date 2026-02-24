@@ -14,7 +14,6 @@ import ConflictPage from './components/ConflictPage';
 import { exportToExcel, importFromExcel } from './utils/excelUtils';
 import GuestBooking from './components/GuestBooking';
 import { parseAlatooSchedule } from './utils/alatooimport';
-import * as scheduleAPI from './api/scheduleAPI'; // ⚠️ ADD THIS IMPORT!
 import './App.css';
 
 const getTodayScheduleDay = () => {
@@ -98,41 +97,25 @@ const AppContent = () => {
     } catch (err) { alert(`Export failed: ${err.message}`); }
   };
 
-  // ✅ FIXED: Added null check for e.target.files
+  // FIXED: Using importSchedule from context instead of scheduleAPI
   const handleImport = async (e) => {
-    // Add safety check
-    if (!e || !e.target || !e.target.files) {
-      console.error('No file selected or event is invalid');
-      return;
-    }
-    
     const file = e.target.files[0];
-    if (!file) {
-      console.error('No file selected');
-      return;
-    }
+    if (!file) return;
     
     setImporting(true);
     
     try {
-      const schedule = await parseAlatooSchedule(file);
+      // Parse the Excel file
+      const parsedSchedule = await parseAlatooSchedule(file);
       
-      // Import to backend
-      for (const entry of schedule) {
-        await scheduleAPI.save(
-          entry.group,
-          entry.day,
-          entry.time,
-          entry.course,
-          entry.teacher,
-          entry.room,
-          entry.subjectType,
-          entry.duration
-        );
+      // Use importSchedule from context (already available from useSchedule)
+      const result = await importSchedule(JSON.stringify(parsedSchedule));
+      
+      if (result && result.success) {
+        alert(`✅ Successfully imported ${parsedSchedule.length} classes!`);
+      } else {
+        alert(`❌ Import failed: ${result?.error || 'Unknown error'}`);
       }
-      
-      alert(`✅ Successfully imported ${schedule.length} classes!`);
-      window.location.reload();
     } catch (error) {
       console.error('Import error:', error);
       alert(`❌ Import failed: ${error.message}`);
