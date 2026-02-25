@@ -14,6 +14,7 @@ import ConflictPage from './components/ConflictPage';
 import { exportToExcel, importFromExcel } from './utils/excelUtils';
 import GuestBooking from './components/GuestBooking';
 import { parseAlatooSchedule } from './utils/alatooimport';
+import BookingManagement from './components/BookingManagement';
 import * as XLSX from 'xlsx'; // Add this import for debugging
 import './App.css';
 
@@ -40,7 +41,7 @@ const AppContent = () => {
   const [currentCell, setCurrentCell] = useState({ group: null, day: null, time: null });
   const [importing, setImporting] = useState(false);
   const [showBooking, setShowBooking] = useState(false);
-  
+
   // Create a ref for the hidden file input
   const fileInputRef = useRef(null);
 
@@ -115,15 +116,15 @@ const AppContent = () => {
         try {
           const data = new Uint8Array(e.target.result);
           const workbook = XLSX.read(data, { type: 'array' });
-          
+
           console.log('📊 Excel file structure:');
           console.log('Sheet names:', workbook.SheetNames);
-          
+
           // Show first sheet data
           const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
           const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
           console.log('First 5 rows:', jsonData.slice(0, 5));
-          
+
           resolve(workbook);
         } catch (error) {
           reject(error);
@@ -141,30 +142,30 @@ const AppContent = () => {
       console.error('No file selected or event is invalid');
       return;
     }
-    
+
     const file = e.target.files[0];
     if (!file) {
       console.error('No file selected');
       return;
     }
-    
+
     console.log('📁 Selected file:', file.name);
     setImporting(true);
-    
+
     try {
       // Try both import methods
-      
+
       // Method 1: Try alatoo import first
       try {
         console.log('Attempting to parse as Alatoo format...');
         const parsedSchedule = await parseAlatooSchedule(file);
-        
+
         if (parsedSchedule && parsedSchedule.length > 0) {
           console.log(`✅ Parsed ${parsedSchedule.length} classes from Alatoo format`);
-          
+
           // Use importSchedule from context
           const result = await importSchedule(JSON.stringify(parsedSchedule));
-          
+
           if (result && result.success) {
             alert(`✅ Successfully imported ${parsedSchedule.length} classes!`);
           } else {
@@ -176,16 +177,16 @@ const AppContent = () => {
       } catch (alatooError) {
         console.log('Alatoo parser failed:', alatooError.message);
         console.log('Trying generic Excel import...');
-        
+
         // Method 2: Try generic import
         const result = await importFromExcel(file);
-        
+
         if (result.success) {
           const res = await importSchedule(JSON.stringify({
             groups: result.groups,
             schedule: result.schedule
           }));
-          
+
           if (res.success) {
             alert(`✅ Successfully imported ${result.groups.length} groups, ${Object.keys(result.schedule).length} classes.`);
           } else {
@@ -227,12 +228,12 @@ const AppContent = () => {
   if (!isAuthenticated && !guestMode) {
     return <Login onViewAsGuest={() => setGuestMode(true)} />;
   }
-
   const tabs = [
     { id: 'schedule', icon: '📅', label: t('tabSchedule') || 'Schedule' },
     { id: 'print', icon: '🖨️', label: t('tabPrint') || 'Print / PDF' },
     { id: 'dashboard', icon: '📊', label: t('tabDashboard') || 'Teacher Stats' },
     { id: 'conflicts', icon: '⚠️', label: t('tabConflicts') || 'Conflicts', badge: conflictCount },
+    { id: 'bookings', icon: '🏫', label: t('tabBookings') || 'Lab Bookings', badge: 0 }, // ADD THIS
   ];
 
   return (
@@ -245,7 +246,7 @@ const AppContent = () => {
         onChange={handleFileChange}
         style={{ display: 'none' }}
       />
-      
+
       {(importing || scheduleLoading) && (
         <div className="import-overlay">
           <div className="import-spinner">
@@ -270,7 +271,7 @@ const AppContent = () => {
         onImport={handleImportClick}
         onClearAll={handleClearAll}
       />
-      
+
       {!isAuthenticated && (
         <>
           <button onClick={() => setShowBooking(true)} className="btn btn-primary">
@@ -279,7 +280,7 @@ const AppContent = () => {
           <GuestBooking isOpen={showBooking} onClose={() => setShowBooking(false)} />
         </>
       )}
-      
+
       {/* Tab Bar */}
       <div className="tab-bar">
         {tabs.map(tab => (
@@ -307,8 +308,9 @@ const AppContent = () => {
         {activeTab === 'print' && <PrintView />}
         {activeTab === 'dashboard' && <TeacherDashboard />}
         {activeTab === 'conflicts' && <ConflictPage onJumpToCell={handleJumpToCell} />}
+        {activeTab === 'bookings' && <BookingManagement />}
       </div>
-
+        
       <ClassModal
         isOpen={modalOpen} onClose={handleCloseModal}
         group={currentCell.group} day={currentCell.day} time={currentCell.time}

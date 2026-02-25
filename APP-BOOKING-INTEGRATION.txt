@@ -1,0 +1,97 @@
+# Add Booking Management to App.js
+
+## Step 1: Import the component
+
+At the top of App.js, add:
+```javascript
+import BookingManagement from './components/BookingManagement';
+```
+
+## Step 2: Add booking tab to tabs array
+
+Find the `tabs` array and add the booking tab:
+```javascript
+const tabs = [
+  { id: 'schedule', icon: '📅', label: t('tabSchedule') || 'Schedule' },
+  { id: 'print', icon: '🖨️', label: t('tabPrint') || 'Print / PDF' },
+  { id: 'dashboard', icon: '📊', label: t('tabDashboard') || 'Teacher Stats' },
+  { id: 'conflicts', icon: '⚠️', label: t('tabConflicts') || 'Conflicts', badge: conflictCount },
+  { id: 'bookings', icon: '🏫', label: t('tabBookings') || 'Lab Bookings', badge: 0 }, // ADD THIS
+];
+```
+
+## Step 3: Add BookingManagement to tab content
+
+Find the tab-content div and add:
+```javascript
+<div className="tab-content">
+  {activeTab === 'schedule' && (
+    <ScheduleTable ... />
+  )}
+  {activeTab === 'print' && <PrintView />}
+  {activeTab === 'dashboard' && <TeacherDashboard />}
+  {activeTab === 'conflicts' && <ConflictPage ... />}
+  {activeTab === 'bookings' && <BookingManagement />}  {/* ADD THIS */}
+</div>
+```
+
+## Step 4: Add translations to i18n.js
+
+```javascript
+// English
+tabBookings: 'Lab Bookings',
+labBookings: 'Lab Booking Requests',
+pending: 'Pending',
+approved: 'Approved',
+rejected: 'Rejected',
+approve: 'Approve',
+reject: 'Reject',
+submitted: 'Submitted',
+noBookings: 'No booking requests found',
+confirmApproveBooking: 'Approve this booking and add to schedule?',
+confirmRejectBooking: 'Reject this booking request?',
+confirmDeleteBooking: 'Delete this booking request?',
+bookingApproved: 'Booking approved and added to schedule!',
+bookingRejected: 'Booking rejected',
+
+// Russian
+tabBookings: 'Бронирования',
+labBookings: 'Запросы на бронирование',
+pending: 'В ожидании',
+approved: 'Одобрено',
+rejected: 'Отклонено',
+approve: 'Одобрить',
+reject: 'Отклонить',
+submitted: 'Отправлено',
+noBookings: 'Нет запросов',
+confirmApproveBooking: 'Одобрить и добавить в расписание?',
+confirmRejectBooking: 'Отклонить запрос?',
+confirmDeleteBooking: 'Удалить запрос?',
+bookingApproved: 'Одобрено и добавлено в расписание!',
+bookingRejected: 'Отклонено',
+
+// Kyrgyz
+tabBookings: 'Броньдоолор',
+labBookings: 'Лабораторияны броньдоо',
+pending: 'Күтүүдө',
+approved: 'Бекитилген',
+rejected: 'Четке кагылган',
+approve: 'Бекитүү',
+reject: 'Четке кагуу',
+submitted: 'Жөнөтүлдү',
+noBookings: 'Өтүнүчтөр жок',
+confirmApproveBooking: 'Бекитип расписанияга кошосузбу?',
+confirmRejectBooking: 'Четке кагасызбы?',
+confirmDeleteBooking: 'Өчүрөсүзбү?',
+bookingApproved: 'Бекитилип расписанияга кошулду!',
+bookingRejected: 'Четке кагылды',
+```
+
+## Done!
+
+Now admin will see a "Lab Bookings" tab where they can:
+- See all booking requests
+- Filter by pending/approved/rejected
+- Approve bookings (adds to schedule automatically)
+- Reject bookings
+- Delete bookings
