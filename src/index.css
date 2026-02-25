@@ -51,8 +51,8 @@ body[data-theme="dark"] {
      DARK MODE - Sophisticated Evening Study
      Based on: MacOS Dark, Notion Dark, Professional Night Mode
      ============================================ */
-  --bg-main: #0f1419;              /* Deep slate (not pure black) */
-  --bg-secondary: #f8f8fb;         /* Dark blue-gray */
+  --bg-main: #ebf3fa;              /* Deep slate (not pure black) */
+  --bg-secondary: #1a1f2e;         /* Dark blue-gray */
   --bg-tertiary: #242b3d;          /* Lighter slate */
   --bg-card: #1e2433;              /* Card background */
   
