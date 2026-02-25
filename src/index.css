@@ -1,21 +1,18 @@
 /* PROFESSIONAL UNIVERSITY THEME */
 
 :root {
-  /* ОСНОВНЫЕ ФОНЫ - увеличен контраст */
-  --bg-main: #f5f7fa;              /* ФОН ВСЕЙ СТРАНИЦЫ */
-  --bg-secondary: #ffffff;          /* ФОН для карточек и секций */
-  --bg-tertiary: #eef2f6;           /* ФОН для шапок таблиц */
-  --bg-card: #ffffff;               /* ФОН карточек */
+  --bg-main: #fafbfc;              /* <-- ЭТО ФОН ВСЕЙ СТРАНИЦЫ (светлый) */
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f4f6f8;
+  --bg-card: #ffffff;
   
-  /* ТЕКСТ */
-  --text-primary: #111827;          /* Почти черный */
-  --text-secondary: #374151;         /* Темно-серый */
-  --text-muted: #6b7280;             /* Средне-серый */
+  --text-primary: #1a2332;
+  --text-secondary: #4a5568;
+  --text-muted: #718096;
   
-  /* ЦВЕТА */
-  --primary: #1d4ed8;               /* Яркий синий */
-  --primary-hover: #1e40af;
-  --primary-light: #e0e7ff;          /* Светло-синий */
+  --primary: #1e40af;
+  --primary-hover: #1e3a8a;
+  --primary-light: #dbeafe;
   
   --accent: #059669;
   --accent-light: #d1fae5;
@@ -26,18 +23,14 @@
   --error: #dc2626;
   --error-light: #fee2e2;
   
-  /* ГРАНИЦЫ */
-  --border: #d1d5db;                 /* Базовая граница */
-  --border-strong: #9ca3af;          /* Сильная граница */
-  --hover-bg: #f3f4f6;               /* Фон при наведении */
+  --border: #e5e7eb;
+  --border-strong: #d1d5db;
+  --hover-bg: #f9fafb;
+  --shadow: rgba(0, 0, 0, 0.08);
+  --shadow-md: rgba(0, 0, 0, 0.12);
+  --shadow-lg: rgba(0, 0, 0, 0.16);
   
-  /* ТЕНИ */
-  --shadow: rgba(0, 0, 0, 0.05);
-  --shadow-md: rgba(0, 0, 0, 0.08);
-  --shadow-lg: rgba(0, 0, 0, 0.12);
-  
-  /* ТИПЫ ЗАНЯТИЙ */
-  --lecture-color: #1d4ed8;
+  --lecture-color: #1e40af;
   --lecture-light: #dbeafe;
   --lab-color: #059669;
   --lab-light: #d1fae5;
@@ -48,7 +41,7 @@
 }
 
 body[data-theme="dark"] {
-  --bg-main: #0f1419;              /* ФОН ВСЕЙ СТРАНИЦЫ (темный) */
+  --bg-main: #0f1419;              /* <-- ЭТО ФОН ВСЕЙ СТРАНИЦЫ (темный синий) */
   --bg-secondary: #1a1f2e;
   --bg-tertiary: #242b3d;
   --bg-card: #1e2433;
@@ -96,7 +89,7 @@ body[data-theme="dark"] {
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  background: var(--bg-main);
+  background: var(--bg-main);  /* <-- ГЛАВНЫЙ ФОН СТРАНИЦЫ */
   color: var(--text-primary);
   line-height: 1.6;
   font-size: 14px;
@@ -108,7 +101,6 @@ body {
 h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
   letter-spacing: -0.02em;
-  color: var(--text-primary);
 }
 
 code {
@@ -119,8 +111,7 @@ code {
 .header {
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
-  box-shadow: 0 2px 4px var(--shadow);
-  display: flex;
+  box-shadow: 0 1px 3px var(--shadow);
   flex-direction: column;
   padding: 12px;
   gap: 12px;
@@ -142,7 +133,6 @@ code {
 }
 
 .header-right {
-  display: flex;
   flex-direction: column;
   gap: 8px;
   width: 100%;
@@ -155,7 +145,6 @@ code {
   font-weight: 600;
   padding: 6px 16px;
   border-radius: 6px;
-  text-align: center;
 }
 
 .lang-selector {
@@ -175,7 +164,6 @@ code {
   border-radius: 6px;
   font-size: 0.85rem;
   cursor: pointer;
-  min-height: 44px;
 }
 
 .lang-btn:hover,
@@ -194,13 +182,11 @@ code {
 /* FILTERS */
 .filters,
 .admin-actions {
-  background: var(--bg-secondary);
+  background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 16px;
-  box-shadow: 0 2px 8px var(--shadow);
-  margin: 12px;
-  display: flex;
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 1px 2px var(--shadow);
   flex-direction: column;
   gap: 12px;
 }
@@ -212,11 +198,9 @@ code {
 .filter-group label {
   color: var(--text-secondary);
   font-weight: 600;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: 4px;
-  display: block;
 }
 
 .filter-group select {
@@ -262,21 +246,20 @@ button {
   cursor: pointer;
   font-size: 0.9rem;
   min-height: 44px;
-  border: none;
 }
 
 .btn-primary,
 button.primary {
   background: var(--primary);
   color: white;
-  box-shadow: 0 2px 4px var(--shadow);
+  border: none;
+  box-shadow: 0 1px 2px var(--shadow);
   width: 100%;
 }
 
 .btn-primary:hover {
   background: var(--primary-hover);
-  box-shadow: 0 4px 8px var(--shadow-md);
-  transform: translateY(-1px);
+  box-shadow: 0 2px 4px var(--shadow-md);
 }
 
 .btn-secondary {
@@ -293,11 +276,11 @@ button.primary {
 .btn-danger {
   background: var(--error);
   color: white;
+  border: none;
 }
 
 .btn-danger:hover {
-  background: #b91c1c;
-  transform: translateY(-1px);
+  opacity: 0.9;
 }
 
 .admin-actions {
@@ -311,13 +294,12 @@ button.primary {
 
 .feedback-button {
   width: 100%;
-  display: flex;
   justify-content: center;
 }
 
 /* TABS */
 .tabs {
-  background: var(--bg-secondary);
+  background: var(--bg-card);
   border-bottom: 1px solid var(--border);
   display: flex;
   gap: 4px;
@@ -336,7 +318,6 @@ button.primary {
   font-weight: 600;
   font-size: 0.85rem;
   flex-shrink: 0;
-  min-height: auto;
 }
 
 .tabs button:hover {
@@ -352,12 +333,12 @@ button.primary {
 
 /* TABLE */
 .schedule-container {
-  background: var(--bg-secondary);
+  background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 8px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
-  box-shadow: 0 4px 12px var(--shadow-md);
+  box-shadow: 0 2px 8px var(--shadow-md);
   margin: 12px;
 }
 
@@ -368,105 +349,60 @@ button.primary {
 
 .schedule-table {
   background: var(--bg-secondary);
-  border-collapse: collapse;
-  border: 1px solid var(--border);
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 0.75rem;
   min-width: 100%;
-  box-shadow: 0 2px 4px var(--shadow);
 }
 
 .schedule-table th {
   background: var(--bg-tertiary);
   color: var(--text-primary);
-  border: 1px solid var(--border-strong);
+  border: 1px solid var(--border);
   font-weight: 700;
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 10px 8px;
-  white-space: nowrap;
+  padding: 8px 6px;
+  min-width: 80px;
 }
 
 .schedule-table td {
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   color: var(--text-primary);
-  padding: 10px 8px;
-  vertical-align: top;
-}
-
-/* Чередование строк */
-.schedule-table tbody tr:nth-child(even) td {
-  background-color: var(--bg-main);
+  padding: 8px 6px;
+  min-width: 80px;
 }
 
 .schedule-cell {
   transition: all 0.15s ease;
-  min-height: 70px;
-  position: relative;
-}
-
-.schedule-cell.filled {
-  background-color: var(--bg-secondary);
-  border-left: 4px solid transparent;
-}
-
-/* Типы занятий */
-.schedule-cell[data-type="lecture"] {
-  border-left-color: var(--lecture-color);
-}
-
-.schedule-cell[data-type="lab"] {
-  border-left-color: var(--lab-color);
-}
-
-.schedule-cell[data-type="seminar"] {
-  border-left-color: var(--seminar-color);
-}
-
-.schedule-cell[data-type="other"] {
-  border-left-color: var(--other-color);
+  min-height: 60px;
 }
 
 .schedule-cell:hover {
   background: var(--hover-bg) !important;
   border-color: var(--primary) !important;
-  box-shadow: 0 0 0 2px var(--primary-light);
-  transform: scale(1.02);
-  z-index: 20;
-  position: relative;
+  box-shadow: 0 0 0 1px var(--primary);
+}
+
+.schedule-cell.filled {
+  font-weight: 500;
 }
 
 .schedule-cell.today-cell {
   background: var(--primary-light) !important;
-  border: 2px solid var(--primary) !important;
-  position: relative;
-}
-
-.today-cell::before {
-  content: "Today";
-  position: absolute;
-  top: -8px;
-  right: 4px;
-  background: var(--primary);
-  color: white;
-  font-size: 0.6rem;
-  padding: 2px 6px;
-  border-radius: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  z-index: 30;
 }
 
 .group-cell {
   position: sticky;
   left: 0;
   z-index: 10;
-  min-width: 120px !important;
+  min-width: 100px !important;
   background: #e5e7eb !important;
-  color: #111827 !important;
+  color: #1a2332 !important;
   font-weight: 700 !important;
-  border-right: 2px solid var(--border-strong) !important;
+  border: 1px solid var(--border-strong) !important;
   box-shadow: 2px 0 4px var(--shadow);
 }
 
@@ -476,9 +412,8 @@ body[data-theme="dark"] .group-cell {
 }
 
 .group-name {
-  color: #111827 !important;
+  color: #1a2332 !important;
   font-weight: 700 !important;
-  font-size: 0.85rem;
 }
 
 body[data-theme="dark"] .group-name {
@@ -499,17 +434,14 @@ body[data-theme="dark"] .group-name {
   font-size: 0.75rem;
   font-weight: 700;
   margin-bottom: 4px;
-  color: var(--text-primary);
 }
 
 .teacher-name,
 .room-number {
   font-size: 0.65rem;
-  color: var(--text-secondary);
 }
 
 .type-pill {
-  display: inline-block;
   padding: 2px 6px;
   border-radius: 4px;
   font-size: 0.6rem;
@@ -517,46 +449,27 @@ body[data-theme="dark"] .group-name {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: white;
-  margin-top: 4px;
 }
-
-.type-pill.lecture { background: var(--lecture-color); }
-.type-pill.lab { background: var(--lab-color); }
-.type-pill.seminar { background: var(--seminar-color); }
-.type-pill.other { background: var(--other-color); }
 
 .duration-indicator {
   font-size: 0.6rem;
   padding: 2px 6px;
-  background: var(--bg-tertiary);
-  border-radius: 4px;
-  margin-top: 4px;
-  display: inline-block;
 }
 
 /* MODAL */
 .modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
 }
 
 .modal-content {
   background: var(--bg-card);
   color: var(--text-primary);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 8px;
   box-shadow: 0 20px 60px var(--shadow-lg);
   width: 95vw;
-  max-width: 600px;
+  max-width: 95vw;
   max-height: 90vh;
   overflow-y: auto;
   margin: 20px;
@@ -565,13 +478,12 @@ body[data-theme="dark"] .group-name {
 .modal-header,
 .modal-body,
 .modal-footer {
-  padding: 20px;
+  padding: 16px;
 }
 
 .modal-header {
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
-  border-radius: 12px 12px 0 0;
 }
 
 .modal-header h2 {
@@ -587,10 +499,6 @@ body[data-theme="dark"] .group-name {
 .modal-footer {
   background: var(--bg-tertiary);
   border-top: 1px solid var(--border);
-  border-radius: 0 0 12px 12px;
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
 }
 
 /* CARDS */
@@ -599,27 +507,25 @@ body[data-theme="dark"] .group-name {
 .conflict-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 18px;
+  border-radius: 8px;
+  padding: 16px;
   margin: 12px;
-  box-shadow: 0 2px 6px var(--shadow);
+  box-shadow: 0 1px 3px var(--shadow);
 }
 
 .card:hover {
-  box-shadow: 0 8px 16px var(--shadow-md);
+  box-shadow: 0 4px 12px var(--shadow-md);
   border-color: var(--border-strong);
-  transform: translateY(-2px);
 }
 
 .type-legend {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 16px;
+  border-radius: 8px;
+  padding: 12px;
   display: flex;
-  gap: 16px;
+  gap: 12px;
   flex-direction: column;
-  margin: 12px;
 }
 
 .legend-item {
@@ -631,9 +537,9 @@ body[data-theme="dark"] .group-name {
 }
 
 .legend-dot {
-  width: 16px;
-  height: 16px;
-  border-radius: 4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
 }
 
 /* LOGIN */
@@ -656,16 +562,15 @@ body[data-theme="dark"] .group-name {
 .login-box {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 32px;
+  border-radius: 12px;
+  padding: 24px;
   box-shadow: 0 8px 32px var(--shadow-lg);
   max-width: 100%;
-  width: 400px;
+  width: 100%;
 }
 
 .login-header h1 {
   font-size: 1.5rem;
-  text-align: center;
 }
 
 .login-title {
@@ -673,7 +578,6 @@ body[data-theme="dark"] .group-name {
   font-size: 2rem;
   font-weight: 700;
   margin-bottom: 8px;
-  text-align: center;
 }
 
 /* CONFLICTS */
@@ -690,9 +594,8 @@ body[data-theme="dark"] .group-name {
 .conflicts-container {
   background: var(--warning-light);
   border-left: 4px solid var(--warning);
-  border-radius: 8px;
+  border-radius: 6px;
   padding: 16px;
-  margin: 12px;
 }
 
 /* SCROLLBARS */
@@ -718,181 +621,52 @@ body[data-theme="dark"] .group-name {
 /* TABLET */
 @media (min-width: 768px) {
   body { font-size: 15px; }
-  
-  .header { 
-    flex-direction: row; 
-    padding: 16px 24px; 
-    align-items: center;
-  }
-  
-  .header-title h1 { 
-    font-size: 1.75rem; 
-    text-align: left; 
-  }
-  
-  .header-right { 
-    flex-direction: row; 
-    width: auto; 
-    margin-left: auto;
-  }
-  
-  .filters, 
-  .admin-actions { 
-    flex-direction: row; 
-    flex-wrap: wrap; 
-    padding: 16px; 
-    margin: 16px;
-  }
-  
-  .filter-group { 
-    flex: 1; 
-    min-width: 200px; 
-  }
-  
-  .schedule-table { 
-    font-size: 0.85rem; 
-  }
-  
-  .schedule-table th, 
-  .schedule-table td { 
-    padding: 12px 10px; 
-  }
-  
-  .modal-content { 
-    width: 80vw; 
-    max-width: 600px; 
-  }
-  
-  .admin-actions { 
-    flex-direction: row; 
-  }
-  
-  .admin-actions button { 
-    width: auto; 
-  }
-  
-  .btn-primary { 
-    width: auto; 
-  }
-  
-  .type-legend { 
-    flex-direction: row; 
-    justify-content: center;
-  }
-  
-  .feedback-button { 
-    width: auto; 
-  }
+  .header { flex-direction: row; padding: 16px 24px; }
+  .header-title h1 { font-size: 1.75rem; text-align: left; }
+  .header-right { flex-direction: row; width: auto; }
+  .filters { flex-direction: row; flex-wrap: wrap; padding: 16px; }
+  .filter-group { flex: 1; min-width: 200px; }
+  .schedule-table { font-size: 0.85rem; }
+  .schedule-table th, .schedule-table td { padding: 10px 8px; }
+  .modal-content { width: 80vw; max-width: 600px; }
+  .admin-actions { flex-direction: row; }
+  .admin-actions button { width: auto; }
+  .btn-primary { width: auto; }
+  .type-legend { flex-direction: row; }
+  .feedback-button { width: auto; }
 }
 
 /* DESKTOP */
 @media (min-width: 1024px) {
   body { font-size: 16px; }
-  
-  .header-title h1 { 
-    font-size: 2rem; 
-  }
-  
-  .schedule-container { 
-    margin: 20px; 
-  }
-  
-  .schedule-table { 
-    font-size: 0.95rem; 
-  }
-  
-  .schedule-table th, 
-  .schedule-table td { 
-    padding: 14px 12px; 
-  }
-  
-  .course-name { 
-    font-size: 0.9rem; 
-  }
-  
-  .teacher-name, 
-  .room-number { 
-    font-size: 0.8rem; 
-  }
-  
-  .modal-body { 
-    padding: 24px; 
-  }
-  
-  .card, 
-  .stat-card { 
-    padding: 24px; 
-    margin: 20px; 
-  }
+  .header-title h1 { font-size: 2rem; }
+  .schedule-container { margin: 20px; }
+  .schedule-table { font-size: 0.95rem; }
+  .schedule-table th, .schedule-table td { padding: 12px; }
+  .course-name { font-size: 0.9rem; }
+  .teacher-name, .room-number { font-size: 0.8rem; }
+  .modal-body { padding: 24px; }
+  .card, .stat-card { padding: 24px; margin: 20px; }
 }
 
 /* TOUCH */
 @media (hover: none) and (pointer: coarse) {
-  button, 
-  select, 
-  input { 
-    min-height: 48px; 
-  }
-  
-  .lang-btn, 
-  .theme-toggle { 
-    min-width: 48px; 
-    min-height: 48px; 
-  }
-  
-  .schedule-cell:hover { 
-    background: var(--bg-secondary) !important; 
-    transform: none;
-  }
+  button, select, input { min-height: 44px; }
+  .lang-btn, .theme-toggle { min-width: 48px; min-height: 48px; }
+  .schedule-cell:hover { background: var(--bg-secondary) !important; }
 }
 
 /* LANDSCAPE MOBILE */
 @media (max-height: 500px) and (orientation: landscape) {
-  .header { 
-    padding: 8px 16px; 
-  }
-  
-  .modal-content { 
-    max-height: 85vh; 
-  }
-  
-  .login-box { 
-    padding: 16px; 
-  }
+  .header { padding: 8px 16px; }
+  .modal-content { max-height: 85vh; }
+  .login-box { padding: 16px; }
 }
 
 /* PRINT */
 @media print {
-  body { 
-    background: white !important; 
-    color: black !important; 
-  }
-  
-  .header, 
-  .filters, 
-  .tabs, 
-  .admin-actions, 
-  .feedback-button, 
-  .theme-toggle, 
-  .lang-selector, 
-  button { 
-    display: none !important; 
-  }
-  
-  .schedule-table { 
-    border-collapse: collapse; 
-    font-size: 10pt; 
-  }
-  
-  .schedule-table th, 
-  .schedule-table td { 
-    border: 1px solid #333 !important; 
-    background: white !important; 
-    color: black !important; 
-    padding: 4px; 
-  }
-  
-  .today-cell::before {
-    display: none;
-  }
+  body { background: white !important; color: black !important; }
+  .header, .filters, .tabs, .admin-actions, .feedback-button, .theme-toggle, .lang-selector, button { display: none !important; }
+  .schedule-table { border-collapse: collapse; font-size: 10pt; }
+  .schedule-table th, .schedule-table td { border: 1px solid #333 !important; background: white !important; color: black !important; padding: 4px; }
 }
