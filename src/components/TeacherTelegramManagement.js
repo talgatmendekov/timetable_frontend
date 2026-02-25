@@ -118,7 +118,7 @@ const TeacherTelegramManagement = () => {
             <tbody>
               {teachers.map(teacher => (
                 <tr key={teacher.id}>
-                  <td className="teacher-name">👨‍🏫 {teacher.name}</td>
+                  <td className="teacher-name">{teacher.name}</td>
                   <td>
                     {editingId === teacher.id ? (
                       <input
@@ -137,7 +137,7 @@ const TeacherTelegramManagement = () => {
                   <td>
                     {teacher.telegram_id ? (
                       <span className={`status ${teacher.notifications_enabled ? 'enabled' : 'disabled'}`}>
-                        {teacher.notifications_enabled ? '✅ ON' : '❌ OFF'}
+                        {teacher.notifications_enabled ? 'ON' : 'OFF'}
                       </span>
                     ) : (
                       <span className="status disabled">—</span>
@@ -179,7 +179,7 @@ const TeacherTelegramManagement = () => {
       </div>
 
       <div className="bot-commands">
-        <h3>🤖 {t('botCommands') || 'Bot Commands for Teachers'}</h3>
+        <h3>{t('botCommands') || 'Bot Commands for Teachers'}</h3>
         <ul>
           <li><code>/start</code> - {t('cmdStart') || 'Get your Telegram ID'}</li>
           <li><code>/status</code> - {t('cmdStatus') || 'Check registration status'}</li>
