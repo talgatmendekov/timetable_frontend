@@ -10,7 +10,7 @@ const TeacherTelegramManagement = () => {
   const [editingId, setEditingId] = useState(null);
   const [telegramInput, setTelegramInput] = useState('');
 
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
   const fetchTeachers = async () => {
     setLoading(true);
@@ -35,30 +35,30 @@ const TeacherTelegramManagement = () => {
   }, []);
 
   const handleSaveTelegramId = async (id) => {
-  try {
-    const token = localStorage.getItem('scheduleToken');
-    const response = await fetch(`${API_URL}/teachers/${id}`, {  // ИСПРАВЛЕНО
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ telegram_id: telegramInput })
-    });
-    
-    const data = await response.json();
-    if (data.success) {
-      alert(t('telegramIdSaved') || 'Telegram ID saved!');
-      setEditingId(null);
-      setTelegramInput('');
-      fetchTeachers();
-    } else {
-      alert(`Error: ${data.error}`);
+    try {
+      const token = localStorage.getItem('scheduleToken');
+      const response = await fetch(`${API_URL}/teachers/${id}/telegram`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ telegram_id: telegramInput })
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        alert(t('telegramIdSaved') || 'Telegram ID saved!');
+        setEditingId(null);
+        setTelegramInput('');
+        fetchTeachers();
+      } else {
+        alert(`Error: ${data.error}`);
+      }
+    } catch (error) {
+      alert(`Error: ${error.message}`);
     }
-  } catch (error) {
-    alert(`Error: ${error.message}`);
-  }
-};
+  };
 
   const startEdit = (teacher) => {
     setEditingId(teacher.id);
@@ -72,12 +72,12 @@ const TeacherTelegramManagement = () => {
   return (
     <div className="teacher-telegram-management">
       <div className="management-header">
-        <h2>📱 {t('telegramNotifications') || 'Telegram Notifications'}</h2>
-        <button onClick={fetchTeachers} className="btn-refresh">🔄</button>
+        <h2>ðŸ“± {t('telegramNotifications') || 'Telegram Notifications'}</h2>
+        <button onClick={fetchTeachers} className="btn-refresh">ðŸ”„</button>
       </div>
 
       <div className="info-box">
-        <h3>ℹ️ {t('howToSetup') || 'How to Setup'}</h3>
+        <h3>â„¹ï¸ {t('howToSetup') || 'How to Setup'}</h3>
         <ol>
           <li>{t('step1') || 'Create a Telegram bot using @BotFather'}</li>
           <li>{t('step2') || 'Set TELEGRAM_BOT_TOKEN in Railway environment variables'}</li>
@@ -105,7 +105,7 @@ const TeacherTelegramManagement = () => {
             <tbody>
               {teachers.map(teacher => (
                 <tr key={teacher.id}>
-                  <td className="teacher-name">👨‍🏫 {teacher.name}</td>
+                  <td className="teacher-name">ðŸ‘¨â€ðŸ« {teacher.name}</td>
                   <td>
                     {editingId === teacher.id ? (
                       <input
@@ -124,10 +124,10 @@ const TeacherTelegramManagement = () => {
                   <td>
                     {teacher.telegram_id ? (
                       <span className={`status ${teacher.notifications_enabled ? 'enabled' : 'disabled'}`}>
-                        {teacher.notifications_enabled ? '✅ ON' : '❌ OFF'}
+                        {teacher.notifications_enabled ? 'âœ… ON' : 'âŒ OFF'}
                       </span>
                     ) : (
-                      <span className="status disabled">—</span>
+                      <span className="status disabled">â€”</span>
                     )}
                   </td>
                   <td>
@@ -137,7 +137,7 @@ const TeacherTelegramManagement = () => {
                           onClick={() => handleSaveTelegramId(teacher.id)}
                           className="btn btn-save"
                         >
-                          💾 {t('save') || 'Save'}
+                          ðŸ’¾ {t('save') || 'Save'}
                         </button>
                         <button
                           onClick={() => {
@@ -154,7 +154,7 @@ const TeacherTelegramManagement = () => {
                         onClick={() => startEdit(teacher)}
                         className="btn btn-edit"
                       >
-                        ✏️ {t('edit') || 'Edit'}
+                        âœï¸ {t('edit') || 'Edit'}
                       </button>
                     )}
                   </td>
@@ -166,7 +166,7 @@ const TeacherTelegramManagement = () => {
       </div>
 
       <div className="bot-commands">
-        <h3>🤖 {t('botCommands') || 'Bot Commands for Teachers'}</h3>
+        <h3>ðŸ¤– {t('botCommands') || 'Bot Commands for Teachers'}</h3>
         <ul>
           <li><code>/start</code> - {t('cmdStart') || 'Get your Telegram ID'}</li>
           <li><code>/status</code> - {t('cmdStatus') || 'Check registration status'}</li>
