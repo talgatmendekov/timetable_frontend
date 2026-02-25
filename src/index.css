@@ -3,104 +3,115 @@
 :root {
   /* ============================================
      LIGHT MODE - Academic Excellence
-     Based on: Oxford Blue, Cambridge Blue, Professional UI
      ============================================ */
-  --bg-main: #fafbfc;              /* Off-white (like Apple.com) */
-  --bg-secondary: #ffffff;         /* Pure white */
-  --bg-tertiary: #f4f6f8;          /* Light gray */
-  --bg-card: #ffffff;              /* Card white */
+  --bg-main: #fafbfc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f4f6f8;
+  --bg-card: #ffffff;
   
-  --text-primary: #1a2332;         /* Oxford dark blue */
-  --text-secondary: #4a5568;       /* Professional gray */
-  --text-muted: #718096;           /* Light gray */
+  --text-primary: #1a2332;
+  --text-secondary: #4a5568;
+  --text-muted: #718096;
   
-  --primary: #1e40af;              /* Classic academic blue (Oxford/Cambridge) */
-  --primary-hover: #1e3a8a;        /* Darker blue */
-  --primary-light: #dbeafe;        /* Light blue background */
+  --primary: #1e40af;
+  --primary-hover: #1e3a8a;
+  --primary-light: #dbeafe;
   
-  --accent: #059669;               /* Professional emerald (like Harvard) */
+  --accent: #059669;
   --accent-light: #d1fae5;
   
-  --success: #059669;              /* Emerald green */
+  --success: #059669;
   --success-light: #d1fae5;
-  --warning: #d97706;              /* Professional amber */
+  --warning: #d97706;
   --warning-light: #fef3c7;
-  --error: #dc2626;                /* Professional red */
+  --error: #dc2626;
   --error-light: #fee2e2;
   
-  --border: #e5e7eb;               /* Subtle border */
-  --border-strong: #d1d5db;        /* Medium border */
-  --hover-bg: #f9fafb;             /* Subtle hover */
+  --border: #e5e7eb;
+  --border-strong: #d1d5db;
+  --hover-bg: #f9fafb;
   --shadow: rgba(0, 0, 0, 0.08);
   --shadow-md: rgba(0, 0, 0, 0.12);
   --shadow-lg: rgba(0, 0, 0, 0.16);
   
-  /* Subject type colors - Professional Academic Palette */
-  --lecture-color: #1e40af;        /* Academic blue */
+  /* Subject type colors */
+  --lecture-color: #1e40af;
   --lecture-light: #dbeafe;
-  --lab-color: #059669;            /* Science green */
+  --lab-color: #059669;
   --lab-light: #d1fae5;
-  --seminar-color: #d97706;        /* Discussion amber */
+  --seminar-color: #d97706;
   --seminar-light: #fef3c7;
-  --other-color: #7c3aed;          /* Professional purple */
+  --other-color: #7c3aed;
   --other-light: #ede9fe;
 }
 
 body[data-theme="dark"] {
   /* ============================================
      DARK MODE - Sophisticated Evening Study
-     Based on: MacOS Dark, Notion Dark, Professional Night Mode
      ============================================ */
-  --bg-main: #0f1419;              /* Deep slate (not pure black) */
-  --bg-secondary: #1a1f2e;         /* Dark blue-gray */
-  --bg-tertiary: #242b3d;          /* Lighter slate */
-  --bg-card: #1e2433;              /* Card background */
+  --bg-main: #0f1419;
+  --bg-secondary: #1a1f2e;
+  --bg-tertiary: #242b3d;
+  --bg-card: #1e2433;
   
-  --text-primary: #e6e9ef;            /* Soft white (easier on eyes) */
-  --text-secondary: #b4b9c5;       /* Medium gray */
-  --text-muted: #8891a8;           /* Muted gray */
+  --text-primary: #e6e9ef;
+  --text-secondary: #b4b9c5;
+  --text-muted: #8891a8;
   
-  --primary: #60a5fa;              /* Soft blue (not harsh) */
-  --primary-hover: #93c5fd;        /* Lighter blue */
-  --primary-light: #1e3a8a;        /* Dark blue background */
+  --primary: #60a5fa;
+  --primary-hover: #93c5fd;
+  --primary-light: #1e3a8a;
   
-  --accent: #34d399;               /* Soft emerald */
+  --accent: #34d399;
   --accent-light: #064e3b;
   
-  --success: #34d399;              /* Soft green */
+  --success: #34d399;
   --success-light: #064e3b;
-  --warning: #fbbf24;              /* Soft gold */
+  --warning: #fbbf24;
   --warning-light: #78350f;
-  --error: #f87171;                /* Soft red */
+  --error: #f87171;
   --error-light: #7f1d1d;
   
-  --border: #2d3548;               /* Subtle dark border */
-  --border-strong: #3d4556;        /* Medium border */
-  --hover-bg: #252b3d;             /* Subtle hover */
+  --border: #2d3548;
+  --border-strong: #3d4556;
+  --hover-bg: #252b3d;
   --shadow: rgba(0, 0, 0, 0.3);
   --shadow-md: rgba(0, 0, 0, 0.4);
   --shadow-lg: rgba(0, 0, 0, 0.5);
   
-  /* Subject type colors - Softer for eyes at night */
-  --lecture-color: #60a5fa;        /* Soft blue */
+  /* Subject type colors */
+  --lecture-color: #60a5fa;
   --lecture-light: #1e3a8a;
-  --lab-color: #34d399;            /* Soft green */
+  --lab-color: #34d399;
   --lab-light: #064e3b;
-  --seminar-color: #fbbf24;        /* Soft amber */
+  --seminar-color: #fbbf24;
   --seminar-light: #78350f;
-  --other-color: #a78bfa;          /* Soft purple */
+  --other-color: #a78bfa;
   --other-light: #4c1d95;
 }
 
 /* ============================================
-   GLOBAL TYPOGRAPHY - Professional Fonts
+   GLOBAL STYLES - ONE BODY RULE ONLY
    ============================================ */
+* {
+  box-sizing: border-box;
+  transition: background-color 0.2s ease, 
+              color 0.2s ease, 
+              border-color 0.2s ease,
+              box-shadow 0.2s ease;
+}
+
 body {
+  margin: 0;
+  padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif;
   background: var(--bg-main);
   color: var(--text-primary);
   line-height: 1.6;
+  font-size: 16px;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -108,31 +119,41 @@ h1, h2, h3, h4, h5, h6 {
   letter-spacing: -0.02em;
 }
 
-* {
-  transition: background-color 0.2s ease, 
-              color 0.2s ease, 
-              border-color 0.2s ease,
-              box-shadow 0.2s ease;
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
 /* ============================================
-   HEADER - Professional Navigation
+   HEADER
    ============================================ */
 .header {
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
   box-shadow: 0 1px 3px var(--shadow);
+  flex-direction: column;
+  padding: 12px;
+  gap: 12px;
 }
 
 .header-title h1 {
   color: var(--text-primary);
   font-weight: 700;
   letter-spacing: -0.03em;
+  font-size: 1.25rem;
+  text-align: center;
 }
 
 .header-title .subtitle {
   color: var(--text-secondary);
   font-weight: 500;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.header-right {
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
 }
 
 .user-badge {
@@ -144,15 +165,22 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 6px;
 }
 
-/* Language & Theme Toggle */
+.lang-selector {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
 .lang-btn,
 .theme-toggle {
   background: var(--bg-main);
   color: var(--text-primary);
   border: 1px solid var(--border);
   font-weight: 500;
-  padding: 8px 14px;
+  padding: 8px 12px;
   border-radius: 6px;
+  font-size: 0.85rem;
 }
 
 .lang-btn:hover,
@@ -169,15 +197,21 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ============================================
-   FILTERS & CONTROLS - Clean UI
+   FILTERS & CONTROLS
    ============================================ */
 .filters,
 .admin-actions {
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 20px;
+  padding: 12px;
   box-shadow: 0 1px 2px var(--shadow);
+  flex-direction: column;
+  gap: 12px;
+}
+
+.filter-group {
+  width: 100%;
 }
 
 .filter-group label {
@@ -186,6 +220,12 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+.filter-group select {
+  width: 100%;
+  font-size: 0.9rem;
+  padding: 10px;
 }
 
 select,
@@ -210,15 +250,23 @@ textarea:focus {
   box-shadow: 0 0 0 3px var(--primary-light);
 }
 
+.form-group input,
+.form-group select,
+.form-group textarea {
+  font-size: 16px; /* Prevents iOS zoom */
+  padding: 12px;
+}
+
 /* ============================================
-   BUTTONS - Professional & Clear
+   BUTTONS
    ============================================ */
 button {
   font-weight: 600;
   border-radius: 6px;
-  padding: 10px 20px;
+  padding: 12px 16px;
   cursor: pointer;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  min-height: 44px;
 }
 
 .btn-primary,
@@ -227,6 +275,7 @@ button.primary {
   color: white;
   border: none;
   box-shadow: 0 1px 2px var(--shadow);
+  width: 100%;
 }
 
 .btn-primary:hover {
@@ -255,15 +304,32 @@ button.primary {
   opacity: 0.9;
 }
 
+.admin-actions {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admin-actions button {
+  width: 100%;
+}
+
+.feedback-button {
+  width: 100%;
+  justify-content: center;
+}
+
 /* ============================================
-   TABS - Clean Professional Tabs
+   TABS
    ============================================ */
 .tabs {
   background: var(--bg-card);
   border-bottom: 1px solid var(--border);
   display: flex;
   gap: 4px;
-  padding: 0 20px;
+  padding: 0 12px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  white-space: nowrap;
 }
 
 .tabs button {
@@ -271,9 +337,10 @@ button.primary {
   color: var(--text-secondary);
   border: none;
   border-bottom: 2px solid transparent;
-  padding: 16px 24px;
+  padding: 12px 16px;
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
+  flex-shrink: 0;
 }
 
 .tabs button:hover {
@@ -288,20 +355,29 @@ button.primary {
 }
 
 /* ============================================
-   TABLE - Professional Academic Layout
+   TABLE
    ============================================ */
 .schedule-container {
   background: var(--bg-card);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  overflow: hidden;
+  border-radius: 8px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   box-shadow: 0 2px 8px var(--shadow-md);
+  margin: 12px;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .schedule-table {
   background: var(--bg-secondary);
   border-collapse: separate;
   border-spacing: 0;
+  font-size: 0.75rem;
+  min-width: 100%;
 }
 
 .schedule-table th {
@@ -309,21 +385,24 @@ button.primary {
   color: var(--text-primary);
   border: 1px solid var(--border);
   font-weight: 700;
-  font-size: 0.875rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 14px 12px;
+  padding: 8px 6px;
+  min-width: 80px;
 }
 
 .schedule-table td {
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   color: var(--text-primary);
-  padding: 12px;
+  padding: 8px 6px;
+  min-width: 80px;
 }
 
 .schedule-cell {
   transition: all 0.15s ease;
+  min-height: 60px;
 }
 
 .schedule-cell:hover {
@@ -341,255 +420,15 @@ button.primary {
 }
 
 .group-cell {
-  background: var(--bg-tertiary) !important;
-  font-weight: 700;
-  color: var(--text-primary);
-}
-
-.time-header {
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-/* Subject type colors with professional styling */
-.type-pill {
-  padding: 4px 12px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: white;
-}
-
-/* ============================================
-   MODAL - Professional Dialog
-   ============================================ */
-.modal-overlay {
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-}
-
-.modal-content {
-  background: var(--bg-card);
-  color: var(--text-primary);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: 0 20px 60px var(--shadow-lg);
-  max-width: 600px;
-}
-
-.modal-header {
-  background: var(--bg-secondary);
-  border-bottom: 1px solid var(--border);
-  padding: 24px;
-}
-
-.modal-header h2 {
-  color: var(--text-primary);
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin: 0;
-}
-
-.modal-body {
-  background: var(--bg-card);
-  padding: 24px;
-}
-
-.modal-footer {
-  background: var(--bg-tertiary);
-  border-top: 1px solid var(--border);
-  padding: 20px 24px;
-}
-
-/* ============================================
-   CARDS & DASHBOARDS - Professional Layout
-   ============================================ */
-.card,
-.stat-card,
-.conflict-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 24px;
-  box-shadow: 0 1px 3px var(--shadow);
-}
-
-.card:hover {
-  box-shadow: 0 4px 12px var(--shadow-md);
-  border-color: var(--border-strong);
-}
-
-/* ============================================
-   LOGIN PAGE - Professional Entry
-   ============================================ */
-.login-container {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 48px;
-  box-shadow: 0 8px 32px var(--shadow-lg);
-  max-width: 440px;
-}
-
-.login-title {
-  color: var(--text-primary);
-  font-size: 2rem;
-  font-weight: 700;
-  margin-bottom: 8px;
-}
-
-/* ============================================
-   CONFLICTS & WARNINGS - Clear Indicators
-   ============================================ */
-.conflict-teacher {
-  border: 2px solid var(--warning) !important;
-  background: var(--warning-light) !important;
-}
-
-.conflict-room {
-  border: 2px solid var(--error) !important;
-  background: var(--error-light) !important;
-}
-
-.conflicts-container {
-  background: var(--warning-light);
-  border-left: 4px solid var(--warning);
-  border-radius: 6px;
-  padding: 16px;
-}
-
-/* ============================================
-   TYPE LEGEND - Clear Visual Guide
-   ============================================ */
-.type-legend {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 16px;
-  display: flex;
-  gap: 24px;
-  flex-wrap: wrap;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 500;
-  font-size: 0.9rem;
-}
-
-.legend-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 3px;
-}
-
-/* ============================================
-   SCROLLBARS - Professional Styling
-   ============================================ */
-::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--bg-main);
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
-  border-radius: 6px;
-  border: 2px solid var(--bg-main);
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-muted);
-}
-
-/* ============================================
-   PRINT MODE
-   ============================================ */
-@media print {
-  body {
-    background: white !important;
-    color: black !important;
-  }
-  
-  .header, .filters, .tabs, button {
-    display: none !important;
-  }
-  
-  .schedule-table {
-    border-collapse: collapse;
-  }
-  
-  .schedule-table th,
-  .schedule-table td {
-    border: 1px solid #333 !important;
-    background: white !important;
-    color: black !important;
-  }
-}
-
-/* ============================================
-   RESPONSIVE - Mobile Friendly
-   ============================================ */
-@media (max-width: 768px) {
-  .header {
-    flex-direction: column;
-    gap: 16px;
-  }
-  
-  .tabs {
-    overflow-x: auto;
-  }
-  
-  .filters {
-    flex-direction: column;
-  }
-}
-
-
-
-
-
-/* FIX 1: Group cells visibility in light mode */
-.group-cell {
-  background: var(--bg-tertiary) !important;
-  font-weight: 700;
-  color: var(--text-primary) !important;
-  border: 1px solid var(--border-strong) !important;
-}
-
-.group-name {
-  color: var(--text-primary) !important;
-  font-weight: 700 !important;
-}
-
-/* Make sure group cells are visible in light mode */
-body:not([data-theme="dark"]) .group-cell {
-  background: #f4f6f8 !important; /* Light gray */
-  color: #1a2332 !important; /* Dark text */
-}
-
-body[data-theme="dark"] .group-cell {
-  background: var(--bg-tertiary) !important;
-  color: var(--text-primary) !important;
-}
-
-
-
-
-/* FORCE GROUP CELLS TO BE VISIBLE IN LIGHT MODE */
-.group-cell,
-.group-cell .group-cell-content,
-.group-cell .group-name {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  min-width: 100px !important;
   background: #e5e7eb !important;
   color: #1a2332 !important;
   font-weight: 700 !important;
+  border: 1px solid var(--border-strong) !important;
+  box-shadow: 2px 0 4px var(--shadow);
 }
 
 body[data-theme="dark"] .group-cell,
@@ -601,178 +440,16 @@ body[data-theme="dark"] .group-cell .group-name {
 
 .group-name {
   color: #1a2332 !important;
+  font-weight: 700 !important;
 }
 
 body[data-theme="dark"] .group-name {
   color: #e6e9ef !important;
 }
 
-
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  background: var(--bg-main); /* ADD THIS LINE */
-}
-
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-
-.login-container {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  min-height: 100vh !important;
-  width: 100vw !important;
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  background: var(--bg-main) !important;
-  padding: 20px !important;
-  margin: 0 !important;
-  border: none !important;
-  border-radius: 0 !important;
-  max-width: none !important;
-}
-
-.login-box {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 48px;
-  box-shadow: 0 8px 32px var(--shadow-lg);
-  max-width: 440px;
-  width: 100%;
-  position: relative;
-}
-
-
-/* ============================================
-   MOBILE-FIRST RESPONSIVE DESIGN
-   All base styles are for mobile, then scale up
-   ============================================ */
-
-/* Mobile Base (320px+) */
-body {
-  font-size: 14px;
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-}
-
-/* Header - Mobile Stacked */
-.header {
-  flex-direction: column;
-  padding: 12px;
-  gap: 12px;
-}
-
-.header-title h1 {
-  font-size: 1.25rem;
-  text-align: center;
-}
-
-.header-title .subtitle {
-  font-size: 0.75rem;
-  text-align: center;
-}
-
-.header-right {
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
-}
-
-.lang-selector {
-  display: flex;
-  justify-content: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.lang-btn,
-.theme-toggle {
-  padding: 8px 12px;
-  font-size: 0.85rem;
-}
-
-/* Filters - Mobile Stacked */
-.filters {
-  flex-direction: column;
-  gap: 12px;
-  padding: 12px;
-}
-
-.filter-group {
-  width: 100%;
-}
-
-.filter-group select {
-  width: 100%;
-  font-size: 0.9rem;
-  padding: 10px;
-}
-
-/* Tabs - Mobile Scrollable */
-.tabs {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  padding: 0 12px;
-  white-space: nowrap;
-}
-
-.tabs button {
-  padding: 12px 16px;
-  font-size: 0.85rem;
-  flex-shrink: 0;
-}
-
-/* Table - Mobile Optimized */
-.schedule-container {
-  margin: 12px;
-  border-radius: 8px;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.table-wrapper {
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-}
-
-.schedule-table {
-  font-size: 0.75rem;
-  min-width: 100%;
-}
-
-.schedule-table th,
-.schedule-table td {
-  padding: 8px 6px;
-  min-width: 80px;
-}
-
-.group-cell {
-  position: sticky;
-  left: 0;
-  z-index: 10;
-  min-width: 100px !important;
-  background: var(--bg-tertiary) !important;
-  box-shadow: 2px 0 4px var(--shadow);
-}
-
 .time-header {
   font-size: 0.7rem;
+  font-weight: 600;
   writing-mode: horizontal-tb;
 }
 
@@ -793,8 +470,13 @@ body {
 }
 
 .type-pill {
-  font-size: 0.6rem;
   padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: white;
 }
 
 .duration-indicator {
@@ -802,14 +484,25 @@ body {
   padding: 2px 6px;
 }
 
-/* Modal - Mobile Full Screen */
+/* ============================================
+   MODAL
+   ============================================ */
+.modal-overlay {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
 .modal-content {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 20px 60px var(--shadow-lg);
   width: 95vw;
   max-width: 95vw;
   max-height: 90vh;
   overflow-y: auto;
   margin: 20px;
-  border-radius: 8px;
 }
 
 .modal-header,
@@ -818,72 +511,153 @@ body {
   padding: 16px;
 }
 
+.modal-header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
 .modal-header h2 {
+  color: var(--text-primary);
   font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0;
 }
 
-.form-group input,
-.form-group select,
-.form-group textarea {
-  font-size: 16px; /* Prevents iOS zoom */
+.modal-body {
+  background: var(--bg-card);
+}
+
+.modal-footer {
+  background: var(--bg-tertiary);
+  border-top: 1px solid var(--border);
+}
+
+/* ============================================
+   CARDS
+   ============================================ */
+.card,
+.stat-card,
+.conflict-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 12px;
+  box-shadow: 0 1px 3px var(--shadow);
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px var(--shadow-md);
+  border-color: var(--border-strong);
+}
+
+.type-legend {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
   padding: 12px;
+  display: flex;
+  gap: 12px;
+  flex-direction: column;
+  flex-wrap: wrap;
 }
 
-/* Login - Mobile Optimized */
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+/* ============================================
+   LOGIN PAGE
+   ============================================ */
 .login-container {
-  padding: 16px !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  min-height: 100vh !important;
   width: 100vw !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  background: var(--bg-main) !important;
+  padding: 16px !important;
+  margin: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  max-width: none !important;
 }
 
 .login-box {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
   padding: 24px;
-  width: 100%;
+  box-shadow: 0 8px 32px var(--shadow-lg);
   max-width: 100%;
+  width: 100%;
+  position: relative;
 }
 
 .login-header h1 {
   font-size: 1.5rem;
 }
 
-/* Buttons - Mobile Touch Friendly */
-button {
-  min-height: 44px; /* iOS minimum touch target */
-  padding: 12px 16px;
-  font-size: 0.9rem;
+.login-title {
+  color: var(--text-primary);
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 8px;
 }
 
-.btn-primary {
-  width: 100%;
+/* ============================================
+   CONFLICTS
+   ============================================ */
+.conflict-teacher {
+  border: 2px solid var(--warning) !important;
+  background: var(--warning-light) !important;
 }
 
-/* Admin Actions - Mobile Stacked */
-.admin-actions {
-  flex-direction: column;
-  gap: 8px;
+.conflict-room {
+  border: 2px solid var(--error) !important;
+  background: var(--error-light) !important;
 }
 
-.admin-actions button {
-  width: 100%;
-}
-
-/* Cards - Mobile Optimized */
-.card,
-.stat-card {
+.conflicts-container {
+  background: var(--warning-light);
+  border-left: 4px solid var(--warning);
+  border-radius: 6px;
   padding: 16px;
-  margin: 12px;
 }
 
-/* Legend - Mobile Compact */
-.type-legend {
-  flex-direction: column;
-  gap: 12px;
-  padding: 12px;
+/* ============================================
+   SCROLLBARS
+   ============================================ */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
 }
 
-/* Feedback Button - Mobile */
-.feedback-button {
-  width: 100%;
-  justify-content: center;
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 6px;
+  border: 2px solid var(--bg-main);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }
 
 /* ============================================
@@ -1004,26 +778,18 @@ button {
    TOUCH OPTIMIZATIONS
    ============================================ */
 @media (hover: none) and (pointer: coarse) {
-  /* Mobile touch devices */
-  
   button,
   select,
   input {
     min-height: 44px;
   }
 
-  .schedule-cell {
-    min-height: 60px;
-  }
-
-  /* Larger tap targets */
   .lang-btn,
   .theme-toggle {
     min-width: 48px;
     min-height: 48px;
   }
 
-  /* No hover effects on touch */
   .schedule-cell:hover {
     background: var(--bg-secondary) !important;
   }
@@ -1047,25 +813,28 @@ button {
 }
 
 /* ============================================
-   PRINT OPTIMIZATIONS
+   PRINT MODE
    ============================================ */
 @media print {
-  .header,
-  .filters,
-  .tabs,
-  .admin-actions,
-  .feedback-button,
-  .theme-toggle,
-  .lang-selector {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .header, .filters, .tabs, .admin-actions, .feedback-button, .theme-toggle, .lang-selector, button {
     display: none !important;
   }
-
+  
   .schedule-table {
+    border-collapse: collapse;
     font-size: 10pt;
   }
-
+  
   .schedule-table th,
   .schedule-table td {
+    border: 1px solid #333 !important;
+    background: white !important;
+    color: black !important;
     padding: 4px;
   }
 }
