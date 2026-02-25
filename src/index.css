@@ -31,9 +31,9 @@
   --border: #e5e7eb;               /* Subtle border */
   --border-strong: #d1d5db;        /* Medium border */
   --hover-bg: #f9fafb;             /* Subtle hover */
-  --shadow: rgb(250, 244, 244);
-  --shadow-md: rgb(255, 255, 255);
-  --shadow-lg: rgb(216, 209, 209);
+  --shadow: rgba(0, 0, 0, 0.08);
+  --shadow-md: rgba(247, 238, 238, 0.12);
+  --shadow-lg: rgba(0, 0, 0, 0.16);
   
   /* Subject type colors - Professional Academic Palette */
   --lecture-color: #1e40af;        /* Academic blue */
@@ -51,8 +51,8 @@ body[data-theme="dark"] {
      DARK MODE - Sophisticated Evening Study
      Based on: MacOS Dark, Notion Dark, Professional Night Mode
      ============================================ */
-  --bg-main: #bbd8f5;              /* Deep slate (not pure black) */
-  --bg-secondary: #1a1f2e;         /* Dark blue-gray */
+  --bg-main: #0f1419;              /* Deep slate (not pure black) */
+  --bg-secondary: #f8f8fb;         /* Dark blue-gray */
   --bg-tertiary: #242b3d;          /* Lighter slate */
   --bg-card: #1e2433;              /* Card background */
   
