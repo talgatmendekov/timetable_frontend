@@ -1,10 +1,7 @@
-/* PROFESSIONAL UNIVERSITY THEME - Inspired by Oxford, Cambridge, MIT, Stanford */
+/* PROFESSIONAL UNIVERSITY THEME */
 
 :root {
-  /* ============================================
-     LIGHT MODE - Academic Excellence
-     ============================================ */
-  --bg-main: #fafbfc;
+  --bg-main: #fafbfc;              /* <-- ЭТО ФОН ВСЕЙ СТРАНИЦЫ (светлый) */
   --bg-secondary: #ffffff;
   --bg-tertiary: #f4f6f8;
   --bg-card: #ffffff;
@@ -19,7 +16,6 @@
   
   --accent: #059669;
   --accent-light: #d1fae5;
-  
   --success: #059669;
   --success-light: #d1fae5;
   --warning: #d97706;
@@ -34,7 +30,6 @@
   --shadow-md: rgba(0, 0, 0, 0.12);
   --shadow-lg: rgba(0, 0, 0, 0.16);
   
-  /* Subject type colors */
   --lecture-color: #1e40af;
   --lecture-light: #dbeafe;
   --lab-color: #059669;
@@ -46,10 +41,7 @@
 }
 
 body[data-theme="dark"] {
-  /* ============================================
-     DARK MODE - Sophisticated Evening Study
-     ============================================ */
-  --bg-main: #f9fcff;
+  --bg-main: #0f1419;              /* <-- ЭТО ФОН ВСЕЙ СТРАНИЦЫ (темный синий) */
   --bg-secondary: #1a1f2e;
   --bg-tertiary: #242b3d;
   --bg-card: #1e2433;
@@ -64,7 +56,6 @@ body[data-theme="dark"] {
   
   --accent: #34d399;
   --accent-light: #064e3b;
-  
   --success: #34d399;
   --success-light: #064e3b;
   --warning: #fbbf24;
@@ -79,7 +70,6 @@ body[data-theme="dark"] {
   --shadow-md: rgba(0, 0, 0, 0.4);
   --shadow-lg: rgba(0, 0, 0, 0.5);
   
-  /* Subject type colors */
   --lecture-color: #60a5fa;
   --lecture-light: #1e3a8a;
   --lab-color: #34d399;
@@ -90,25 +80,19 @@ body[data-theme="dark"] {
   --other-light: #4c1d95;
 }
 
-/* ============================================
-   GLOBAL STYLES - ONE BODY RULE ONLY
-   ============================================ */
 * {
   box-sizing: border-box;
-  transition: background-color 0.2s ease, 
-              color 0.2s ease, 
-              border-color 0.2s ease,
-              box-shadow 0.2s ease;
+  margin: 0;
+  padding: 0;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 body {
-  margin: 0;
-  padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', 'Helvetica Neue', Arial, sans-serif;
-  background: var(--bg-main);
+  background: var(--bg-main);  /* <-- ГЛАВНЫЙ ФОН СТРАНИЦЫ */
   color: var(--text-primary);
   line-height: 1.6;
-  font-size: 16px;
+  font-size: 14px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
@@ -123,9 +107,7 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
-/* ============================================
-   HEADER
-   ============================================ */
+/* HEADER */
 .header {
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
@@ -181,6 +163,7 @@ code {
   padding: 8px 12px;
   border-radius: 6px;
   font-size: 0.85rem;
+  cursor: pointer;
 }
 
 .lang-btn:hover,
@@ -196,9 +179,7 @@ code {
   font-weight: 600;
 }
 
-/* ============================================
-   FILTERS & CONTROLS
-   ============================================ */
+/* FILTERS */
 .filters,
 .admin-actions {
   background: var(--bg-card);
@@ -253,13 +234,11 @@ textarea:focus {
 .form-group input,
 .form-group select,
 .form-group textarea {
-  font-size: 16px; /* Prevents iOS zoom */
+  font-size: 16px;
   padding: 12px;
 }
 
-/* ============================================
-   BUTTONS
-   ============================================ */
+/* BUTTONS */
 button {
   font-weight: 600;
   border-radius: 6px;
@@ -318,9 +297,7 @@ button.primary {
   justify-content: center;
 }
 
-/* ============================================
-   TABS
-   ============================================ */
+/* TABS */
 .tabs {
   background: var(--bg-card);
   border-bottom: 1px solid var(--border);
@@ -354,9 +331,7 @@ button.primary {
   background: transparent;
 }
 
-/* ============================================
-   TABLE
-   ============================================ */
+/* TABLE */
 .schedule-container {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -431,9 +406,7 @@ button.primary {
   box-shadow: 2px 0 4px var(--shadow);
 }
 
-body[data-theme="dark"] .group-cell,
-body[data-theme="dark"] .group-cell .group-cell-content,
-body[data-theme="dark"] .group-cell .group-name {
+body[data-theme="dark"] .group-cell {
   background: #242b3d !important;
   color: #e6e9ef !important;
 }
@@ -450,7 +423,6 @@ body[data-theme="dark"] .group-name {
 .time-header {
   font-size: 0.7rem;
   font-weight: 600;
-  writing-mode: horizontal-tb;
 }
 
 .cell-content {
@@ -484,9 +456,7 @@ body[data-theme="dark"] .group-name {
   padding: 2px 6px;
 }
 
-/* ============================================
-   MODAL
-   ============================================ */
+/* MODAL */
 .modal-overlay {
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
@@ -520,7 +490,6 @@ body[data-theme="dark"] .group-name {
   color: var(--text-primary);
   font-size: 1.2rem;
   font-weight: 700;
-  margin: 0;
 }
 
 .modal-body {
@@ -532,9 +501,7 @@ body[data-theme="dark"] .group-name {
   border-top: 1px solid var(--border);
 }
 
-/* ============================================
-   CARDS
-   ============================================ */
+/* CARDS */
 .card,
 .stat-card,
 .conflict-card {
@@ -559,7 +526,6 @@ body[data-theme="dark"] .group-name {
   display: flex;
   gap: 12px;
   flex-direction: column;
-  flex-wrap: wrap;
 }
 
 .legend-item {
@@ -576,9 +542,7 @@ body[data-theme="dark"] .group-name {
   border-radius: 3px;
 }
 
-/* ============================================
-   LOGIN PAGE
-   ============================================ */
+/* LOGIN */
 .login-container {
   display: flex !important;
   justify-content: center !important;
@@ -590,7 +554,6 @@ body[data-theme="dark"] .group-name {
   left: 0 !important;
   background: var(--bg-main) !important;
   padding: 16px !important;
-  margin: 0 !important;
   border: none !important;
   border-radius: 0 !important;
   max-width: none !important;
@@ -604,7 +567,6 @@ body[data-theme="dark"] .group-name {
   box-shadow: 0 8px 32px var(--shadow-lg);
   max-width: 100%;
   width: 100%;
-  position: relative;
 }
 
 .login-header h1 {
@@ -618,9 +580,7 @@ body[data-theme="dark"] .group-name {
   margin-bottom: 8px;
 }
 
-/* ============================================
-   CONFLICTS
-   ============================================ */
+/* CONFLICTS */
 .conflict-teacher {
   border: 2px solid var(--warning) !important;
   background: var(--warning-light) !important;
@@ -638,9 +598,7 @@ body[data-theme="dark"] .group-name {
   padding: 16px;
 }
 
-/* ============================================
-   SCROLLBARS
-   ============================================ */
+/* SCROLLBARS */
 ::-webkit-scrollbar {
   width: 12px;
   height: 12px;
@@ -660,181 +618,55 @@ body[data-theme="dark"] .group-name {
   background: var(--text-muted);
 }
 
-/* ============================================
-   TABLET (768px+)
-   ============================================ */
+/* TABLET */
 @media (min-width: 768px) {
-  body {
-    font-size: 15px;
-  }
-
-  .header {
-    flex-direction: row;
-    padding: 16px 24px;
-  }
-
-  .header-title h1 {
-    font-size: 1.75rem;
-    text-align: left;
-  }
-
-  .header-right {
-    flex-direction: row;
-    width: auto;
-  }
-
-  .filters {
-    flex-direction: row;
-    flex-wrap: wrap;
-    padding: 16px;
-  }
-
-  .filter-group {
-    flex: 1;
-    min-width: 200px;
-  }
-
-  .schedule-table {
-    font-size: 0.85rem;
-  }
-
-  .schedule-table th,
-  .schedule-table td {
-    padding: 10px 8px;
-  }
-
-  .modal-content {
-    width: 80vw;
-    max-width: 600px;
-  }
-
-  .admin-actions {
-    flex-direction: row;
-  }
-
-  .admin-actions button {
-    width: auto;
-  }
-
-  .btn-primary {
-    width: auto;
-  }
-
-  .type-legend {
-    flex-direction: row;
-  }
-
-  .feedback-button {
-    width: auto;
-  }
+  body { font-size: 15px; }
+  .header { flex-direction: row; padding: 16px 24px; }
+  .header-title h1 { font-size: 1.75rem; text-align: left; }
+  .header-right { flex-direction: row; width: auto; }
+  .filters { flex-direction: row; flex-wrap: wrap; padding: 16px; }
+  .filter-group { flex: 1; min-width: 200px; }
+  .schedule-table { font-size: 0.85rem; }
+  .schedule-table th, .schedule-table td { padding: 10px 8px; }
+  .modal-content { width: 80vw; max-width: 600px; }
+  .admin-actions { flex-direction: row; }
+  .admin-actions button { width: auto; }
+  .btn-primary { width: auto; }
+  .type-legend { flex-direction: row; }
+  .feedback-button { width: auto; }
 }
 
-/* ============================================
-   DESKTOP (1024px+)
-   ============================================ */
+/* DESKTOP */
 @media (min-width: 1024px) {
-  body {
-    font-size: 16px;
-  }
-
-  .header-title h1 {
-    font-size: 2rem;
-  }
-
-  .schedule-container {
-    margin: 20px;
-  }
-
-  .schedule-table {
-    font-size: 0.95rem;
-  }
-
-  .schedule-table th,
-  .schedule-table td {
-    padding: 12px;
-  }
-
-  .course-name {
-    font-size: 0.9rem;
-  }
-
-  .teacher-name,
-  .room-number {
-    font-size: 0.8rem;
-  }
-
-  .modal-body {
-    padding: 24px;
-  }
-
-  .card,
-  .stat-card {
-    padding: 24px;
-    margin: 20px;
-  }
+  body { font-size: 16px; }
+  .header-title h1 { font-size: 2rem; }
+  .schedule-container { margin: 20px; }
+  .schedule-table { font-size: 0.95rem; }
+  .schedule-table th, .schedule-table td { padding: 12px; }
+  .course-name { font-size: 0.9rem; }
+  .teacher-name, .room-number { font-size: 0.8rem; }
+  .modal-body { padding: 24px; }
+  .card, .stat-card { padding: 24px; margin: 20px; }
 }
 
-/* ============================================
-   TOUCH OPTIMIZATIONS
-   ============================================ */
+/* TOUCH */
 @media (hover: none) and (pointer: coarse) {
-  button,
-  select,
-  input {
-    min-height: 44px;
-  }
-
-  .lang-btn,
-  .theme-toggle {
-    min-width: 48px;
-    min-height: 48px;
-  }
-
-  .schedule-cell:hover {
-    background: var(--bg-secondary) !important;
-  }
+  button, select, input { min-height: 44px; }
+  .lang-btn, .theme-toggle { min-width: 48px; min-height: 48px; }
+  .schedule-cell:hover { background: var(--bg-secondary) !important; }
 }
 
-/* ============================================
-   LANDSCAPE MOBILE
-   ============================================ */
+/* LANDSCAPE MOBILE */
 @media (max-height: 500px) and (orientation: landscape) {
-  .header {
-    padding: 8px 16px;
-  }
-
-  .modal-content {
-    max-height: 85vh;
-  }
-
-  .login-box {
-    padding: 16px;
-  }
+  .header { padding: 8px 16px; }
+  .modal-content { max-height: 85vh; }
+  .login-box { padding: 16px; }
 }
 
-/* ============================================
-   PRINT MODE
-   ============================================ */
+/* PRINT */
 @media print {
-  body {
-    background: white !important;
-    color: black !important;
-  }
-  
-  .header, .filters, .tabs, .admin-actions, .feedback-button, .theme-toggle, .lang-selector, button {
-    display: none !important;
-  }
-  
-  .schedule-table {
-    border-collapse: collapse;
-    font-size: 10pt;
-  }
-  
-  .schedule-table th,
-  .schedule-table td {
-    border: 1px solid #333 !important;
-    background: white !important;
-    color: black !important;
-    padding: 4px;
-  }
+  body { background: white !important; color: black !important; }
+  .header, .filters, .tabs, .admin-actions, .feedback-button, .theme-toggle, .lang-selector, button { display: none !important; }
+  .schedule-table { border-collapse: collapse; font-size: 10pt; }
+  .schedule-table th, .schedule-table td { border: 1px solid #333 !important; background: white !important; color: black !important; padding: 4px; }
 }
