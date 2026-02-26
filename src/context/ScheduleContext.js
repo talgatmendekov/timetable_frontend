@@ -13,12 +13,12 @@ export const useSchedule = () => {
 };
 
 export const ScheduleProvider = ({ children }) => {
-  const [groups, setGroups] = useState(UNIVERSITY_GROUPS);
+  const [groups,   setGroups]   = useState(UNIVERSITY_GROUPS);
   const [schedule, setSchedule] = useState({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [loading,  setLoading]  = useState(true);
+  const [error,    setError]    = useState(null);
 
-  // â”€â”€ Load everything from backend on mount â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Load everything from backend on mount ──────────────────────────────────
   const loadAll = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -46,12 +46,11 @@ export const ScheduleProvider = ({ children }) => {
       .filter(Boolean)
   )].sort();
 
-  // â”€â”€ Schedule mutations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Schedule mutations ─────────────────────────────────────────────────────
   const addOrUpdateClass = async (group, day, time, classData) => {
     const { course, teacher, room, subjectType, duration = 1 } = classData;
     try {
       await scheduleAPI.save(group, day, time, course, teacher, room, subjectType, duration);
-      // Optimistic update
       const key = `${group}-${day}-${time}`;
       setSchedule(prev => ({
         ...prev,
@@ -76,32 +75,20 @@ export const ScheduleProvider = ({ children }) => {
     }
   };
 
-  // Move = update destination + delete source (or swap)
   const moveClass = async (fromGroup, fromDay, fromTime, toGroup, toDay, toTime) => {
     const fromKey = `${fromGroup}-${fromDay}-${fromTime}`;
-    const toKey = `${toGroup}-${toDay}-${toTime}`;
+    const toKey   = `${toGroup}-${toDay}-${toTime}`;
     const fromData = schedule[fromKey];
-    const toData = schedule[toKey];
+    const toData   = schedule[toKey];
     if (!fromData) return;
 
     try {
-      // Save dragged class to new position
-      await scheduleAPI.save(
-        toGroup, toDay, toTime,
-        fromData.course, fromData.teacher, fromData.room, fromData.subjectType
-      );
-      // If destination was occupied, move that class back to source position (swap)
+      await scheduleAPI.save(toGroup, toDay, toTime, fromData.course, fromData.teacher, fromData.room, fromData.subjectType);
       if (toData) {
-        await scheduleAPI.save(
-          fromGroup, fromDay, fromTime,
-          toData.course, toData.teacher, toData.room, toData.subjectType
-        );
+        await scheduleAPI.save(fromGroup, fromDay, fromTime, toData.course, toData.teacher, toData.room, toData.subjectType);
       } else {
-        // Source slot is now empty
         await scheduleAPI.delete(fromGroup, fromDay, fromTime);
       }
-
-      // Optimistic state update
       setSchedule(prev => {
         const next = { ...prev };
         next[toKey] = { ...fromData, group: toGroup, day: toDay, time: toTime };
@@ -114,11 +101,11 @@ export const ScheduleProvider = ({ children }) => {
       });
     } catch (err) {
       alert(`Failed to move class: ${err.message}`);
-      loadAll(); // Re-sync from server on error
+      loadAll();
     }
   };
 
-  // â”€â”€ Group mutations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Group mutations ────────────────────────────────────────────────────────
   const addGroup = async (groupName) => {
     try {
       await groupsAPI.add(groupName);
@@ -132,7 +119,6 @@ export const ScheduleProvider = ({ children }) => {
     try {
       await groupsAPI.delete(groupName);
       setGroups(prev => prev.filter(g => g !== groupName));
-      // Remove all schedule entries for this group from local state
       setSchedule(prev => {
         const next = {};
         Object.entries(prev).forEach(([k, v]) => {
@@ -146,7 +132,6 @@ export const ScheduleProvider = ({ children }) => {
   };
 
   const clearSchedule = async () => {
-    // Delete every entry from the backend
     try {
       await Promise.all(
         Object.values(schedule).map(e => scheduleAPI.delete(e.group, e.day, e.time))
@@ -158,7 +143,7 @@ export const ScheduleProvider = ({ children }) => {
     }
   };
 
-  // â”€â”€ Read helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Read helpers ───────────────────────────────────────────────────────────
   const getClassByKey = (group, day, time) =>
     schedule[`${group}-${day}-${time}`] || null;
 
@@ -168,43 +153,62 @@ export const ScheduleProvider = ({ children }) => {
   const getScheduleByTeacher = (teacher) =>
     Object.entries(schedule).filter(([, v]) => v.teacher === teacher);
 
-  // â”€â”€ Import / Export (still uses the backend format) â”€
+  // ── Export ─────────────────────────────────────────────────────────────────
   const exportSchedule = () =>
     JSON.stringify({ groups, schedule, exportDate: new Date().toISOString() }, null, 2);
 
+  // ── Import — uses bulk endpoint: 1 request for all 444 classes ────────────
   const importSchedule = async (jsonData) => {
     try {
       const data = JSON.parse(jsonData);
-      if (!data.groups || !data.schedule)
+
+      // Support both formats:
+      //   { groups, schedule }  ← from importFromExcel / exportSchedule
+      //   Array of class objects ← from parseAlatooSchedule
+      let entries = [];
+      let groupList = [];
+
+      if (Array.isArray(data)) {
+        // Alatoo parser returns a flat array
+        entries = data;
+        groupList = [...new Set(data.map(e => e.group).filter(Boolean))];
+      } else if (data.schedule) {
+        // Generic import returns { groups, schedule }
+        entries = Object.values(data.schedule);
+        groupList = data.groups || [...new Set(entries.map(e => e.group).filter(Boolean))];
+      } else {
         return { success: false, error: 'Invalid data format' };
-
-      // Add any new groups first
-      for (const g of data.groups) {
-        if (!groups.includes(g)) {
-          try { await groupsAPI.add(g); } catch { /* already exists */ }
-        }
       }
 
-      // Save every class
-      // await Promise.all(
-      //   Object.values(data.schedule).map(e =>
-      //     scheduleAPI.save(e.group, e.day, e.time, e.course, e.teacher, e.room, e.subjectType)
-      //   )
-      // );
+      if (entries.length === 0)
+        return { success: false, error: 'No schedule entries found' };
 
+      // Single bulk request — no rate limit issues
+      const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+      const token = localStorage.getItem('token');
 
-      const entries = Object.values(data.schedule);
-      const BATCH = 10;
-      for (let i = 0; i < entries.length; i += BATCH) {
-        const batch = entries.slice(i, i + BATCH);
-        await Promise.all(
-          batch.map(e => scheduleAPI.save(e.group, e.day, e.time, e.course, e.teacher, e.room, e.subjectType))
-        );
-        if (i + BATCH < entries.length) await new Promise(r => setTimeout(r, 200));
+      const response = await fetch(`${apiBase}/schedules/bulk`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ groups: groupList, schedule: Object.fromEntries(entries.map(e => [`${e.group}-${e.day}-${e.time}`, e])) }),
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        let msg = `Server error ${response.status}`;
+        try { msg = JSON.parse(text).error || msg; } catch {}
+        return { success: false, error: msg };
       }
 
-      await loadAll(); // Reload from backend to get canonical state
-      return { success: true };
+      const result = await response.json();
+      if (!result.success) return { success: false, error: result.error || 'Bulk import failed' };
+
+      await loadAll(); // Reload canonical state from backend
+      return { success: true, imported: result.imported };
+
     } catch (err) {
       return { success: false, error: err.message };
     }
