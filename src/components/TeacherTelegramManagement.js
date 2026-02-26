@@ -10,22 +10,16 @@ const TeacherTelegramManagement = () => {
   const [editingId, setEditingId] = useState(null);
   const [telegramInput, setTelegramInput] = useState('');
 
-  // ВАЖНО: Исправьте URL на ваш Railway
-  const API_URL = process.env.REACT_APP_API_URL || 'https://ваш-проект.railway.app/api';
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 
   const fetchTeachers = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('scheduleToken');
-      console.log('Fetching teachers from:', `${API_URL}/teachers`);
-      
       const response = await fetch(`${API_URL}/teachers`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
       const data = await response.json();
-      console.log('Response:', data);
-      
       if (data.success) {
         setTeachers(data.data);
       } else {
@@ -38,33 +32,28 @@ const TeacherTelegramManagement = () => {
     }
   };
 
-  useEffect(() => {
-    fetchTeachers();
-  }, []);
+  useEffect(() => { fetchTeachers(); }, []);
 
   const handleSaveTelegramId = async (id) => {
     try {
       const token = localStorage.getItem('scheduleToken');
-      console.log('Saving Telegram ID for teacher:', id, 'Value:', telegramInput);
-      
-      // ИСПРАВЛЕНО: убрано /telegram из URL
-      const response = await fetch(`${API_URL}/teachers/${id}`, {
+
+      // ✅ FIXED: must match backend route PUT /teachers/:id/telegram
+      const response = await fetch(`${API_URL}/teachers/${id}/telegram`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ telegram_id: telegramInput })
+        body: JSON.stringify({ telegram_id: telegramInput.trim() })
       });
-      
+
       const data = await response.json();
-      console.log('Save response:', data);
-      
       if (data.success) {
-        alert(t('telegramIdSaved') || 'Telegram ID saved!');
+        alert(t('telegramIdSaved') || '✅ Telegram ID saved!');
         setEditingId(null);
         setTelegramInput('');
-        fetchTeachers(); // Перезагрузить список
+        fetchTeachers();
       } else {
         alert(`Error: ${data.error}`);
       }
@@ -78,9 +67,7 @@ const TeacherTelegramManagement = () => {
     setTelegramInput(teacher.telegram_id || '');
   };
 
-  if (loading) {
-    return <div className="loading">Loading teachers...</div>;
-  }
+  if (loading) return <div className="loading">Loading teachers...</div>;
 
   return (
     <div className="teacher-telegram-management">
@@ -125,7 +112,7 @@ const TeacherTelegramManagement = () => {
                         type="text"
                         value={telegramInput}
                         onChange={(e) => setTelegramInput(e.target.value)}
-                        placeholder="123456789"
+                        placeholder="e.g. 1300165738"
                         className="telegram-input"
                       />
                     ) : (
@@ -146,27 +133,15 @@ const TeacherTelegramManagement = () => {
                   <td>
                     {editingId === teacher.id ? (
                       <>
-                        <button
-                          onClick={() => handleSaveTelegramId(teacher.id)}
-                          className="btn btn-save"
-                        >
+                        <button onClick={() => handleSaveTelegramId(teacher.id)} className="btn btn-save">
                           💾 {t('save') || 'Save'}
                         </button>
-                        <button
-                          onClick={() => {
-                            setEditingId(null);
-                            setTelegramInput('');
-                          }}
-                          className="btn btn-cancel"
-                        >
+                        <button onClick={() => { setEditingId(null); setTelegramInput(''); }} className="btn btn-cancel">
                           {t('cancel') || 'Cancel'}
                         </button>
                       </>
                     ) : (
-                      <button
-                        onClick={() => startEdit(teacher)}
-                        className="btn btn-edit"
-                      >
+                      <button onClick={() => startEdit(teacher)} className="btn btn-edit">
                         ✏️ {t('edit') || 'Edit'}
                       </button>
                     )}
