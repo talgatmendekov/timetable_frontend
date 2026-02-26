@@ -18,7 +18,6 @@ export const ScheduleProvider = ({ children }) => {
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState(null);
 
-  // ── Load everything from backend on mount ──────────────────────────────────
   const loadAll = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -39,14 +38,10 @@ export const ScheduleProvider = ({ children }) => {
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
-  // Derived: list of unique teachers from schedule
   const teachers = [...new Set(
-    Object.values(schedule)
-      .map(e => e.teacher)
-      .filter(Boolean)
+    Object.values(schedule).map(e => e.teacher).filter(Boolean)
   )].sort();
 
-  // ── Schedule mutations ─────────────────────────────────────────────────────
   const addOrUpdateClass = async (group, day, time, classData) => {
     const { course, teacher, room, subjectType, duration = 1 } = classData;
     try {
@@ -65,11 +60,7 @@ export const ScheduleProvider = ({ children }) => {
     try {
       await scheduleAPI.delete(group, day, time);
       const key = `${group}-${day}-${time}`;
-      setSchedule(prev => {
-        const next = { ...prev };
-        delete next[key];
-        return next;
-      });
+      setSchedule(prev => { const next = { ...prev }; delete next[key]; return next; });
     } catch (err) {
       alert(`Failed to delete class: ${err.message}`);
     }
@@ -81,7 +72,6 @@ export const ScheduleProvider = ({ children }) => {
     const fromData = schedule[fromKey];
     const toData   = schedule[toKey];
     if (!fromData) return;
-
     try {
       await scheduleAPI.save(toGroup, toDay, toTime, fromData.course, fromData.teacher, fromData.room, fromData.subjectType);
       if (toData) {
@@ -92,11 +82,8 @@ export const ScheduleProvider = ({ children }) => {
       setSchedule(prev => {
         const next = { ...prev };
         next[toKey] = { ...fromData, group: toGroup, day: toDay, time: toTime };
-        if (toData) {
-          next[fromKey] = { ...toData, group: fromGroup, day: fromDay, time: fromTime };
-        } else {
-          delete next[fromKey];
-        }
+        if (toData) { next[fromKey] = { ...toData, group: fromGroup, day: fromDay, time: fromTime }; }
+        else { delete next[fromKey]; }
         return next;
       });
     } catch (err) {
@@ -105,7 +92,6 @@ export const ScheduleProvider = ({ children }) => {
     }
   };
 
-  // ── Group mutations ────────────────────────────────────────────────────────
   const addGroup = async (groupName) => {
     try {
       await groupsAPI.add(groupName);
@@ -121,9 +107,7 @@ export const ScheduleProvider = ({ children }) => {
       setGroups(prev => prev.filter(g => g !== groupName));
       setSchedule(prev => {
         const next = {};
-        Object.entries(prev).forEach(([k, v]) => {
-          if (v.group !== groupName) next[k] = v;
-        });
+        Object.entries(prev).forEach(([k, v]) => { if (v.group !== groupName) next[k] = v; });
         return next;
       });
     } catch (err) {
@@ -133,9 +117,7 @@ export const ScheduleProvider = ({ children }) => {
 
   const clearSchedule = async () => {
     try {
-      await Promise.all(
-        Object.values(schedule).map(e => scheduleAPI.delete(e.group, e.day, e.time))
-      );
+      await Promise.all(Object.values(schedule).map(e => scheduleAPI.delete(e.group, e.day, e.time)));
       setSchedule({});
     } catch (err) {
       alert(`Failed to clear schedule: ${err.message}`);
@@ -143,37 +125,28 @@ export const ScheduleProvider = ({ children }) => {
     }
   };
 
-  // ── Read helpers ───────────────────────────────────────────────────────────
-  const getClassByKey = (group, day, time) =>
-    schedule[`${group}-${day}-${time}`] || null;
+  const getClassByKey        = (group, day, time) => schedule[`${group}-${day}-${time}`] || null;
+  const getScheduleByDay     = (day) => Object.entries(schedule).filter(([, v]) => v.day === day);
+  const getScheduleByTeacher = (t)   => Object.entries(schedule).filter(([, v]) => v.teacher === t);
+  const exportSchedule       = () => JSON.stringify({ groups, schedule, exportDate: new Date().toISOString() }, null, 2);
 
-  const getScheduleByDay = (day) =>
-    Object.entries(schedule).filter(([, v]) => v.day === day);
-
-  const getScheduleByTeacher = (teacher) =>
-    Object.entries(schedule).filter(([, v]) => v.teacher === teacher);
-
-  // ── Export ─────────────────────────────────────────────────────────────────
-  const exportSchedule = () =>
-    JSON.stringify({ groups, schedule, exportDate: new Date().toISOString() }, null, 2);
-
-  // ── Import — uses bulk endpoint: 1 request for all 444 classes ────────────
+  // ── Import ─────────────────────────────────────────────────────────────────
+  // Supports both formats:
+  //   - Flat array (from parseAlatooSchedule)
+  //   - { groups, schedule } object (from importFromExcel / exportSchedule)
   const importSchedule = async (jsonData) => {
     try {
       const data = JSON.parse(jsonData);
 
-      // Support both formats:
-      //   { groups, schedule }  ← from importFromExcel / exportSchedule
-      //   Array of class objects ← from parseAlatooSchedule
       let entries = [];
       let groupList = [];
 
       if (Array.isArray(data)) {
-        // Alatoo parser returns a flat array
+        // alatooImport returns a flat array of class objects
         entries = data;
         groupList = [...new Set(data.map(e => e.group).filter(Boolean))];
       } else if (data.schedule) {
-        // Generic import returns { groups, schedule }
+        // generic import / export format
         entries = Object.values(data.schedule);
         groupList = data.groups || [...new Set(entries.map(e => e.group).filter(Boolean))];
       } else {
@@ -181,33 +154,32 @@ export const ScheduleProvider = ({ children }) => {
       }
 
       if (entries.length === 0)
-        return { success: false, error: 'No schedule entries found' };
+        return { success: false, error: 'No schedule entries found in file' };
 
-      // Single bulk request — no rate limit issues
-      const apiBase = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
-      const token = localStorage.getItem('token');
-
-      const response = await fetch(`${apiBase}/schedules/bulk`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ groups: groupList, schedule: Object.fromEntries(entries.map(e => [`${e.group}-${e.day}-${e.time}`, e])) }),
-      });
-
-      if (!response.ok) {
-        const text = await response.text();
-        let msg = `Server error ${response.status}`;
-        try { msg = JSON.parse(text).error || msg; } catch {}
-        return { success: false, error: msg };
+      // Use bulk endpoint if available, otherwise fall back to batched requests
+      if (scheduleAPI.bulk) {
+        const result = await scheduleAPI.bulk(groupList, entries);
+        if (!result.success) return { success: false, error: result.error || 'Bulk import failed' };
+      } else {
+        // Fallback: ensure groups exist first
+        for (const g of groupList) {
+          if (!groups.includes(g)) {
+            try { await groupsAPI.add(g); } catch { /* already exists */ }
+          }
+        }
+        // Save in batches of 10 with 300ms gap to avoid rate limiting
+        const BATCH = 10;
+        for (let i = 0; i < entries.length; i += BATCH) {
+          const batch = entries.slice(i, i + BATCH);
+          await Promise.all(
+            batch.map(e => scheduleAPI.save(e.group, e.day, e.time, e.course, e.teacher, e.room, e.subjectType))
+          );
+          if (i + BATCH < entries.length) await new Promise(r => setTimeout(r, 300));
+        }
       }
 
-      const result = await response.json();
-      if (!result.success) return { success: false, error: result.error || 'Bulk import failed' };
-
-      await loadAll(); // Reload canonical state from backend
-      return { success: true, imported: result.imported };
+      await loadAll();
+      return { success: true };
 
     } catch (err) {
       return { success: false, error: err.message };
