@@ -12,6 +12,43 @@ export const useSchedule = () => {
   return context;
 };
 
+// ─── Teacher name normalisation ───────────────────────────────────────────────
+// Strips trailing room tokens (B110, LAB, BIGLAB, LAB5(213), A202, и102 …)
+// so that "Dr. Mekuria B202", "Dr. Mekuria B204", "Dr. Mekuria" all collapse
+// to the same canonical name "Dr. Mekuria".
+const ROOM_TOKEN = /^(B\d+|A\d+|LAB\d*(\(\d+\))?|BIGLAB|Lab\d*(\(\d+\))?|и\d+)$/i;
+
+function normalizeTeacherName(raw) {
+  if (!raw) return '';
+  const parts = raw.trim().split(/\s+/);
+  // Drop tokens from the right as long as they look like room identifiers
+  let end = parts.length;
+  while (end > 0 && ROOM_TOKEN.test(parts[end - 1])) end--;
+  return parts.slice(0, end).join(' ').trim();
+}
+
+// Build a deduplicated, sorted teacher list from the schedule.
+// Uses the *normalised* name for deduplication but keeps the
+// shortest/cleanest version as the display value.
+function buildTeacherList(scheduleMap) {
+  // Collect all raw teacher strings
+  const raw = Object.values(scheduleMap)
+    .map(e => e.teacher)
+    .filter(Boolean);
+
+  // Map normalised name → best (shortest clean) display name
+  const canonical = new Map(); // normalisedName → displayName
+  raw.forEach(t => {
+    const norm = normalizeTeacherName(t);
+    if (!norm) return;
+    if (!canonical.has(norm)) {
+      canonical.set(norm, norm); // use the normalised form as display
+    }
+  });
+
+  return [...canonical.values()].sort();
+}
+
 export const ScheduleProvider = ({ children }) => {
   const [groups,   setGroups]   = useState(UNIVERSITY_GROUPS);
   const [schedule, setSchedule] = useState({});
@@ -38,9 +75,16 @@ export const ScheduleProvider = ({ children }) => {
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
-  const teachers = [...new Set(
-    Object.values(schedule).map(e => e.teacher).filter(Boolean)
-  )].sort();
+  // ── Deduplicated teacher list (normalised names, no room suffixes) ──────────
+  const teachers = buildTeacherList(schedule);
+
+  // ── getScheduleByTeacher must also match via normalised name ────────────────
+  const getScheduleByTeacher = (teacherName) => {
+    const normTarget = normalizeTeacherName(teacherName);
+    return Object.entries(schedule).filter(
+      ([, v]) => normalizeTeacherName(v.teacher) === normTarget
+    );
+  };
 
   const addOrUpdateClass = async (group, day, time, classData) => {
     const { course, teacher, room, subjectType, duration = 1 } = classData;
@@ -67,8 +111,8 @@ export const ScheduleProvider = ({ children }) => {
   };
 
   const moveClass = async (fromGroup, fromDay, fromTime, toGroup, toDay, toTime) => {
-    const fromKey = `${fromGroup}-${fromDay}-${fromTime}`;
-    const toKey   = `${toGroup}-${toDay}-${toTime}`;
+    const fromKey  = `${fromGroup}-${fromDay}-${fromTime}`;
+    const toKey    = `${toGroup}-${toDay}-${toTime}`;
     const fromData = schedule[fromKey];
     const toData   = schedule[toKey];
     if (!fromData) return;
@@ -125,29 +169,23 @@ export const ScheduleProvider = ({ children }) => {
     }
   };
 
-  const getClassByKey        = (group, day, time) => schedule[`${group}-${day}-${time}`] || null;
-  const getScheduleByDay     = (day) => Object.entries(schedule).filter(([, v]) => v.day === day);
-  const getScheduleByTeacher = (t)   => Object.entries(schedule).filter(([, v]) => v.teacher === t);
-  const exportSchedule       = () => JSON.stringify({ groups, schedule, exportDate: new Date().toISOString() }, null, 2);
+  const getClassByKey    = (group, day, time) => schedule[`${group}-${day}-${time}`] || null;
+  const getScheduleByDay = (day) => Object.entries(schedule).filter(([, v]) => v.day === day);
+  const exportSchedule   = () => JSON.stringify({ groups, schedule, exportDate: new Date().toISOString() }, null, 2);
 
   // ── Import ─────────────────────────────────────────────────────────────────
-  // Supports both formats:
-  //   - Flat array (from parseAlatooSchedule)
-  //   - { groups, schedule } object (from importFromExcel / exportSchedule)
   const importSchedule = async (jsonData) => {
     try {
       const data = JSON.parse(jsonData);
 
-      let entries = [];
+      let entries   = [];
       let groupList = [];
 
       if (Array.isArray(data)) {
-        // alatooImport returns a flat array of class objects
-        entries = data;
+        entries   = data;
         groupList = [...new Set(data.map(e => e.group).filter(Boolean))];
       } else if (data.schedule) {
-        // generic import / export format
-        entries = Object.values(data.schedule);
+        entries   = Object.values(data.schedule);
         groupList = data.groups || [...new Set(entries.map(e => e.group).filter(Boolean))];
       } else {
         return { success: false, error: 'Invalid data format' };
@@ -156,18 +194,15 @@ export const ScheduleProvider = ({ children }) => {
       if (entries.length === 0)
         return { success: false, error: 'No schedule entries found in file' };
 
-      // Use bulk endpoint if available, otherwise fall back to batched requests
       if (scheduleAPI.bulk) {
         const result = await scheduleAPI.bulk(groupList, entries);
         if (!result.success) return { success: false, error: result.error || 'Bulk import failed' };
       } else {
-        // Fallback: ensure groups exist first
         for (const g of groupList) {
           if (!groups.includes(g)) {
             try { await groupsAPI.add(g); } catch { /* already exists */ }
           }
         }
-        // Save in batches of 10 with 300ms gap to avoid rate limiting
         const BATCH = 10;
         for (let i = 0; i < entries.length; i += BATCH) {
           const batch = entries.slice(i, i + BATCH);
