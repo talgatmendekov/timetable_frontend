@@ -26,7 +26,7 @@ const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClas
   const groupsToShow = selectedGroup ? groups.filter(g => g === selectedGroup) : groups;
   const typeLabels = SUBJECT_TYPE_LABELS[lang] || SUBJECT_TYPE_LABELS.en;
 
-  // Pre-normalise the selected teacher once for the whole render pass
+  // Pre-normalise the selected teacher once per render
   const normSelectedTeacher = useMemo(
     () => selectedTeacher ? normalizeTeacherName(selectedTeacher) : '',
     [selectedTeacher]
@@ -36,7 +36,6 @@ const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClas
   const [dragOver, setDragOver] = useState(null);
   const dragNode = useRef(null);
 
-  // Build skip map - cells that are continuation of multi-slot classes
   const cellsToSkipGlobal = useMemo(() => {
     const skipSet = new Set();
     Object.values(schedule).forEach(classData => {
@@ -56,9 +55,7 @@ const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClas
 
   const getClass = (group, day, time) => schedule[`${group}-${day}-${time}`] || null;
 
-  // ── KEY FIX: compare via normalised names ─────────────────────────────────
-  // The dropdown shows "Dr. X" (normalised) but the DB may store "Dr. X B110 LAB".
-  // Without normalisation the filter would never match and show empty results.
+  // Compare via normalised names — dropdown shows "Dr. X" but DB stores "Dr. X B110 LAB"
   const shouldShowCell = (classData) => {
     if (!classData) return true;
     if (normSelectedTeacher &&
@@ -166,14 +163,14 @@ const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClas
                   const cellKey = `${group}-${day}-${time}`;
                   if (cellsToSkipGlobal.has(cellKey)) return null;
 
-                  const classData = getClass(group, day, time);
-                  const show = shouldShowCell(classData);
-                  const isToday = day === todayName;
-                  const conflicts = getCellConflicts(group, day, time, classData);
+                  const classData  = getClass(group, day, time);
+                  const show       = shouldShowCell(classData);
+                  const isToday    = day === todayName;
+                  const conflicts  = getCellConflicts(group, day, time, classData);
                   const isDragSource = dragSource?.group === group && dragSource?.day === day && dragSource?.time === time;
                   const isDragOver   = dragOver?.group   === group && dragOver?.day   === day && dragOver?.time   === time;
-                  const typeStyle = classData ? getTypeStyle(classData.subjectType) : null;
-                  const duration  = classData?.duration ? parseInt(classData.duration) : 1;
+                  const typeStyle  = classData ? getTypeStyle(classData.subjectType) : null;
+                  const duration   = classData?.duration ? parseInt(classData.duration) : 1;
 
                   if (!show) {
                     return (
@@ -187,14 +184,14 @@ const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClas
                     <td key={cellKey}
                       className={[
                         'schedule-cell',
-                        classData          ? 'filled'           : '',
-                        isAuthenticated    ? 'editable'         : '',
-                        isToday            ? 'today-cell'       : '',
+                        classData       ? 'filled'        : '',
+                        isAuthenticated ? 'editable'      : '',
+                        isToday         ? 'today-cell'    : '',
                         conflicts.includes('teacher') ? 'conflict-teacher' : '',
                         conflicts.includes('room')    ? 'conflict-room'    : '',
-                        isDragSource       ? 'drag-source'      : '',
+                        isDragSource    ? 'drag-source'   : '',
                         isDragOver ? (classData ? 'drag-over-filled' : 'drag-over-empty') : '',
-                        duration > 1       ? 'multi-slot'       : '',
+                        duration > 1    ? 'multi-slot'    : '',
                       ].filter(Boolean).join(' ')}
                       style={classData && typeStyle ? { background: typeStyle.light, borderLeft: `3px solid ${typeStyle.color}` } : {}}
                       colSpan={duration}
