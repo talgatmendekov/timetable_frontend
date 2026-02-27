@@ -13,56 +13,81 @@ export const useSchedule = () => {
 };
 
 // ─── Teacher name normalisation ───────────────────────────────────────────────
-// Strips ALL trailing room/location noise from teacher strings so that:
-//   "Dr. Mekuria B110 LAB"   → "Dr. Mekuria"
-//   "Dr. Mekuria B 202"      → "Dr. Mekuria"   (space inside room code)
-//   "Dr. Mekuria LAB3(210)"  → "Dr. Mekuria"
-//   "Mr. X BIGLAB + make up" → "Mr. X"
-//   "Ms. Y B109 (APPLE LAB)" → "Ms. Y"
-//   "Ms. Z B204/(15:30...)"  → "Ms. Z"
-//   "Mr. A b109"             → "Mr. A"          (lowercase room)
-//   "Mr. B LINK"             → "Mr. B"
-//   "Mr. C B WEB"            → "Mr. C"
+// Handles every messy pattern found in the Ala-Too Excel schedule:
+//
+//  Spacing variants:   "Dr.Ahmad" → "Dr. Ahmad",  "Ms Iskra" → "Ms. Iskra"
+//  Trailing rooms:     "Dr. X B110 LAB" / "B 202" / "b109" → "Dr. X"
+//  Trailing notes:     "... with own device" / "own device" / "make up ..." → stripped
+//  Trailing LAB refs:  "LAB3(210)" / "BIGLAB" / "untill 10:15" → stripped
+//  Leading slash:      "/Ms.Asina" → "Ms. Asina"
+//  Trailing slash:     "Ms. X B204/" → "Ms. X"
+//  Slash mid-string:   "Alimpieva L./Tsoi A. B102" → "Alimpieva L." (keep first person)
+//  Comma+room:         "Ms.Orozalieva D.,B103" → "Ms. Orozalieva D."
+//  Bare room as name:  "B201(COM)" → "" (excluded from list)
 export function normalizeTeacherName(raw) {
   if (!raw) return '';
   let s = raw.trim();
 
-  // 1. Remove trailing parenthetical info: "(APPLE LAB)", "(with own device)"
+  // 1. Strip leading slash  e.g. "/Ms.Asina"
+  s = s.replace(/^\/+/, '').trim();
+
+  // 2. Cut at slash — keep only the first person in multi-teacher cells
+  //    e.g. "Alimpieva L./Tsoi A. B102\103"  →  "Alimpieva L."
+  s = s.replace(/\/.*$/, '').trim();
+
+  // 3. Remove trailing parenthetical noise  e.g. "(APPLE LAB)", "(with own device)"
   s = s.replace(/\s*\([^)]*\)\s*$/, '').trim();
 
-  // 2. Remove slash+parens variant: "B204/ (15:30 BIGLAB)"
-  s = s.replace(/\/\s*\(.*\)\s*$/, '').trim();
+  // 4. Remove "untill/until ..." and everything after
+  s = s.replace(/\s+until+\b.*/i, '').trim();
 
-  // 3. Repeatedly strip trailing noise tokens until stable.
-  //    Covers: B110, B 202, b109, A204, LAB, LAB3, LAB3(210), BIGLAB,
-  //            BigLab, LINK, WEB, web, link, WeB, и102, make, up
-  const TRAILING_NOISE = /\s+(B\s?\d*\w*|b\s?\d*\w*|A\d+|LAB\d*(\(\d+\))?|BIGLAB|BigLab|Lab\d*(\(\d+\))?|LINK|WEB|web|link|WeB|и\d+|make|up)$/i;
+  // 5. Remove "own device" / "with own device" / "with own ..." and everything after
+  s = s.replace(/\s+(?:with\s+)?own\b.*/i, '').trim();
+
+  // 6. Remove "make up ..." and everything after
+  s = s.replace(/\s+make\s+up\b.*/i, '').trim();
+
+  // 7. Remove trailing slash and anything after  e.g. "B204/"  or  "LAB3(210) untill 10:15/"
+  s = s.replace(/\s*\/.*$/, '').trim();
+
+  // 8. Repeatedly strip trailing room/location tokens until stable
+  //    Matches: B110, B 202, b109, A204, LAB, LAB3, LAB3(210), BIGLAB, BigLab,
+  //             LINK, WEB, link, и102, WeB
+  const TRAILING_ROOM = /\s+([Bb]\s?\d+\w*|[Aa]\d+|LAB\d*(\(\d+\))?|BIGLAB|BigLab|Lab\d*(\(\d+\))?|LINK|WEB|web|link|WeB|и\d+)$/i;
   let prev;
-  do {
-    prev = s;
-    s = s.replace(TRAILING_NOISE, '').trim();
-  } while (s !== prev);
+  do { prev = s; s = s.replace(TRAILING_ROOM, '').trim(); } while (s !== prev);
 
-  // 4. Strip trailing "+ anything" (e.g. "+ make up")
+  // 9. Strip trailing "+ ..." noise  e.g. "+ make up"
   s = s.replace(/\s*\+.*$/, '').trim();
 
-  // 5. Strip trailing hyphenated lab refs like "B111-Lab"
-  s = s.replace(/\s+\S*[Ll]ab\S*$/, '').trim();
+  // 10. Strip comma+room at end  e.g. ",B103"  or  ", B102 untill 16:10"
+  s = s.replace(/,\s*[Bb]\d+.*$/, '').trim();
 
-  // 6. Collapse multiple spaces
+  // 11. Strip trailing comma / period
+  s = s.replace(/[,]+$/, '').trim();
+
+  // 12. Normalize title spacing so dot+space variants collapse to one form:
+  //     "Dr.Ahmad" → "Dr. Ahmad"
+  //     "Dr Ahmad" → "Dr. Ahmad"   (no dot)
+  //     "Ms Iskra"  → "Ms. Iskra"
+  //     "Mr.Talgat" → "Mr. Talgat"
+  s = s.replace(/\b(Dr|Mr|Ms|Mrs|Prof)\.(\w)/g, '$1. $2');   // "Dr.X" → "Dr. X"
+  s = s.replace(/\b(Dr|Mr|Ms|Mrs|Prof)\s+(?!\.)/g, '$1. ');  // "Dr X"  → "Dr. X"
+
+  // 13. Collapse multiple spaces
   s = s.replace(/\s{2,}/g, ' ').trim();
+
+  // 14. Exclude bare room strings that got mis-parsed as teacher names
+  if (/^[Bb]\d+(\(\w+\))?$/.test(s)) return '';
 
   return s;
 }
 
-// Build a deduplicated sorted teacher list from schedule data.
-// Normalises every raw string before deduplication, so
-// "Dr. X B110 LAB", "Dr. X B202", "Dr. X" all collapse to one entry "Dr. X".
+// Deduplicated sorted teacher list — normalises every raw string first
 function buildTeacherList(scheduleMap) {
   const seen   = new Set();
   const result = [];
   Object.values(scheduleMap).forEach(entry => {
-    if (!entry.teacher) return;
     const norm = normalizeTeacherName(entry.teacher);
     if (!norm || seen.has(norm)) return;
     seen.add(norm);
@@ -97,16 +122,15 @@ export const ScheduleProvider = ({ children }) => {
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
-  // Deduplicated, normalised teacher list for the filter dropdown
+  // Clean deduplicated teacher list for the filter dropdown
   const teachers = buildTeacherList(schedule);
 
-  // Filter schedule entries by teacher using normalised matching.
-  // Selecting "Dr. Remudin Mekuria" will correctly return entries
-  // stored as "Dr. Remudin Mekuria B110 LAB", "Dr. Remudin Mekuria B 202", etc.
+  // Match schedule entries by normalised teacher name so that selecting
+  // "Dr. Remudin Mekuria" returns entries stored as any dirty variant
   const getScheduleByTeacher = (teacherName) => {
-    const normTarget = normalizeTeacherName(teacherName);
+    const target = normalizeTeacherName(teacherName);
     return Object.entries(schedule).filter(
-      ([, v]) => normalizeTeacherName(v.teacher) === normTarget
+      ([, v]) => normalizeTeacherName(v.teacher) === target
     );
   };
 
@@ -200,9 +224,7 @@ export const ScheduleProvider = ({ children }) => {
   const importSchedule = async (jsonData) => {
     try {
       const data = JSON.parse(jsonData);
-      let entries   = [];
-      let groupList = [];
-
+      let entries = [], groupList = [];
       if (Array.isArray(data)) {
         entries   = data;
         groupList = [...new Set(data.map(e => e.group).filter(Boolean))];
@@ -212,29 +234,23 @@ export const ScheduleProvider = ({ children }) => {
       } else {
         return { success: false, error: 'Invalid data format' };
       }
-
-      if (entries.length === 0)
-        return { success: false, error: 'No schedule entries found in file' };
+      if (entries.length === 0) return { success: false, error: 'No schedule entries found in file' };
 
       if (scheduleAPI.bulk) {
         const result = await scheduleAPI.bulk(groupList, entries);
         if (!result.success) return { success: false, error: result.error || 'Bulk import failed' };
       } else {
         for (const g of groupList) {
-          if (!groups.includes(g)) {
-            try { await groupsAPI.add(g); } catch { /* already exists */ }
-          }
+          if (!groups.includes(g)) { try { await groupsAPI.add(g); } catch { /* exists */ } }
         }
         const BATCH = 10;
         for (let i = 0; i < entries.length; i += BATCH) {
-          const batch = entries.slice(i, i + BATCH);
-          await Promise.all(
-            batch.map(e => scheduleAPI.save(e.group, e.day, e.time, e.course, e.teacher, e.room, e.subjectType))
-          );
+          await Promise.all(entries.slice(i, i + BATCH).map(
+            e => scheduleAPI.save(e.group, e.day, e.time, e.course, e.teacher, e.room, e.subjectType)
+          ));
           if (i + BATCH < entries.length) await new Promise(r => setTimeout(r, 300));
         }
       }
-
       await loadAll();
       return { success: true };
     } catch (err) {

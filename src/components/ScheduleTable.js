@@ -26,6 +26,12 @@ const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClas
   const groupsToShow = selectedGroup ? groups.filter(g => g === selectedGroup) : groups;
   const typeLabels = SUBJECT_TYPE_LABELS[lang] || SUBJECT_TYPE_LABELS.en;
 
+  // Pre-normalise the selected teacher once for the whole render pass
+  const normSelectedTeacher = useMemo(
+    () => selectedTeacher ? normalizeTeacherName(selectedTeacher) : '',
+    [selectedTeacher]
+  );
+
   const [dragSource, setDragSource] = useState(null);
   const [dragOver, setDragOver] = useState(null);
   const dragNode = useRef(null);
@@ -39,9 +45,7 @@ const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClas
         if (timeIdx !== -1) {
           for (let i = 1; i < classData.duration; i++) {
             if (timeIdx + i < timeSlots.length) {
-              const skipTime = timeSlots[timeIdx + i];
-              const skipKey = `${classData.group}-${classData.day}-${skipTime}`;
-              skipSet.add(skipKey);
+              skipSet.add(`${classData.group}-${classData.day}-${timeSlots[timeIdx + i]}`);
             }
           }
         }
@@ -52,9 +56,9 @@ const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClas
 
   const getClass = (group, day, time) => schedule[`${group}-${day}-${time}`] || null;
 
-  // ── FIX: compare via normalised names so "Dr. X B110 LAB" matches filter "Dr. X" ──
-  const normSelectedTeacher = selectedTeacher ? normalizeTeacherName(selectedTeacher) : '';
-
+  // ── KEY FIX: compare via normalised names ─────────────────────────────────
+  // The dropdown shows "Dr. X" (normalised) but the DB may store "Dr. X B110 LAB".
+  // Without normalisation the filter would never match and show empty results.
   const shouldShowCell = (classData) => {
     if (!classData) return true;
     if (normSelectedTeacher &&
@@ -105,10 +109,7 @@ const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClas
     e.preventDefault();
     if (!dragSource) return;
     const { group: fromGroup, day: fromDay, time: fromTime } = dragSource;
-    if (fromGroup === toGroup && fromDay === toDay && fromTime === toTime) {
-      handleDragEnd();
-      return;
-    }
+    if (fromGroup === toGroup && fromDay === toDay && fromTime === toTime) { handleDragEnd(); return; }
     moveClass(fromGroup, fromDay, fromTime, toGroup, toDay, toTime);
     handleDragEnd();
   };
@@ -132,7 +133,9 @@ const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClas
         <table className="schedule-table">
           <thead>
             <tr>
-              <th className="group-header">{t('groupTime')}{!isAuthenticated && <div className="lock-icon">🔒</div>}</th>
+              <th className="group-header">
+                {t('groupTime')}{!isAuthenticated && <div className="lock-icon">🔒</div>}
+              </th>
               {daysToShow.map(day => (
                 <th key={day} className={`day-header ${day === todayName ? 'today-col' : ''}`} colSpan={timeSlots.length}>
                   {t(day)}{day === todayName && <span className="today-badge"> ★</span>}
@@ -161,8 +164,6 @@ const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClas
                 </td>
                 {daysToShow.map(day => timeSlots.map(time => {
                   const cellKey = `${group}-${day}-${time}`;
-
-                  // Skip continuation cells
                   if (cellsToSkipGlobal.has(cellKey)) return null;
 
                   const classData = getClass(group, day, time);
@@ -170,9 +171,9 @@ const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClas
                   const isToday = day === todayName;
                   const conflicts = getCellConflicts(group, day, time, classData);
                   const isDragSource = dragSource?.group === group && dragSource?.day === day && dragSource?.time === time;
-                  const isDragOver = dragOver?.group === group && dragOver?.day === day && dragOver?.time === time;
+                  const isDragOver   = dragOver?.group   === group && dragOver?.day   === day && dragOver?.time   === time;
                   const typeStyle = classData ? getTypeStyle(classData.subjectType) : null;
-                  const duration = classData?.duration ? parseInt(classData.duration) : 1;
+                  const duration  = classData?.duration ? parseInt(classData.duration) : 1;
 
                   if (!show) {
                     return (
@@ -184,11 +185,17 @@ const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClas
 
                   return (
                     <td key={cellKey}
-                      className={['schedule-cell', classData ? 'filled' : '', isAuthenticated ? 'editable' : '',
-                        isToday ? 'today-cell' : '', conflicts.includes('teacher') ? 'conflict-teacher' : '',
-                        conflicts.includes('room') ? 'conflict-room' : '', isDragSource ? 'drag-source' : '',
+                      className={[
+                        'schedule-cell',
+                        classData          ? 'filled'           : '',
+                        isAuthenticated    ? 'editable'         : '',
+                        isToday            ? 'today-cell'       : '',
+                        conflicts.includes('teacher') ? 'conflict-teacher' : '',
+                        conflicts.includes('room')    ? 'conflict-room'    : '',
+                        isDragSource       ? 'drag-source'      : '',
                         isDragOver ? (classData ? 'drag-over-filled' : 'drag-over-empty') : '',
-                        duration > 1 ? 'multi-slot' : ''].filter(Boolean).join(' ')}
+                        duration > 1       ? 'multi-slot'       : '',
+                      ].filter(Boolean).join(' ')}
                       style={classData && typeStyle ? { background: typeStyle.light, borderLeft: `3px solid ${typeStyle.color}` } : {}}
                       colSpan={duration}
                       onClick={() => { if (isAuthenticated && !dragSource) onEditClass(group, day, time); }}
@@ -201,25 +208,36 @@ const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClas
                     >
                       {classData ? (
                         <div className="cell-content">
-                          {typeStyle && <div className="type-pill" style={{ background: typeStyle.color }}>
-                            {typeStyle.icon} {typeLabels[classData.subjectType || 'lecture']}</div>}
+                          {typeStyle && (
+                            <div className="type-pill" style={{ background: typeStyle.color }}>
+                              {typeStyle.icon} {typeLabels[classData.subjectType || 'lecture']}
+                            </div>
+                          )}
                           {(conflicts.includes('teacher') || conflicts.includes('room')) && (
                             <div className="cell-conflict-icons">
                               {conflicts.includes('teacher') && <span>⚠️</span>}
-                              {conflicts.includes('room') && <span>🚪⚠️</span>}
+                              {conflicts.includes('room')    && <span>🚪⚠️</span>}
                             </div>
                           )}
                           <div className="course-name">{classData.course}</div>
                           {duration > 1 && <div className="duration-indicator">⏱ {duration * 40}min</div>}
-                          {classData.teacher && <div className={`teacher-name ${conflicts.includes('teacher') ? 'conflict-text' : ''}`}>
-                            👨‍🏫 {classData.teacher}</div>}
-                          {classData.room && <div className={`room-number ${conflicts.includes('room') ? 'conflict-text' : ''}`}>
-                            🚪 {classData.room}</div>}
+                          {classData.teacher && (
+                            <div className={`teacher-name ${conflicts.includes('teacher') ? 'conflict-text' : ''}`}>
+                              👨‍🏫 {classData.teacher}
+                            </div>
+                          )}
+                          {classData.room && (
+                            <div className={`room-number ${conflicts.includes('room') ? 'conflict-text' : ''}`}>
+                              🚪 {classData.room}
+                            </div>
+                          )}
                           {isAuthenticated && <div className="drag-handle">⠿</div>}
                         </div>
                       ) : (
-                        <>{isAuthenticated && <div className="empty-cell">+</div>}
-                          {isDragOver && <div className="drop-indicator">Drop here</div>}</>
+                        <>
+                          {isAuthenticated && <div className="empty-cell">+</div>}
+                          {isDragOver && <div className="drop-indicator">Drop here</div>}
+                        </>
                       )}
                     </td>
                   );
