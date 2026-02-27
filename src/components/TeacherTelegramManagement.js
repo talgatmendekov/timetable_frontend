@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import BroadcastMessage from './BroadcastMessage';
 import './TeacherTelegramManagement.css';
+import { normalizeTeacherName } from '../context/ScheduleContext';
 
 const TeacherTelegramManagement = () => {
   const { t } = useLanguage();
@@ -24,7 +25,40 @@ const TeacherTelegramManagement = () => {
     try {
       const res  = await fetch(`${API_URL}/teachers`, { headers: { Authorization: `Bearer ${token()}` } });
       const data = await res.json();
-      if (data.success) setTeachers(data.data);
+      if (!data.success) return;
+
+      // Deduplicate using the same normalizeTeacherName as the schedule filter.
+      // For each canonical name, keep the row that has a telegram_id (preferred),
+      // or the first row if none have one. Collect all raw IDs in the group so
+      // deleting the canonical entry also removes all duplicates.
+      const canonical = new Map(); // canonicalName → best row
+      const allIds    = new Map(); // canonicalName → [id, id, ...]
+
+      for (const teacher of data.data) {
+        const norm = normalizeTeacherName(teacher.name) || teacher.name.trim();
+        if (!allIds.has(norm)) allIds.set(norm, []);
+        allIds.get(norm).push(teacher.id);
+
+        if (!canonical.has(norm)) {
+          canonical.set(norm, teacher);
+        } else {
+          // Prefer the row that already has a telegram_id
+          const existing = canonical.get(norm);
+          if (!existing.telegram_id && teacher.telegram_id) {
+            canonical.set(norm, teacher);
+          }
+        }
+      }
+
+      // Attach the list of all duplicate DB ids so we can delete them all at once
+      const deduped = Array.from(canonical.values()).map(t => ({
+        ...t,
+        _allIds: allIds.get(normalizeTeacherName(t.name) || t.name.trim()),
+      }));
+
+      // Sort alphabetically
+      deduped.sort((a, b) => a.name.localeCompare(b.name));
+      setTeachers(deduped);
     } catch (e) { console.error(e); }
   };
 
@@ -82,22 +116,24 @@ const TeacherTelegramManagement = () => {
     }
   };
 
-  const handleDeleteTeacher = async (id, name) => {
-    if (!window.confirm(`⚠️ Permanently delete teacher "${name}" from the database?\nThis cannot be undone.`)) return;
+  const handleDeleteTeacher = async (teacher) => {
+    const dupeCount = teacher._allIds ? teacher._allIds.length : 1;
+    const dupeNote  = dupeCount > 1 ? `\n(This will also delete ${dupeCount - 1} duplicate record(s) from the database.)` : '';
+    if (!window.confirm(`⚠️ Permanently delete teacher "${teacher.name}"?\nThis cannot be undone.${dupeNote}`)) return;
     try {
-      const url = `${API_URL}/teachers/${id}`;
-      const res = await fetch(url, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token()}` },
-      });
-      const text = await res.text();
-      let data;
-      try { data = JSON.parse(text); } catch { data = { success: false, error: text }; }
-      if (data.success) {
-        fetchTeachers();
-      } else {
-        alert('Delete failed (HTTP ' + res.status + '):\n' + (data.error || text));
+      // Delete all duplicate rows for this canonical name
+      const ids = teacher._allIds || [teacher.id];
+      const results = await Promise.all(ids.map(id =>
+        fetch(`${API_URL}/teachers/${id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token()}` },
+        }).then(r => r.json())
+      ));
+      const anyFail = results.find(r => !r.success);
+      if (anyFail) {
+        alert('Some deletes failed: ' + anyFail.error);
       }
+      fetchTeachers();
     } catch (e) {
       alert('Network error: ' + e.message);
     }
@@ -202,7 +238,14 @@ const TeacherTelegramManagement = () => {
                   {teachers.map(teacher => (
                     <tr key={teacher.id}>
 
-                      <td className="teacher-name">{teacher.name}</td>
+                      <td className="teacher-name">
+                        {teacher.name}
+                        {teacher._allIds && teacher._allIds.length > 1 && (
+                          <span className="dupe-badge" title={`${teacher._allIds.length} duplicate records merged`}>
+                            ×{teacher._allIds.length}
+                          </span>
+                        )}
+                      </td>
 
                       {/* Telegram ID cell */}
                       <td>
@@ -275,7 +318,7 @@ const TeacherTelegramManagement = () => {
                             </button>
                             {/* Delete Teacher entirely button */}
                             <button
-                              onClick={() => handleDeleteTeacher(teacher.id, teacher.name)}
+                              onClick={() => handleDeleteTeacher(teacher)}
                               className="btn btn-delete-teacher"
                               title="Delete this teacher from the database"
                             >
