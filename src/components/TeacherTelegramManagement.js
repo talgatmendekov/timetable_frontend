@@ -198,10 +198,16 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
   };
 
   const deleteGroup = async (groupName) => {
-    if (!window.confirm(`Remove channel for ${groupName}?`)) return;
-    const data = await apiCall(`${API_URL}/group-channels/${encodeURIComponent(groupName)}`, 'DELETE');
-    if (data.success) fetchGroups();
-    else alert('Error: ' + (data.error || 'unknown'));
+    setGroupError('');
+    const url = `${API_URL}/group-channels/${encodeURIComponent(groupName)}`;
+    console.log('Deleting:', url);
+    const data = await apiCall(url, 'DELETE');
+    console.log('Delete result:', data);
+    if (data.success) {
+      fetchGroups();
+    } else {
+      setGroupError('Delete failed: ' + (data.error || 'unknown error'));
+    }
   };
 
   // ── Render ───────────────────────────────────────────────────────────────────
