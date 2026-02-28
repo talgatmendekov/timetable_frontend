@@ -26,6 +26,7 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
   // Group row state
   const [editingGroup, setEditingGroup]     = useState(null);
   const [addingGroup, setAddingGroup]       = useState(false);
+  const [groupError, setGroupError]         = useState('');
   const [newGroupName, setNewGroupName]     = useState('');
   const [newGroupChat, setNewGroupChat]     = useState('');
   const [groupChatInput, setGroupChatInput] = useState('');
@@ -100,14 +101,18 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
 
   // ── API helpers ──────────────────────────────────────────────────────────────
   const apiCall = async (url, method, body) => {
-    const res  = await fetch(url, {
-      method,
-      headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
-      ...(body ? { body: JSON.stringify(body) } : {}),
-    });
-    const text = await res.text();
-    try { return { ok: res.ok, ...JSON.parse(text) }; }
-    catch { return { ok: false, error: text }; }
+    try {
+      const res  = await fetch(url, {
+        method,
+        headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
+        ...(body ? { body: JSON.stringify(body) } : {}),
+      });
+      const text = await res.text();
+      try { return { ok: res.ok, ...JSON.parse(text) }; }
+      catch { return { ok: false, error: text }; }
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
   };
 
   // ── Teacher actions ──────────────────────────────────────────────────────────
@@ -172,7 +177,9 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
   };
 
   const addNewGroup = async () => {
-    if (!newGroupName.trim() || !newGroupChat.trim()) return;
+    setGroupError('');
+    if (!newGroupName.trim()) { setGroupError('Please enter a group name'); return; }
+    if (!newGroupChat.trim()) { setGroupError('Please enter a Chat ID or @username'); return; }
     const data = await apiCall(`${API_URL}/group-channels`, 'POST', {
       group_name: newGroupName.trim(),
       chat_id: newGroupChat.trim(),
@@ -181,7 +188,10 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
       setAddingGroup(false);
       setNewGroupName('');
       setNewGroupChat('');
+      setGroupError('');
       fetchGroups();
+    } else {
+      setGroupError(data.error || 'Failed to save — check the console for details');
     }
   };
 
@@ -345,10 +355,15 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
             Add bot as <strong>Admin</strong> → get chat ID from <code>@getidsbot</code> or use <code>@channelusername</code> → paste below
           </div>
           <div className="ttm-toolbar">
-            <button className="act save" onClick={() => { setAddingGroup(true); setNewGroupName(''); setNewGroupChat(''); }}>
+            <button className="act save" onClick={() => { setAddingGroup(true); setNewGroupName(''); setNewGroupChat(''); setGroupError(''); }}>
               + Add Channel
             </button>
           </div>
+          {groupError && (
+            <div style={{background:'#4c0519',color:'#fecdd3',border:'1px solid #be123c',borderRadius:'8px',padding:'10px 14px',marginBottom:'10px',fontSize:'0.88rem'}}>
+              ⚠️ {groupError}
+            </div>
+          )}
           <div className="ttm-scroll">
             <table className="ttm-tbl">
               <thead>
