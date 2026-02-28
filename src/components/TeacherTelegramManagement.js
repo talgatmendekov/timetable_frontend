@@ -180,7 +180,9 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
     setGroupError('');
     if (!newGroupName.trim()) { setGroupError('Please enter a group name'); return; }
     if (!newGroupChat.trim()) { setGroupError('Please enter a Chat ID or @username'); return; }
-    const data = await apiCall(`${API_URL}/group-channels`, 'POST', {
+    const url = `${API_URL}/group-channels`;
+    console.log('Saving to:', url);
+    const data = await apiCall(url, 'POST', {
       group_name: newGroupName.trim(),
       chat_id: newGroupChat.trim(),
     });
@@ -191,7 +193,7 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
       setGroupError('');
       fetchGroups();
     } else {
-      setGroupError(data.error || 'Failed to save — check the console for details');
+      setGroupError(`Failed (${url}): ${data.error || 'unknown error'}`);
     }
   };
 
