@@ -7,7 +7,7 @@ import './TeacherTelegramManagement.css';
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 const getToken = () => localStorage.getItem('scheduleToken');
 
-const TeacherTelegramManagement = () => {
+const TeacherTelegramManagement = ({ isDark = false }) => {
   // ── teachers comes from context — SAME list as the filter dropdown, zero dupes
   const { teachers: canonicalTeachers } = useSchedule();
 
@@ -179,7 +179,7 @@ const TeacherTelegramManagement = () => {
   if (loading) return <div className="ttm-loading">Loading…</div>;
 
   return (
-    <div className="ttm">
+    <div className="ttm" data-theme={isDark ? "dark" : "light"}>
 
       {/* HEADER */}
       <div className="ttm-head">

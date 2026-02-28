@@ -1,6 +1,6 @@
 /* ── TeacherTelegramManagement.css ─────────────────────────────────────────── */
 
-/* LIGHT MODE — default */
+/* LIGHT MODE — default (data-theme="light" or no attribute) */
 .ttm {
   --bg:             #ffffff;
   --bg-subtle:      #f8fafc;
@@ -39,45 +39,43 @@
   --btn-del-bg:     #fff1f2;  --btn-del-txt:     #be123c;  --btn-del-brd:     #fecdd3;
 }
 
-/* DARK MODE — override */
-@media (prefers-color-scheme: dark) {
-  .ttm {
-    --bg:             #0f172a;
-    --bg-subtle:      #1e293b;
-    --bg-hover:       #1e293b;
-    --border:         #334155;
-    --border-focus:   #818cf8;
-    --text:           #cbd5e1;
-    --text-strong:    #f1f5f9;
-    --text-muted:     #64748b;
-    --linked-bg:      #0d2318;
-    --linked-hover:   #122b1e;
-    --id-bg:          #14532d;
-    --id-color:       #86efac;
-    --hint-bg:        #1e1b4b;
-    --hint-border:    #818cf8;
-    --hint-text:      #c7d2fe;
-    --hint-code-bg:   #312e81;
-    --hint-code:      #a5b4fc;
-    --tab-active-clr: #f1f5f9;
-    --stat-bg:        #1e293b;
-    --stat-border:    #334155;
-    --row-border:     #1e293b;
-    --search-bg:      #1e293b;
-    --tbl-head-bg:    #162032;
-    --footer-bg:      #1e293b;
-    --dot-off:        #475569;
-    --dot-on:         #4ade80;
-    --badge-on-txt:   #86efac;
-    --badge-off-txt:  #64748b;
+/* DARK MODE — activated via data-theme="dark" prop */
+.ttm[data-theme="dark"] {
+  --bg:             #0f172a;
+  --bg-subtle:      #1e293b;
+  --bg-hover:       #1e293b;
+  --border:         #334155;
+  --border-focus:   #818cf8;
+  --text:           #cbd5e1;
+  --text-strong:    #f1f5f9;
+  --text-muted:     #64748b;
+  --linked-bg:      #0d2318;
+  --linked-hover:   #122b1e;
+  --id-bg:          #14532d;
+  --id-color:       #86efac;
+  --hint-bg:        #1e1b4b;
+  --hint-border:    #818cf8;
+  --hint-text:      #c7d2fe;
+  --hint-code-bg:   #312e81;
+  --hint-code:      #a5b4fc;
+  --tab-active-clr: #f1f5f9;
+  --stat-bg:        #1e293b;
+  --stat-border:    #334155;
+  --row-border:     #1e293b;
+  --search-bg:      #1e293b;
+  --tbl-head-bg:    #162032;
+  --footer-bg:      #1e293b;
+  --dot-off:        #475569;
+  --dot-on:         #4ade80;
+  --badge-on-txt:   #86efac;
+  --badge-off-txt:  #64748b;
 
-    --btn-edit-bg:    #1e3a5f;  --btn-edit-txt:    #93c5fd;  --btn-edit-brd:    #1d4ed8;
-    --btn-rename-bg:  #2e1065;  --btn-rename-txt:  #c4b5fd;  --btn-rename-brd:  #6d28d9;
-    --btn-save-bg:    #14532d;  --btn-save-txt:    #86efac;  --btn-save-brd:    #15803d;
-    --btn-cancel-bg:  #1e293b;  --btn-cancel-txt:  #94a3b8;  --btn-cancel-brd:  #334155;
-    --btn-remove-bg:  #431407;  --btn-remove-txt:  #fed7aa;  --btn-remove-brd:  #c2410c;
-    --btn-del-bg:     #4c0519;  --btn-del-txt:     #fecdd3;  --btn-del-brd:     #be123c;
-  }
+  --btn-edit-bg:    #1e3a5f;  --btn-edit-txt:    #93c5fd;  --btn-edit-brd:    #1d4ed8;
+  --btn-rename-bg:  #2e1065;  --btn-rename-txt:  #c4b5fd;  --btn-rename-brd:  #6d28d9;
+  --btn-save-bg:    #14532d;  --btn-save-txt:    #86efac;  --btn-save-brd:    #15803d;
+  --btn-cancel-bg:  #1e293b;  --btn-cancel-txt:  #94a3b8;  --btn-cancel-brd:  #334155;
+  --btn-remove-bg:  #431407;  --btn-remove-txt:  #fed7aa;  --btn-remove-brd:  #c2410c;
+  --btn-del-bg:     #4c0519;  --btn-del-txt:     #fecdd3;  --btn-del-brd:     #be123c;
 }
 
 /* ── Base ────────────────────────────────────────────────────────────────────── */
@@ -89,6 +87,7 @@
   font-size: 15px;
   color: var(--text);
   background: var(--bg);
+  border-radius: 12px;
 }
 
 /* ── Header ─────────────────────────────────────────────────────────────────── */
@@ -354,18 +353,25 @@
 .ttm-input-id   { width: 170px; }
 .ttm-input-name { width: 210px; }
 
-/* ── Action buttons ──────────────────────────────────────────────────────────── */
-.td-actions { min-width: 220px; }
-.act-row { display: flex; gap: 5px; flex-wrap: wrap; align-items: center; }
+/* ── Action buttons — ALWAYS ONE ROW, no wrapping ───────────────────────────── */
+.td-actions { min-width: 240px; width: 240px; }
+.act-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: nowrap;   /* ← NEVER wrap, always one line */
+  white-space: nowrap;
+}
 
 .act {
-  padding: 5px 12px;
+  padding: 5px 10px;
   border-radius: 6px;
   border: 1.5px solid transparent;
-  font-size: 0.8rem;
+  font-size: 0.76rem;
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
+  flex-shrink: 0;      /* ← buttons never shrink */
   transition: opacity 0.12s, transform 0.1s, filter 0.1s;
 }
 .act:hover  { opacity: 0.82; transform: translateY(-1px); filter: brightness(1.08); }
