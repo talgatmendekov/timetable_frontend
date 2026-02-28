@@ -25,6 +25,9 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
 
   // Group row state
   const [editingGroup, setEditingGroup]     = useState(null);
+  const [addingGroup, setAddingGroup]       = useState(false);
+  const [newGroupName, setNewGroupName]     = useState('');
+  const [newGroupChat, setNewGroupChat]     = useState('');
   const [groupChatInput, setGroupChatInput] = useState('');
 
   // ── Fetch DB data ────────────────────────────────────────────────────────────
@@ -166,6 +169,20 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
     const data = await apiCall(`${API_URL}/group-channels`, 'POST', { group_name: groupName, chat_id: groupChatInput.trim() });
     if (data.success) { setEditingGroup(null); setGroupChatInput(''); fetchGroups(); }
     else alert('Error: ' + data.error);
+  };
+
+  const addNewGroup = async () => {
+    if (!newGroupName.trim() || !newGroupChat.trim()) return;
+    const data = await apiCall(`${API_URL}/group-channels`, 'POST', {
+      group_name: newGroupName.trim(),
+      chat_id: newGroupChat.trim(),
+    });
+    if (data.success) {
+      setAddingGroup(false);
+      setNewGroupName('');
+      setNewGroupChat('');
+      fetchGroups();
+    }
   };
 
   const deleteGroup = async (groupName) => {
@@ -325,16 +342,45 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
       {tab === 'groups' && (
         <div className="ttm-pane">
           <div className="ttm-hint">
-            Add bot as <strong>Admin</strong> → get chat ID from <code>@getidsbot</code> (negative number) → paste below
+            Add bot as <strong>Admin</strong> → get chat ID from <code>@getidsbot</code> or use <code>@channelusername</code> → paste below
+          </div>
+          <div className="ttm-toolbar">
+            <button className="act save" onClick={() => { setAddingGroup(true); setNewGroupName(''); setNewGroupChat(''); }}>
+              + Add Channel
+            </button>
           </div>
           <div className="ttm-scroll">
             <table className="ttm-tbl">
               <thead>
-                <tr><th>Group</th><th>Chat ID</th><th>Status</th><th>Actions</th></tr>
+                <tr><th>Group / Channel Name</th><th>Chat ID</th><th>Status</th><th>Actions</th></tr>
               </thead>
               <tbody>
-                {groups.length === 0 && (
-                  <tr><td colSpan={4} className="ttm-empty">No groups yet</td></tr>
+                {/* ── Add new row ── */}
+                {addingGroup && (
+                  <tr style={{background:'var(--hint-bg)'}}>
+                    <td><input
+                      className="ttm-input ttm-input-name"
+                      placeholder="e.g. CS101-A"
+                      value={newGroupName}
+                      onChange={e => setNewGroupName(e.target.value)}
+                      autoFocus
+                    /></td>
+                    <td><input
+                      className="ttm-input ttm-input-id"
+                      placeholder="@username or -100123..."
+                      value={newGroupChat}
+                      onChange={e => setNewGroupChat(e.target.value)}
+                      onKeyDown={e => { if(e.key==='Enter') addNewGroup(); if(e.key==='Escape') setAddingGroup(false); }}
+                    /></td>
+                    <td><span className="status-dot off">New</span></td>
+                    <td><div className="act-row">
+                      <button className="act save" onClick={addNewGroup}>Save</button>
+                      <button className="act cancel" onClick={() => setAddingGroup(false)}>Cancel</button>
+                    </div></td>
+                  </tr>
+                )}
+                {groups.length === 0 && !addingGroup && (
+                  <tr><td colSpan={4} className="ttm-empty">No channels yet — click "+ Add Channel" above</td></tr>
                 )}
                 {groups.map(g => (
                   <tr key={g.group_name} className={g.chat_id ? 'tr-linked' : ''}>
