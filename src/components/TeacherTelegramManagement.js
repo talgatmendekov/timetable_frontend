@@ -149,6 +149,10 @@ const TeacherTelegramManagement = () => {
   };
 
   const deleteTeacher = async (t) => {
+    if (!t.allIds.length) {
+      alert(`"${t.canonName}" has no database record — nothing to delete.`);
+      return;
+    }
     const note = t.dupCount > 1 ? `\n(removes ${t.dupCount} duplicate DB records)` : '';
     if (!window.confirm(`Delete "${t.canonName}"?${note}`)) return;
     await Promise.all(t.allIds.map(id =>
@@ -300,9 +304,7 @@ const TeacherTelegramManagement = () => {
                             {t.telegram_id && (
                               <button className="act remove" onClick={() => removeTelegramId(t)}>Remove ID</button>
                             )}
-                            {t.id && (
-                              <button className="act del" onClick={() => deleteTeacher(t)}>Delete</button>
-                            )}
+                            <button className="act del" onClick={() => deleteTeacher(t)}>Delete</button>
                           </div>
                         )}
                       </td>
@@ -367,7 +369,7 @@ const TeacherTelegramManagement = () => {
                       ) : (
                         <div className="act-row">
                           <button className="act edit" onClick={() => { setEditingGroup(g.group_name); setGroupChatInput(g.chat_id||''); }}>Edit</button>
-                          {g.chat_id && <button className="act del" onClick={() => deleteGroup(g.group_name)}>Delete</button>}
+                          <button className="act del" onClick={() => deleteGroup(g.group_name)}>Delete</button>
                         </div>
                       )}
                     </td>
