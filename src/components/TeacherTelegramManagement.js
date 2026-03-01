@@ -139,12 +139,31 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
   const cancelEdit = () => { setEditingName(null); setEditField(null); };
 
   const saveTelegramId = async (t) => {
+    const trimmed = telegramInput.trim();
+    if (!trimmed) { cancelEdit(); return; }
+
     if (!t.id) {
-      // No DB row yet — need to create one first via PUT (backend handles upsert)
-      alert('This teacher has no DB record yet. Please re-import the schedule first.');
+      // No DB record yet — create the teacher first, then set telegram_id
+      const created = await apiCall(`${API_URL}/teachers`, 'POST', { name: t.canonName });
+      if (!created.success && !created.id) {
+        alert('Could not create teacher record: ' + (created.error || 'unknown'));
+        return;
+      }
+      const newId = created.id || created.data?.id;
+      if (newId) {
+        const data = await apiCall(`${API_URL}/teachers/${newId}/telegram`, 'PUT', { telegram_id: trimmed });
+        if (data.success) { cancelEdit(); fetchDbTeachers(); }
+        else alert('Error saving Telegram ID: ' + data.error);
+      } else {
+        // Fallback: try upsert endpoint
+        const data = await apiCall(`${API_URL}/teachers/upsert`, 'POST', { name: t.canonName, telegram_id: trimmed });
+        if (data.success) { cancelEdit(); fetchDbTeachers(); }
+        else alert('Error: ' + (data.error || 'Could not save. Please re-import schedule.'));
+      }
       return;
     }
-    const data = await apiCall(`${API_URL}/teachers/${t.id}/telegram`, 'PUT', { telegram_id: telegramInput.trim() });
+
+    const data = await apiCall(`${API_URL}/teachers/${t.id}/telegram`, 'PUT', { telegram_id: trimmed });
     if (data.success) { cancelEdit(); fetchDbTeachers(); }
     else alert('Error: ' + data.error);
   };
@@ -212,14 +231,17 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
 
   const deleteGroup = async (groupName) => {
     setGroupError('');
+    // Optimistically remove immediately so UI feels instant
+    setGroups(prev => prev.filter(g => g.group_name !== groupName));
+    setConfirmDelete(null);
     const url = `${API_URL}/group-channels/${encodeURIComponent(groupName)}`;
     const data = await apiCall(url, 'DELETE');
-    if (data.success) {
-      setGroups(prev => prev.filter(g => g.group_name !== groupName));
-      fetchGroups();
-    } else {
+    if (!data.success) {
+      // Revert on failure
       setGroupError('Delete failed: ' + (data.error || 'unknown'));
+      fetchGroups(); // reload to restore correct state
     }
+    // Do NOT call fetchGroups() on success — optimistic update is already correct
   };
 
   // ── Render ───────────────────────────────────────────────────────────────────
