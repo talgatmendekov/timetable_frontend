@@ -3,6 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { useSchedule } from '../context/ScheduleContext';
 import { useLanguage } from '../context/LanguageContext';
 import { SUBJECT_TYPES, SUBJECT_TYPE_LABELS } from '../data/i18n';
+import { normalizeTeacherName } from '../context/ScheduleContext';
 import './TeacherDashboard.css';
 
 const TeacherDashboard = () => {
@@ -10,52 +11,26 @@ const TeacherDashboard = () => {
   const { t, lang } = useLanguage();
   const typeLabels = SUBJECT_TYPE_LABELS[lang] || SUBJECT_TYPE_LABELS.en;
 
-  // ── Normalize helpers ──────────────────────────────────────────────────────
-  // teachers from context can be array of strings OR objects — handle both
-  const normalize = (name) =>
-    (typeof name === 'object' ? name?.name || name?.label || '' : name || '')
-      .toString()
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, ' ');  // collapse multiple spaces
-
-  // Build canonical teacher name list from schedule entries directly
-  // This guarantees we match what's actually in the schedule
+  // ── Use the SAME normalizeTeacherName from ScheduleContext ─────────────────
+  // teachers[] from context is already normalized — just use it directly
   const scheduleEntries = useMemo(() => Object.values(schedule || {}), [schedule]);
 
-  // Get unique teachers from SCHEDULE (not just context list) so no one is missed
+  // teachers from context is already the deduped normalized list
   const allTeacherNames = useMemo(() => {
-    const fromSchedule = new Set(
-      scheduleEntries
-        .map(e => e.teacher?.trim())
-        .filter(Boolean)
-    );
-    // Also include teachers from context list
-    const fromContext = (teachers || []).map(t =>
-      typeof t === 'object' ? (t.name || t.label || '') : String(t || '')
-    ).map(s => s.trim()).filter(Boolean);
-
-    fromContext.forEach(n => fromSchedule.add(n));
-
-    // Sort alphabetically
-    return Array.from(fromSchedule).sort((a, b) => a.localeCompare(b));
-  }, [scheduleEntries, teachers]);
+    return (teachers || []).filter(Boolean).sort((a, b) => a.localeCompare(b));
+  }, [teachers]);
 
   const [selectedTeacher, setSelectedTeacher] = useState('');
-
-  // Set default selected teacher on first load
   const effectiveSelected = selectedTeacher || allTeacherNames[0] || '';
 
-  // Build full stats for all teachers
+  // Build stats — match using normalizeTeacherName exactly like ScheduleContext does
   const allStats = useMemo(() => {
     return allTeacherNames.map(teacher => {
-      const normTeacher = normalize(teacher);
-
-      // Match by normalized name — handles whitespace/case differences
-      const classes = scheduleEntries.filter(e => {
-        const normEntry = normalize(e.teacher);
-        return normEntry === normTeacher;
-      });
+      // teacher is already normalized (from buildTeacherList in ScheduleContext)
+      // match raw schedule entries using the same normalize function
+      const classes = scheduleEntries.filter(e =>
+        normalizeTeacherName(e.teacher) === teacher
+      );
 
       const byDay = {};
       (days || []).forEach(d => { byDay[d] = []; });
