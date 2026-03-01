@@ -13,20 +13,15 @@ export const useSchedule = () => {
 };
 
 // ─── Known typo / short-form → canonical name map ────────────────────────────
-// Key: lowercased normalized string   Value: canonical display name
 const TEACHER_CANONICAL = {
-  // Daniiar / Daniyar — same person, typo in Excel
   'dr. daniyar satybaldiev':          'Dr. Daniiar Satybaldiev',
   'mr. daniyar satybaldiev':          'Dr. Daniiar Satybaldiev',
   'dr daniiar satybaldiev':           'Dr. Daniiar Satybaldiev',
   'mr. daniiar satybaldiev':          'Dr. Daniiar Satybaldiev',
   'dr. daniar satybaldiev':           'Dr. Daniiar Satybaldiev',
   'mr. daniar satybaldiev':           'Dr. Daniiar Satybaldiev',
-  // Nurlan — Mukambaev vs Mukambetov typo
   'mr. nurlan mukambetov':            'Mr. Nurlan Mukambaev',
-  // Erustan spacing variants already handled by regex, but keep as safety net
   'mr. erustan erkebulanov':          'Mr. Erustan Erkebulanov',
-  // Other typos / short-forms
   'dr. sheraly matanov':              'Dr. Sherali Matanov',
   'mr. hussien chebsi':               'Mr. Hussein Chebsi',
   'mr. ahmad sarosh':                 'Dr. Ahmad Sarosh',
@@ -38,7 +33,6 @@ const TEACHER_CANONICAL = {
   'ms. meerim':                       'Ms. Meerim Chukaeva',
   'ms. meerim chukaeva (own device)': 'Ms. Meerim Chukaeva',
   'mr. murrey':                       'Mr. Murrey Eldred',
-  // Tattybubu — patronymic variant → short canonical form
   'ms. tattybubu arap kyzy':          'Ms. Tattybubu',
 };
 
@@ -46,71 +40,29 @@ const TEACHER_CANONICAL = {
 export function normalizeTeacherName(raw) {
   if (!raw) return '';
   let s = raw.trim();
-
-  // 1. Insert space before LAB/B when directly attached with no space
-  //    e.g. "ErkebulanovLAB3" → "Erkebulanov LAB3"
   s = s.replace(/([a-z])(LAB\d*|BIGLAB|B\d+)/g, '$1 $2');
-
-  // 2. Strip leading slash  e.g. "/Ms.Asina"
   s = s.replace(/^\/+/, '').trim();
-
-  // 3. Cut at slash — keep first person only for multi-teacher cells
-  //    e.g. "Alimpieva L./Tsoi A. B102" → "Alimpieva L."
   s = s.replace(/\/.*$/, '').trim();
-
-  // 4. Remove trailing parenthetical noise  e.g. "(APPLE LAB)", "(with own device)"
   s = s.replace(/\s*\([^)]*\)\s*$/, '').trim();
-
-  // 5. Remove "untill/until ..." and everything after
   s = s.replace(/\s+until+\b.*/i, '').trim();
-
-  // 6. Remove "own device" / "with own ..." and everything after
   s = s.replace(/\s+(?:with\s+)?own\b.*/i, '').trim();
-
-  // 7. Remove "make up ..." and everything after
   s = s.replace(/\s+make\s+up\b.*/i, '').trim();
-
-  // 8. Remove " at HH:MM" time references  e.g. "b101 at 14:50"
   s = s.replace(/\s+at\s+\d+[:.]\d+.*/i, '').trim();
-
-  // 9. Remove trailing slash and anything after
   s = s.replace(/\s*\/.*$/, '').trim();
-
-  // 10. Strip trailing "+ ..." noise  (before TRAILING loop so "BIGLAB + make up" → "BIGLAB" → stripped)
   s = s.replace(/\s*\+.*$/, '').trim();
-
-  // 10. Repeatedly strip trailing room/location tokens until stable
-  //     Matches: B110, B 202, b109, A204, LAB, LAB3, LAB3(210),
-  //              BIGLAB, BigLab, LINK, WEB, link, и102
   const TRAILING_ROOM = /\s+([Bb]\s?\d*\w*|[Aa]\d+|LAB\d*(\(\d+\))?|BIGLAB|BigLab|Lab\d*(\(\d+\))?|LINK|WEB|web|link|WeB|и\d+)$/i;
   let prev;
   do { prev = s; s = s.replace(TRAILING_ROOM, '').trim(); } while (s !== prev);
-
-
-  // 12. Strip comma+room  e.g. ",B103"
   s = s.replace(/,\s*[Bb]\d+.*/g, '').trim();
-
-  // 13. Strip trailing commas/periods
   s = s.replace(/[,]+$/, '').trim();
-
-  // 14. Normalize title spacing:
-  //     "Dr.Ahmad" → "Dr. Ahmad"   "Dr Ahmad" → "Dr. Ahmad"
-  //     "Ms.Iskra" → "Ms. Iskra"   "Ms Iskra"  → "Ms. Iskra"
   s = s.replace(/\b(Dr|Mr|Ms|Mrs|Prof)\.(\w)/g, '$1. $2');
   s = s.replace(/\b(Dr|Mr|Ms|Mrs|Prof)\s+(?=[A-Z])/g, '$1. ');
-
-  // 15. Collapse multiple spaces
   s = s.replace(/\s{2,}/g, ' ').trim();
-
-  // 16. Exclude garbage that isn't a teacher name
   if (!s) return '';
-  if (/^[Bb]\d+(\(\w+\))?$/.test(s)) return '';  // bare room: "B201"
+  if (/^[Bb]\d+(\(\w+\))?$/.test(s)) return '';
   if (/^(ALATOO|German\s|DevOps\s|Time\s+club|Programs\s|COURSE|COM\b|\(COM\)|B201)/i.test(s)) return '';
-
-  // 17. Apply canonical cleanup map for known typos / short forms
   const canonical = TEACHER_CANONICAL[s.toLowerCase()];
   if (canonical) s = canonical;
-
   return s;
 }
 
@@ -133,21 +85,34 @@ export const ScheduleProvider = ({ children }) => {
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState(null);
 
+  // ── loadAll with silent retry — fixes Railway cold-start error on first load ─
   const loadAll = useCallback(async () => {
     setLoading(true);
     setError(null);
-    try {
-      const [scheduleData, groupsData] = await Promise.all([
-        scheduleAPI.getAll(),
-        groupsAPI.getAll(),
-      ]);
-      setSchedule(scheduleData || {});
-      if (groupsData?.length > 0) setGroups(groupsData);
-    } catch (err) {
-      console.error('Failed to load data from backend:', err);
-      setError(err.message);
-    } finally {
-      setLoading(false);
+
+    const MAX_ATTEMPTS = 4;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      try {
+        const [scheduleData, groupsData] = await Promise.all([
+          scheduleAPI.getAll(),
+          groupsAPI.getAll(),
+        ]);
+        setSchedule(scheduleData || {});
+        if (groupsData?.length > 0) setGroups(groupsData);
+        setError(null);
+        setLoading(false);
+        return; // success
+      } catch (err) {
+        if (attempt < MAX_ATTEMPTS) {
+          const delay = attempt * 800; // 800ms, 1600ms, 2400ms
+          console.warn(`API attempt ${attempt} failed, retrying in ${delay}ms...`);
+          await new Promise(r => setTimeout(r, delay));
+        } else {
+          console.error('Failed to load data from backend:', err);
+          setError(err.message);
+          setLoading(false);
+        }
+      }
     }
   }, []);
 
