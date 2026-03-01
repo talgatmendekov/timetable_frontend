@@ -15,7 +15,7 @@ import { exportToExcel, importFromExcel } from './utils/excelUtils';
 import GuestBooking from './components/GuestBooking';
 import { parseAlatooSchedule } from './utils/alatooimport';
 import BookingManagement from './components/BookingManagement';
-import * as XLSX from 'xlsx'; // Add this import for debugging
+import * as XLSX from 'xlsx';
 import TeacherTelegramManagement from './components/TeacherTelegramManagement';
 import './App.css';
 
@@ -43,7 +43,6 @@ const AppContent = () => {
   const [importing, setImporting] = useState(false);
   const [showBooking, setShowBooking] = useState(false);
 
-  // Create a ref for the hidden file input
   const fileInputRef = useRef(null);
 
   // Count all conflicts for badge
@@ -58,7 +57,7 @@ const AppContent = () => {
         const tMap = {}, rMap = {};
         slot.forEach(e => {
           if (e.teacher) { const k = e.teacher.toLowerCase(); tMap[k] = (tMap[k] || 0) + 1; }
-          if (e.room) { const k = e.room.toLowerCase(); rMap[k] = (rMap[k] || 0) + 1; }
+          if (e.room)    { const k = e.room.toLowerCase();    rMap[k] = (rMap[k] || 0) + 1; }
         });
         Object.entries(tMap).forEach(([k, v]) => {
           if (v > 1 && !seen.has(`t-${k}-${day}-${time}`)) { count++; seen.add(`t-${k}-${day}-${time}`); }
@@ -103,13 +102,10 @@ const AppContent = () => {
     } catch (err) { alert(`Export failed: ${err.message}`); }
   };
 
-  // This function triggers the file input
   const handleImportClick = () => {
-    // Trigger click on hidden file input
     fileInputRef.current?.click();
   };
 
-  // Debug function to inspect Excel file structure
   const debugExcelFile = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -117,15 +113,11 @@ const AppContent = () => {
         try {
           const data = new Uint8Array(e.target.result);
           const workbook = XLSX.read(data, { type: 'array' });
-
           console.log('📊 Excel file structure:');
           console.log('Sheet names:', workbook.SheetNames);
-
-          // Show first sheet data
           const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
           const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
           console.log('First 5 rows:', jsonData.slice(0, 5));
-
           resolve(workbook);
         } catch (error) {
           reject(error);
@@ -136,37 +128,25 @@ const AppContent = () => {
     });
   };
 
-  // This function handles the actual file selection
   const handleFileChange = async (e) => {
-    // Safety check
     if (!e || !e.target || !e.target.files) {
       console.error('No file selected or event is invalid');
       return;
     }
-
     const file = e.target.files[0];
     if (!file) {
       console.error('No file selected');
       return;
     }
-
     console.log('📁 Selected file:', file.name);
     setImporting(true);
-
     try {
-      // Try both import methods
-
-      // Method 1: Try alatoo import first
       try {
         console.log('Attempting to parse as Alatoo format...');
         const parsedSchedule = await parseAlatooSchedule(file);
-
         if (parsedSchedule && parsedSchedule.length > 0) {
           console.log(`✅ Parsed ${parsedSchedule.length} classes from Alatoo format`);
-
-          // Use importSchedule from context
           const result = await importSchedule(JSON.stringify(parsedSchedule));
-
           if (result && result.success) {
             alert(`✅ Successfully imported ${parsedSchedule.length} classes!`);
           } else {
@@ -178,23 +158,18 @@ const AppContent = () => {
       } catch (alatooError) {
         console.log('Alatoo parser failed:', alatooError.message);
         console.log('Trying generic Excel import...');
-
-        // Method 2: Try generic import
         const result = await importFromExcel(file);
-
         if (result.success) {
           const res = await importSchedule(JSON.stringify({
             groups: result.groups,
             schedule: result.schedule
           }));
-
           if (res.success) {
             alert(`✅ Successfully imported ${result.groups.length} groups, ${Object.keys(result.schedule).length} classes.`);
           } else {
             alert(`❌ Import failed: ${res.error}`);
           }
         } else {
-          // If both methods fail, show debug info
           console.error('Both import methods failed');
           await debugExcelFile(file);
           alert(`❌ Invalid file format. Please check the console for file structure.`);
@@ -205,7 +180,6 @@ const AppContent = () => {
       alert(`❌ Import failed: ${error.message}`);
     } finally {
       setImporting(false);
-      // Reset file input so the same file can be selected again
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -216,7 +190,6 @@ const AppContent = () => {
     if (window.confirm(t('confirmClearAll'))) clearSchedule();
   };
 
-  // Show loading spinner while verifying auth token
   if (authLoading) {
     return (
       <div className="app-loading">
@@ -229,13 +202,14 @@ const AppContent = () => {
   if (!isAuthenticated && !guestMode) {
     return <Login onViewAsGuest={() => setGuestMode(true)} />;
   }
+
   const tabs = [
-    { id: 'schedule', icon: '📅', label: t('tabSchedule') || 'Schedule' },
-    { id: 'print', icon: '🖨️', label: t('tabPrint') || 'Print / PDF' },
-    { id: 'dashboard', icon: '📊', label: t('tabDashboard') || 'Teacher Stats' },
-    { id: 'conflicts', icon: '⚠️', label: t('tabConflicts') || 'Conflicts', badge: conflictCount },
-    { id: 'bookings', icon: '🏫', label: t('tabBookings') || 'Lab Bookings', badge: 0 }, // ADD THIS
-    { id: 'telegram', icon: '📱', label: t('tabTelegram') || 'Telegram' },
+    { id: 'schedule',  icon: '📅', label: t('tabSchedule')   || 'Schedule' },
+    { id: 'print',     icon: '🖨️', label: t('tabPrint')      || 'Print / PDF' },
+    { id: 'dashboard', icon: '📊', label: t('tabDashboard')  || 'Teacher Stats' },
+    { id: 'conflicts', icon: '⚠️', label: t('tabConflicts')  || 'Conflicts', badge: conflictCount },
+    { id: 'bookings',  icon: '🏫', label: t('tabBookings')   || 'Lab Bookings', badge: 0 },
+    { id: 'telegram',  icon: '📱', label: t('tabTelegram')   || 'Telegram' },
   ];
 
   return (
@@ -307,17 +281,29 @@ const AppContent = () => {
             onEditClass={handleEditClass} onDeleteGroup={deleteGroup}
           />
         )}
-        {activeTab === 'print' && <PrintView />}
+        {activeTab === 'print'     && <PrintView />}
         {activeTab === 'dashboard' && <TeacherDashboard />}
         {activeTab === 'conflicts' && <ConflictPage onJumpToCell={handleJumpToCell} />}
-        {activeTab === 'bookings' && <BookingManagement />}
-        {activeTab === 'telegram' && <TeacherTelegramManagement />}
+        {activeTab === 'bookings'  && <BookingManagement />}
+        {activeTab === 'telegram'  && <TeacherTelegramManagement />}
       </div>
 
       <ClassModal
         isOpen={modalOpen} onClose={handleCloseModal}
         group={currentCell.group} day={currentCell.day} time={currentCell.time}
       />
+
+      {/* ── Author credit footer ── */}
+      <footer className="app-author-credit">
+        <span className="app-author-logo">🏛</span>
+        <span>
+          Developed by <strong>Talgat Mendekov</strong>
+        </span>
+        <span className="app-author-sep">·</span>
+        <span>Alatoo International University</span>
+        <span className="app-author-sep">·</span>
+        <span>{new Date().getFullYear()}</span>
+      </footer>
     </div>
   );
 };

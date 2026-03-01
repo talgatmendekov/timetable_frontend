@@ -221,6 +221,50 @@ body {
   min-height: 400px;
 }
 
+
+
+/* ── ADD THESE STYLES to your existing App.css ───────────────────────────── */
+
+/* Author credit footer */
+.app-author-credit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px 24px;
+  margin-top: 32px;
+  font-size: 0.8rem;
+  color: #9ca3af;
+  border-top: 1px solid #f3f4f6;
+  flex-wrap: wrap;
+}
+.app-author-credit strong {
+  color: #6366f1;
+  font-weight: 600;
+}
+.app-author-sep {
+  color: #d1d5db;
+}
+.app-author-credit:hover strong {
+  color: #4f46e5;
+}
+
+/* ── BroadcastMessage preview styles ─────────────────────────────────────── */
+/* ADD these to BroadcastMessage.css if bc-preview-subfrom/divider not styled */
+
+.bc-preview-subfrom {
+  margin: 0 0 2px;
+  font-size: 0.82rem;
+  color: #6b7280;
+}
+.bc-preview-divider {
+  margin: 6px 0;
+  font-size: 0.72rem;
+  color: #9ca3af;
+  letter-spacing: -1px;
+  overflow: hidden;
+}
+
 @media (max-width: 600px) {
   .tab-bar { gap: 4px; }
   .tab-btn { padding: 8px 12px; font-size: 0.8rem; }

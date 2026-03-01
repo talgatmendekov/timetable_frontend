@@ -236,10 +236,13 @@ const BroadcastMessage = () => {
           <div className="bc-preview">
             <p className="bc-preview-label">{t('broadcastPreview') || 'Preview:'}</p>
             <div className="bc-preview-bubble">
-              <p className="bc-preview-from">📢 <strong>{t('broadcastTitle') || 'Message from University Admin'}</strong></p>
+              <p className="bc-preview-from">🏛 <strong>Alatoo International University</strong></p>
+              <p className="bc-preview-subfrom"><em>Faculty Administration</em></p>
+              <p className="bc-preview-divider">━━━━━━━━━━━━━━━━</p>
               {subject && <p className="bc-preview-subject">📌 <strong>{subject}</strong></p>}
               <p className="bc-preview-body">{message || '…'}</p>
-              <p className="bc-preview-footer">{t('broadcastAdmin') || '— University Admin'}</p>
+              <p className="bc-preview-divider">━━━━━━━━━━━━━━━━</p>
+              <p className="bc-preview-footer"><em>— Faculty Administration</em></p>
             </div>
           </div>
         )}
