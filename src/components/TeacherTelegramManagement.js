@@ -452,8 +452,8 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
                           <button className="act edit" onClick={() => { setEditingGroup(g.group_name); setGroupChatInput(g.chat_id||''); setConfirmDelete(null); }}>Edit</button>
                           {confirmDelete === g.group_name ? (
                             <>
-                              <button className="act del" onClick={() => { deleteGroup(g.group_name); setConfirmDelete(null); }}>Sure?</button>
-                              <button className="act cancel" onClick={() => setConfirmDelete(null)}>No</button>
+                              <button className="act save" onClick={() => { deleteGroup(g.group_name); setConfirmDelete(null); }}>✓ Yes</button>
+                              <button className="act cancel" onClick={() => setConfirmDelete(null)}>✗ No</button>
                             </>
                           ) : (
                             <button className="act del" onClick={() => setConfirmDelete(g.group_name)}>Delete</button>
