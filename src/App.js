@@ -23,7 +23,8 @@ const getTodayScheduleDay = () => {
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const scheduleDays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const today = dayNames[new Date().getDay()];
-  return scheduleDays.includes(today) ? today : '';
+  // On weekdays return today, on weekends return Monday
+  return scheduleDays.includes(today) ? today : 'Monday';
 };
 
 const AppContent = () => {
@@ -36,6 +37,15 @@ const AppContent = () => {
   const [guestMode, setGuestMode] = useState(false);
   const [activeTab, setActiveTab] = useState('schedule');
   const [selectedDay, setSelectedDay] = useState(getTodayScheduleDay);
+
+  // Auto-select today when schedule data first loads
+  // This fixes the race condition where days array is empty on first render
+  React.useEffect(() => {
+    const today = getTodayScheduleDay();
+    if (today && days.includes(today)) {
+      setSelectedDay(today);
+    }
+  }, [days]);
   const [selectedTeacher, setSelectedTeacher] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
