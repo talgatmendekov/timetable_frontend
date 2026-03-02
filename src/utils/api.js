@@ -10,11 +10,12 @@ const getToken = () =>
 // ── Retry helper ───────────────────────────────────────────────────────────
 // Retries up to `retries` times with exponential backoff (500ms, 1000ms, 2000ms)
 // This fixes the "first load fails" race condition where Railway cold-starts
-const apiCall = async (endpoint, options = {}, retries = 3) => {
-  const token = getToken();
+const apiCall = async (endpoint, options = {}, retries = 5) => {
   const url = `${BASE_URL}${endpoint}`;
 
   for (let attempt = 1; attempt <= retries; attempt++) {
+    // Re-read token on every attempt — auth may have completed since last try
+    const token = getToken();
     let response;
     try {
       response = await fetch(url, {
@@ -50,10 +51,12 @@ const apiCall = async (endpoint, options = {}, retries = 3) => {
     }
 
     if (!response.ok) {
-      // Don't retry 4xx errors — only retry on 5xx or network issues
-      if (response.status >= 500 && attempt < retries) {
-        const delay = attempt * 500;
-        console.warn(`⚠️ Server error ${response.status}, retrying in ${delay}ms...`);
+      // Retry 401 on first attempts — token may not be set yet on first load
+      const isAuthError = response.status === 401;
+      const isServerError = response.status >= 500;
+      if ((isAuthError || isServerError) && attempt < retries) {
+        const delay = attempt * 600;
+        console.warn(`⚠️ API ${response.status} on attempt ${attempt}, retrying in ${delay}ms...`);
         await new Promise(r => setTimeout(r, delay));
         continue;
       }
