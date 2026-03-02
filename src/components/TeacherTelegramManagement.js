@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import BroadcastMessage from './BroadcastMessage';
 import './TeacherTelegramManagement.css';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+const API_URL = process.env.REACT_APP_API_URL || 'https://timetablebackend-production.up.railway.app/api';
 const getToken = () =>
   localStorage.getItem('scheduleToken') ||
   localStorage.getItem('token') ||
@@ -141,12 +141,17 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
     const trimmed = telegramInput.trim();
     if (!trimmed) { cancelEdit(); return; }
 
-    // Always use upsert — works whether teacher exists in DB or not
-    // This inserts the teacher if missing, then sets telegram_id
-    const data = await apiCall(`${API_URL}/teachers/upsert`, 'POST', {
-      name: t.canonName,
-      telegram_id: trimmed,
-    });
+    let data;
+    if (t.id) {
+      // Teacher exists in DB — just update telegram_id
+      data = await apiCall(`${API_URL}/teachers/${t.id}/telegram`, 'PUT', { telegram_id: trimmed });
+    } else {
+      // Teacher not in DB yet — use name-based telegram save
+      data = await apiCall(`${API_URL}/teachers/by-name/telegram`, 'PUT', {
+        name: t.canonName,
+        telegram_id: trimmed,
+      });
+    }
 
     if (data.success) {
       cancelEdit();

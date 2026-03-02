@@ -18,7 +18,7 @@ const BroadcastMessage = () => {
   const [message, setMessage] = useState('');
   const [subject, setSubject] = useState('');
 
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+  const API_URL = process.env.REACT_APP_API_URL || 'https://timetablebackend-production.up.railway.app/api';
   const token = () =>
     localStorage.getItem('token') ||
     localStorage.getItem('scheduleToken') ||
