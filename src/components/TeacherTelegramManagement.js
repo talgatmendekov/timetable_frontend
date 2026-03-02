@@ -141,30 +141,19 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
     const trimmed = telegramInput.trim();
     if (!trimmed) { cancelEdit(); return; }
 
-    if (!t.id) {
-      // No DB record yet — create the teacher first, then set telegram_id
-      const created = await apiCall(`${API_URL}/teachers`, 'POST', { name: t.canonName });
-      if (!created.success && !created.id) {
-        alert('Could not create teacher record: ' + (created.error || 'unknown'));
-        return;
-      }
-      const newId = created.id || created.data?.id;
-      if (newId) {
-        const data = await apiCall(`${API_URL}/teachers/${newId}/telegram`, 'PUT', { telegram_id: trimmed });
-        if (data.success) { cancelEdit(); fetchDbTeachers(); }
-        else alert('Error saving Telegram ID: ' + data.error);
-      } else {
-        // Fallback: try upsert endpoint
-        const data = await apiCall(`${API_URL}/teachers/upsert`, 'POST', { name: t.canonName, telegram_id: trimmed });
-        if (data.success) { cancelEdit(); fetchDbTeachers(); }
-        else alert('Error: ' + (data.error || 'Could not save. Please re-import schedule.'));
-      }
-      return;
-    }
+    // Always use upsert — works whether teacher exists in DB or not
+    // This inserts the teacher if missing, then sets telegram_id
+    const data = await apiCall(`${API_URL}/teachers/upsert`, 'POST', {
+      name: t.canonName,
+      telegram_id: trimmed,
+    });
 
-    const data = await apiCall(`${API_URL}/teachers/${t.id}/telegram`, 'PUT', { telegram_id: trimmed });
-    if (data.success) { cancelEdit(); fetchDbTeachers(); }
-    else alert('Error: ' + data.error);
+    if (data.success) {
+      cancelEdit();
+      fetchDbTeachers();
+    } else {
+      alert('Error saving Telegram ID: ' + (data.error || 'unknown'));
+    }
   };
 
   const removeTelegramId = async (t) => {
