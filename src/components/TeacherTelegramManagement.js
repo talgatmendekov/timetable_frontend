@@ -141,17 +141,13 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
     const trimmed = telegramInput.trim();
     if (!trimmed) { cancelEdit(); return; }
 
-    let data;
-    if (t.id) {
-      // Teacher exists in DB — just update telegram_id
-      data = await apiCall(`${API_URL}/teachers/${t.id}/telegram`, 'PUT', { telegram_id: trimmed });
-    } else {
-      // Teacher not in DB yet — use name-based telegram save
-      data = await apiCall(`${API_URL}/teachers/by-name/telegram`, 'PUT', {
-        name: t.canonName,
-        telegram_id: trimmed,
-      });
-    }
+    // Always send both name and telegram_id — backend uses id if available,
+    // otherwise finds/creates by name
+    const data = await apiCall(`${API_URL}/teachers/save-telegram`, 'POST', {
+      id:          t.id || null,
+      name:        t.canonName,
+      telegram_id: trimmed,
+    });
 
     if (data.success) {
       cancelEdit();
