@@ -1,19 +1,19 @@
 // Frontend: src/components/TeacherTelegramManagement.js
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSchedule } from '../context/ScheduleContext';
+import { useAuth } from '../context/AuthContext';
 import BroadcastMessage from './BroadcastMessage';
 import './TeacherTelegramManagement.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 const getToken = () =>
-  localStorage.getItem('token') ||
   localStorage.getItem('scheduleToken') ||
-  localStorage.getItem('authToken') ||
-  localStorage.getItem('jwt') ||
-  sessionStorage.getItem('token') ||
-  sessionStorage.getItem('scheduleToken') || '';
+  localStorage.getItem('token') ||
+  localStorage.getItem('authToken') || '';
 
 const TeacherTelegramManagement = ({ isDark = false }) => {
+  // ── Wait for auth before fetching ───────────────────────────────────────────
+  const { isAuthenticated, loading: authLoading } = useAuth();
   // ── teachers comes from context — SAME list as the filter dropdown, zero dupes
   const { teachers: canonicalTeachers } = useSchedule();
 
@@ -57,17 +57,16 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
 
   const fetchAll = async () => {
     setLoading(true);
-    // Wait up to 2s for token to be available (App.js sets it async)
-    let attempts = 0;
-    while (!getToken() && attempts < 10) {
-      await new Promise(r => setTimeout(r, 200));
-      attempts++;
-    }
     await Promise.all([fetchDbTeachers(), fetchGroups()]);
     setLoading(false);
   };
 
-  useEffect(() => { fetchAll(); }, []);
+  // Only fetch once auth is confirmed — avoids "No token" on first load
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      fetchAll();
+    }
+  }, [isAuthenticated, authLoading]);
 
   // ── Merge canonical list with DB telegram data ───────────────────────────────
   // canonicalTeachers = ['Dr. Ahmad Sarosh', 'Dr. Daniiar Satybaldiev', ...]
