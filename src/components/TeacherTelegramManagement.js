@@ -261,7 +261,7 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
         <Stat val={linked}              lbl={t('linked') || 'linked'}  />
         <Stat val={merged.length - linked} lbl={t('notLinked') || 'not linked'} color="muted" />
         <Stat val={gLinked}             lbl={t('tabGroupChannels') || 'group channels'}  />
-        <Stat val={merged.length}       lbl={t('noTeachersFound') ? 'total' : 'total'} color="muted" />
+        <Stat val={merged.length}       lbl={t('tabTeachers') || 'total teachers'} color="muted" />
       </div>
 
       {/* TABS */}
@@ -308,13 +308,13 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
                 {displayed.length === 0 && (
                   <tr><td colSpan={4} className="ttm-empty">{t('noTeachersFound') || 'No teachers found'}</td></tr>
                 )}
-                {displayed.map(t => {
-                  const isEditing     = editingName === t.canonName;
+                {displayed.map(teacher => {
+                  const isEditing     = editingName === teacher.canonName;
                   const editTelegram  = isEditing && editField === 'telegram';
                   const editName      = isEditing && editField === 'name';
 
                   return (
-                    <tr key={t.canonName} className={t.telegram_id ? 'tr-linked' : ''}>
+                    <tr key={teacher.canonName} className={teacher.telegram_id ? 'tr-linked' : ''}>
 
                       {/* NAME */}
                       <td className="td-name">
@@ -323,11 +323,11 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
                             className="ttm-input ttm-input-name"
                             value={nameInput}
                             onChange={e => setNameInput(e.target.value)}
-                            onKeyDown={e => { if(e.key==='Enter') saveTeacherName(t); if(e.key==='Escape') cancelEdit(); }}
+                            onKeyDown={e => { if(e.key==='Enter') saveTeacherName(teacher); if(e.key==='Escape') cancelEdit(); }}
                             autoFocus
                           />
                         ) : (
-                          <span className="teacher-name">{t.canonName}</span>
+                          <span className="teacher-name">{teacher.canonName}</span>
                         )}
                       </td>
 
@@ -338,21 +338,21 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
                             className="ttm-input ttm-input-id"
                             value={telegramInput}
                             onChange={e => setTelegramInput(e.target.value)}
-                            {...{placeholder: t('telegramIdPlaceholder') || 'e.g. 1300165738'}}
-                            onKeyDown={e => { if(e.key==='Enter') saveTelegramId(t); if(e.key==='Escape') cancelEdit(); }}
+                            placeholder={t('telegramIdPlaceholder') || 'e.g. 1300165738'}
+                            onKeyDown={e => { if(e.key==='Enter') saveTelegramId(teacher); if(e.key==='Escape') cancelEdit(); }}
                             autoFocus
                           />
                         ) : (
-                          <span className={t.telegram_id ? 'id-chip set' : 'id-chip empty'}>
-                            {t.telegram_id || (t('notSet') || 'not set')}
+                          <span className={teacher.telegram_id ? 'id-chip set' : 'id-chip empty'}>
+                            {teacher.telegram_id || t('notSet') || 'not set'}
                           </span>
                         )}
                       </td>
 
                       {/* STATUS */}
                       <td>
-                        <span className={`status-dot ${t.telegram_id ? 'on' : 'off'}`}>
-                          {t.telegram_id ? (t('linked') || 'Linked') : (t('notSet') || 'Not set')}
+                        <span className={`status-dot ${teacher.telegram_id ? 'on' : 'off'}`}>
+                          {teacher.telegram_id ? (t('linked') || 'Linked') : (t('notSet') || 'Not set')}
                         </span>
                       </td>
 
@@ -360,17 +360,17 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
                       <td className="td-actions">
                         {isEditing ? (
                           <div className="act-row">
-                            <button className="act save" onClick={() => editField==='name' ? saveTeacherName(t) : saveTelegramId(t)}>{t('save') || 'Save'}</button>
+                            <button className="act save" onClick={() => editField==='name' ? saveTeacherName(teacher) : saveTelegramId(teacher)}>{t('save') || 'Save'}</button>
                             <button className="act cancel" onClick={cancelEdit}>{t('cancel') || 'Cancel'}</button>
                           </div>
                         ) : (
                           <div className="act-row">
-                            <button className="act edit" onClick={() => startEdit(t, 'telegram')}>{t('edit') || 'Edit'} ID</button>
-                            <button className="act rename" onClick={() => startEdit(t, 'name')}>{t('edit') || 'Rename'}</button>
-                            {t.telegram_id && (
-                              <button className="act remove" onClick={() => removeTelegramId(t)}>{t('deleteTelegramId') || 'Remove ID'}</button>
+                            <button className="act edit" onClick={() => startEdit(teacher, 'telegram')}>{t('edit') || 'Edit'} ID</button>
+                            <button className="act rename" onClick={() => startEdit(teacher, 'name')}>{t('edit') || 'Rename'}</button>
+                            {teacher.telegram_id && (
+                              <button className="act remove" onClick={() => removeTelegramId(teacher)}>{t('deleteTelegramId') || 'Remove ID'}</button>
                             )}
-                            <button className="act del" onClick={() => deleteTeacher(t)}>{t('delete') || 'Delete'}</button>
+                            <button className="act del" onClick={() => deleteTeacher(teacher)}>{t('delete') || 'Delete'}</button>
                           </div>
                         )}
                       </td>
