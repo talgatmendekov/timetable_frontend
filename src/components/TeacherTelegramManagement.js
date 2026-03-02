@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSchedule } from '../context/ScheduleContext';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import BroadcastMessage from './BroadcastMessage';
 import './TeacherTelegramManagement.css';
 
@@ -14,6 +15,7 @@ const getToken = () =>
 const TeacherTelegramManagement = ({ isDark = false }) => {
   // ── Wait for auth before fetching ───────────────────────────────────────────
   const { isAuthenticated, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
   // ── teachers comes from context — SAME list as the filter dropdown, zero dupes
   const { teachers: canonicalTeachers } = useSchedule();
 
@@ -141,8 +143,12 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
     const trimmed = telegramInput.trim();
     if (!trimmed) { cancelEdit(); return; }
 
-    // Always send both name and telegram_id — backend uses id if available,
-    // otherwise finds/creates by name
+    const token = getToken();
+    if (!token) {
+      alert('Not logged in — please refresh the page and try again.');
+      return;
+    }
+
     const data = await apiCall(`${API_URL}/teachers/save-telegram`, 'POST', {
       id:          t.id || null,
       name:        t.canonName,
@@ -152,6 +158,8 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
     if (data.success) {
       cancelEdit();
       fetchDbTeachers();
+    } else if (data.error?.includes('Access denied') || data.error?.includes('token')) {
+      alert('Session expired — please refresh the page and log in again.');
     } else {
       alert('Error saving Telegram ID: ' + (data.error || 'unknown'));
     }
@@ -234,7 +242,7 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
   };
 
   // ── Render ───────────────────────────────────────────────────────────────────
-  if (loading) return <div className="ttm-loading">Loading…</div>;
+  if (loading) return <div className="ttm-loading">{t('loadingData') || 'Loading…'}</div>;
 
   return (
     <div className="ttm" data-theme={isDark ? "dark" : "light"}>
@@ -245,22 +253,22 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
           <h2 className="ttm-title">Telegram</h2>
           <p className="ttm-sub">Notifications · Group Channels · Broadcast</p>
         </div>
-        <button className="ttm-ico-btn" onClick={fetchAll} title="Refresh">↻</button>
+        <button className="ttm-ico-btn" onClick={fetchAll} title={t('refresh') || 'Refresh'}>↻</button>
       </div>
 
       {/* STATS */}
       <div className="ttm-stats">
-        <Stat val={linked}              lbl="teachers linked"  />
-        <Stat val={merged.length - linked} lbl="not linked"   color="muted" />
-        <Stat val={gLinked}             lbl="group channels"  />
-        <Stat val={merged.length}       lbl="total teachers"  color="muted" />
+        <Stat val={linked}              lbl={t('linked') || 'linked'}  />
+        <Stat val={merged.length - linked} lbl={t('notLinked') || 'not linked'} color="muted" />
+        <Stat val={gLinked}             lbl={t('tabGroupChannels') || 'group channels'}  />
+        <Stat val={merged.length}       lbl={t('noTeachersFound') ? 'total' : 'total'} color="muted" />
       </div>
 
       {/* TABS */}
       <div className="ttm-tabs">
         {['teachers','groups','broadcast'].map(id => (
           <button key={id} className={`ttm-tab${tab===id?' active':''}`} onClick={() => setTab(id)}>
-            {id === 'teachers' ? 'Teachers' : id === 'groups' ? 'Group Channels' : 'Broadcast'}
+            {id === 'teachers' ? (t('tabTeachers') || 'Teachers') : id === 'groups' ? (t('tabGroupChannels') || 'Group Channels') : (t('tabBroadcast') || 'Broadcast')}
           </button>
         ))}
       </div>
@@ -273,32 +281,32 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
               <span className="ttm-search-icon">⌕</span>
               <input
                 className="ttm-search"
-                placeholder="Search teacher…"
+                {...{placeholder: t('teacherName') ? `${t('teacherName')}…` : 'Search teacher…'}}
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
               {search && <button className="ttm-search-x" onClick={() => setSearch('')}>×</button>}
             </div>
-            <span className="ttm-count">{displayed.length} teachers</span>
+            <span className="ttm-count">{displayed.length} {t('tabTeachers') || 'teachers'}</span>
           </div>
 
           <div className="ttm-hint">
-            Teacher sends <code>/start</code> to your bot → receives their ID → paste it in the row below
+            {t('teacherSetupStep1') || 'Teacher sends'} <code>/start</code> → {t('teacherSetupStep2') || 'paste ID below'}
           </div>
 
           <div className="ttm-scroll">
             <table className="ttm-tbl">
               <thead>
                 <tr>
-                  <th>Teacher</th>
-                  <th>Telegram ID</th>
-                  <th>Status</th>
-                  <th>Actions</th>
+                  <th>{t('teacherName') || 'Teacher'}</th>
+                  <th>{t('telegramId') || 'Telegram ID'}</th>
+                  <th>{t('status') || 'Status'}</th>
+                  <th>{t('actions') || 'Actions'}</th>
                 </tr>
               </thead>
               <tbody>
                 {displayed.length === 0 && (
-                  <tr><td colSpan={4} className="ttm-empty">No teachers found</td></tr>
+                  <tr><td colSpan={4} className="ttm-empty">{t('noTeachersFound') || 'No teachers found'}</td></tr>
                 )}
                 {displayed.map(t => {
                   const isEditing     = editingName === t.canonName;
@@ -330,13 +338,13 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
                             className="ttm-input ttm-input-id"
                             value={telegramInput}
                             onChange={e => setTelegramInput(e.target.value)}
-                            placeholder="e.g. 1300165738"
+                            {...{placeholder: t('telegramIdPlaceholder') || 'e.g. 1300165738'}}
                             onKeyDown={e => { if(e.key==='Enter') saveTelegramId(t); if(e.key==='Escape') cancelEdit(); }}
                             autoFocus
                           />
                         ) : (
                           <span className={t.telegram_id ? 'id-chip set' : 'id-chip empty'}>
-                            {t.telegram_id || 'not set'}
+                            {t.telegram_id || (t('notSet') || 'not set')}
                           </span>
                         )}
                       </td>
@@ -344,7 +352,7 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
                       {/* STATUS */}
                       <td>
                         <span className={`status-dot ${t.telegram_id ? 'on' : 'off'}`}>
-                          {t.telegram_id ? 'Linked' : 'Not set'}
+                          {t.telegram_id ? (t('linked') || 'Linked') : (t('notSet') || 'Not set')}
                         </span>
                       </td>
 
@@ -352,17 +360,17 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
                       <td className="td-actions">
                         {isEditing ? (
                           <div className="act-row">
-                            <button className="act save" onClick={() => editField==='name' ? saveTeacherName(t) : saveTelegramId(t)}>Save</button>
-                            <button className="act cancel" onClick={cancelEdit}>Cancel</button>
+                            <button className="act save" onClick={() => editField==='name' ? saveTeacherName(t) : saveTelegramId(t)}>{t('save') || 'Save'}</button>
+                            <button className="act cancel" onClick={cancelEdit}>{t('cancel') || 'Cancel'}</button>
                           </div>
                         ) : (
                           <div className="act-row">
-                            <button className="act edit" onClick={() => startEdit(t, 'telegram')}>Edit ID</button>
-                            <button className="act rename" onClick={() => startEdit(t, 'name')}>Rename</button>
+                            <button className="act edit" onClick={() => startEdit(t, 'telegram')}>{t('edit') || 'Edit'} ID</button>
+                            <button className="act rename" onClick={() => startEdit(t, 'name')}>{t('edit') || 'Rename'}</button>
                             {t.telegram_id && (
-                              <button className="act remove" onClick={() => removeTelegramId(t)}>Remove ID</button>
+                              <button className="act remove" onClick={() => removeTelegramId(t)}>{t('deleteTelegramId') || 'Remove ID'}</button>
                             )}
-                            <button className="act del" onClick={() => deleteTeacher(t)}>Delete</button>
+                            <button className="act del" onClick={() => deleteTeacher(t)}>{t('delete') || 'Delete'}</button>
                           </div>
                         )}
                       </td>
@@ -387,7 +395,7 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
           </div>
           <div className="ttm-toolbar">
             <button className="act save" onClick={() => { setAddingGroup(true); setNewGroupName(''); setNewGroupChat(''); setGroupError(''); }}>
-              + Add Channel
+              + {t('tabGroupChannels') || 'Add Channel'}
             </button>
           </div>
           {groupError && (
@@ -398,7 +406,7 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
           <div className="ttm-scroll">
             <table className="ttm-tbl">
               <thead>
-                <tr><th>Group / Channel Name</th><th>Chat ID</th><th>Status</th><th>Actions</th></tr>
+                <tr><th>{t('group') || 'Group'} / Channel</th><th>Chat ID</th><th>{t('status') || 'Status'}</th><th>{t('actions') || 'Actions'}</th></tr>
               </thead>
               <tbody>
                 {/* ── Add new row ── */}
@@ -420,13 +428,13 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
                     /></td>
                     <td><span className="status-dot off">New</span></td>
                     <td><div className="act-row">
-                      <button className="act save" onClick={addNewGroup}>Save</button>
-                      <button className="act cancel" onClick={() => setAddingGroup(false)}>Cancel</button>
+                      <button className="act save" onClick={addNewGroup}>{t('save') || 'Save'}</button>
+                      <button className="act cancel" onClick={() => setAddingGroup(false)}>{t('cancel') || 'Cancel'}</button>
                     </div></td>
                   </tr>
                 )}
                 {groups.length === 0 && !addingGroup && (
-                  <tr><td colSpan={4} className="ttm-empty">No channels yet — click "+ Add Channel" above</td></tr>
+                  <tr><td colSpan={4} className="ttm-empty">No channels yet — click "+ {t('tabGroupChannels') || 'Add Channel'}" above</td></tr>
                 )}
                 {groups.map(g => (
                   <tr key={g.group_name} className={g.chat_id ? 'tr-linked' : ''}>
@@ -443,31 +451,31 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
                         />
                       ) : (
                         <span className={g.chat_id ? 'id-chip set' : 'id-chip empty'}>
-                          {g.chat_id || 'not set'}
+                          {g.chat_id || (t('notSet') || 'not set')}
                         </span>
                       )}
                     </td>
                     <td>
                       <span className={`status-dot ${g.chat_id ? 'on' : 'off'}`}>
-                        {g.chat_id ? 'Linked' : 'Not set'}
+                        {g.chat_id ? (t('linked') || 'Linked') : (t('notSet') || 'Not set')}
                       </span>
                     </td>
                     <td className="td-actions">
                       {editingGroup === g.group_name ? (
                         <div className="act-row">
-                          <button className="act save" onClick={() => saveGroup(g.group_name)}>Save</button>
-                          <button className="act cancel" onClick={() => setEditingGroup(null)}>Cancel</button>
+                          <button className="act save" onClick={() => saveGroup(g.group_name)}>{t('save') || 'Save'}</button>
+                          <button className="act cancel" onClick={() => setEditingGroup(null)}>{t('cancel') || 'Cancel'}</button>
                         </div>
                       ) : (
                         <div className="act-row">
-                          <button className="act edit" onClick={() => { setEditingGroup(g.group_name); setGroupChatInput(g.chat_id||''); setConfirmDelete(null); }}>Edit</button>
+                          <button className="act edit" onClick={() => { setEditingGroup(g.group_name); setGroupChatInput(g.chat_id||''); setConfirmDelete(null); }}>{t('edit') || 'Edit'}</button>
                           {confirmDelete === g.group_name ? (
                             <>
                               <button className="act save" onClick={() => { deleteGroup(g.group_name); setConfirmDelete(null); }}>✓ Yes</button>
                               <button className="act cancel" onClick={() => setConfirmDelete(null)}>✗ No</button>
                             </>
                           ) : (
-                            <button className="act del" onClick={() => setConfirmDelete(g.group_name)}>Delete</button>
+                            <button className="act del" onClick={() => setConfirmDelete(g.group_name)}>{t('delete') || 'Delete'}</button>
                           )}
                         </div>
                       )}
