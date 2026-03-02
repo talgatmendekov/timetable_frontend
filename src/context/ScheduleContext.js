@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { UNIVERSITY_GROUPS, TIME_SLOTS, DAYS } from '../data/constants';
 import { scheduleAPI, groupsAPI } from '../utils/api';
+import { useAuth } from './AuthContext';
 
 const ScheduleContext = createContext();
 
@@ -80,12 +81,12 @@ function buildTeacherList(scheduleMap) {
 }
 
 export const ScheduleProvider = ({ children }) => {
+  const { loading: authLoading } = useAuth();
   const [groups,   setGroups]   = useState(UNIVERSITY_GROUPS);
   const [schedule, setSchedule] = useState({});
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState(null);
 
-  // ── loadAll with silent retry — fixes Railway cold-start error on first load ─
   const loadAll = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -101,10 +102,10 @@ export const ScheduleProvider = ({ children }) => {
         if (groupsData?.length > 0) setGroups(groupsData);
         setError(null);
         setLoading(false);
-        return; // success
+        return;
       } catch (err) {
         if (attempt < MAX_ATTEMPTS) {
-          const delay = attempt * 800; // 800ms, 1600ms, 2400ms
+          const delay = attempt * 800;
           console.warn(`API attempt ${attempt} failed, retrying in ${delay}ms...`);
           await new Promise(r => setTimeout(r, delay));
         } else {
@@ -116,7 +117,13 @@ export const ScheduleProvider = ({ children }) => {
     }
   }, []);
 
-  useEffect(() => { loadAll(); }, [loadAll]);
+  // Wait for AuthContext to finish verifying token before loading schedule
+  // This prevents "No token" errors on first visit
+  useEffect(() => {
+    if (!authLoading) {
+      loadAll();
+    }
+  }, [authLoading, loadAll]);
 
   const teachers = buildTeacherList(schedule);
 
