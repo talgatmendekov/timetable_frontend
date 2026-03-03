@@ -3,6 +3,7 @@ import React, { useState, useRef } from 'react';
 import { useSchedule } from '../context/ScheduleContext';
 import { useLanguage } from '../context/LanguageContext';
 import { SUBJECT_TYPES } from '../data/i18n';
+import './PrintView.css';
 
 const DEPARTMENTS = [
   {
@@ -31,19 +32,21 @@ const DEPARTMENTS = [
 const PrintView = () => {
   const { groups, schedule, timeSlots, days } = useSchedule();
   const { t, lang } = useLanguage();
-  const [mode, setMode]               = useState('group');
+
+  const [mode, setMode]                   = useState('group');
   const [selectedGroup, setSelectedGroup] = useState('');
   const [selectedDay, setSelectedDay]     = useState('');
   const [deptId, setDeptId]               = useState('');
   const printRef = useRef();
 
-  const dept         = DEPARTMENTS.find(d => d.id === deptId);
-  const deptLabel    = (d) => d?.[lang] || d?.en || '';
+  const dept           = DEPARTMENTS.find(d => d.id === deptId);
+  const deptLabel      = (d) => (d && (d[lang] || d.en)) || '';
   const filteredGroups = deptId ? groups.filter(g => dept?.groups.includes(g)) : groups;
 
   const getClass = (group, day, time) => schedule[`${group}-${day}-${time}`] || null;
   const typeOf   = (st) => SUBJECT_TYPES.find(s => s.value === st) || SUBJECT_TYPES[0];
 
+  // ── Print popup ──────────────────────────────────────────────────────────
   const handlePrint = () => {
     const html = printRef.current?.innerHTML;
     if (!html) return;
@@ -52,98 +55,175 @@ const PrintView = () => {
       <meta charset="UTF-8">
       <title>Schedule — Alatoo International University</title>
       <style>
-        @page { size: A4 landscape; margin: 8mm; }
+        @page { size: A4 landscape; margin: 6mm 7mm; }
         * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family: Arial, sans-serif; font-size: 8px; color: #000; }
-        h1 { font-size: 12px; text-align: center; margin: 0 0 2px; font-weight: 800; }
-        h2 { font-size: 9px; text-align: center; color: #555; margin: 0 0 8px; }
-        h3 { font-size: 9px; margin: 8px 0 4px; padding: 3px 6px; background: #f0f0f0; border-left: 3px solid #6366f1; font-weight: 700; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 8px; page-break-inside: avoid; table-layout: fixed; }
-        th, td { border: 1px solid #ccc; padding: 2px 3px; font-size: 7px; vertical-align: top; overflow: hidden; }
-        th { background: #e8e8e8; font-weight: 700; text-align: center; white-space: nowrap; }
-        td.day-col { font-weight: 700; background: #f8f8f8; white-space: nowrap; width: 55px; font-size: 7px; }
-        td.group-col { font-weight: 700; background: #f8f8f8; white-space: nowrap; width: 65px; font-size: 7px; }
-        .course { font-weight: 700; font-size: 7px; line-height: 1.2; }
-        .teacher, .room { color: #555; font-size: 6px; line-height: 1.2; }
-        .pill { display: inline-block; padding: 0 3px; border-radius: 2px; font-size: 6px; color: #fff; margin-bottom: 1px; }
-        .empty { color: #ccc; text-align: center; font-size: 9px; }
-        @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+        body { font-family: Arial, Helvetica, sans-serif; font-size: 7px; color:#000; background:#fff; }
+
+        .pv-header {
+          background: #0f172a;
+          padding: 10px 14px;
+          display: flex; align-items: center; justify-content: space-between;
+        }
+        .pv-header-left { display: flex; align-items: center; gap: 10px; }
+        .pv-header-logo {
+          width:28px; height:28px; background:#6366f1; border-radius:6px;
+          display:flex; align-items:center; justify-content:center; font-size:14px;
+        }
+        .pv-header-title { font-size:11px; font-weight:800; color:#fff; }
+        .pv-header-sub   { font-size:7px; color:#94a3b8; margin-top:1px; }
+        .pv-header-dept  { font-size:7px; font-weight:700; color:#818cf8; text-transform:uppercase; letter-spacing:0.08em; }
+        .pv-header-date  { font-size:7px; color:#cbd5e1; margin-top:2px; }
+        .pv-header-meta  { text-align:right; }
+
+        .pv-sections { padding: 6px 8px 8px; display:flex; flex-direction:column; gap:6px; }
+
+        .pv-section-head { display:flex; align-items:center; gap:6px; margin-bottom:3px; }
+        .pv-section-icon {
+          width:16px; height:16px; border-radius:4px; background:#6366f1;
+          display:flex; align-items:center; justify-content:center; font-size:9px;
+        }
+        .pv-section-name { font-size:8px; font-weight:700; color:#0f172a; }
+
+        table { width:100%; border-collapse:collapse; table-layout:fixed; border:1px solid #e2e8f0; margin-bottom:2px; }
+        thead { background:#f8fafc; }
+        th {
+          padding:3px 2px; font-size:6px; font-weight:700; text-transform:uppercase;
+          letter-spacing:0.05em; color:#64748b;
+          border-bottom:1px solid #e2e8f0; border-right:1px solid #edf0f4;
+          text-align:center; white-space:nowrap; overflow:hidden;
+        }
+        th:last-child { border-right:none; }
+        th.th-label { text-align:left; padding-left:5px; background:#f1f5f9; color:#475569; }
+        tr:nth-child(even) { background:#fafbfd; }
+        td {
+          padding:2px 2px; border-bottom:1px solid #edf0f4;
+          border-right:1px solid #edf0f4; vertical-align:top; overflow:hidden;
+        }
+        td:last-child { border-right:none; }
+        tr:last-child td { border-bottom:none; }
+        td.td-label {
+          font-weight:700; font-size:6.5px; color:#334155;
+          background:#f8fafc; white-space:nowrap;
+          padding-left:5px; border-right:2px solid #e2e8f0;
+        }
+        .pv-cell { display:flex; flex-direction:column; gap:1px; }
+        .pv-cell-pill {
+          display:inline-block; padding:0 3px; border-radius:2px;
+          font-size:5.5px; font-weight:700; color:#fff; margin-bottom:1px;
+        }
+        .pv-cell-course  { font-size:6.5px; font-weight:700; color:#0f172a; line-height:1.2; }
+        .pv-cell-teacher { font-size:5.8px; color:#475569; line-height:1.2; }
+        .pv-cell-room    { font-size:5.5px; color:#94a3b8; line-height:1.2; }
+        .pv-cell-empty   { color:#e2e8f0; text-align:center; font-size:9px; }
+
+        .pv-footer {
+          border-top:1px solid #e2e8f0; padding:5px 10px;
+          display:flex; align-items:center; justify-content:space-between;
+          background:#f8fafc;
+        }
+        .pv-footer-txt { font-size:6px; color:#94a3b8; }
+
+        .pv-section { page-break-inside: avoid; }
+        * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
       </style>
-      </head><body>${html}</body></html>`);
+    </head><body>${html}</body></html>`);
     w.document.close();
     setTimeout(() => { w.focus(); w.print(); }, 400);
   };
 
+  // ── Cell renderer ────────────────────────────────────────────────────────
   const renderCell = (cls) => {
-    if (!cls) return <span className="empty">—</span>;
+    if (!cls) return <span className="pv-cell-empty">·</span>;
     const ts = typeOf(cls.subjectType);
     return (
-      <div>
-        <span className="pill" style={{background: ts.color}}>{ts.icon}</span>
-        <div className="course">{cls.course}</div>
-        {cls.teacher && <div className="teacher">{cls.teacher}</div>}
-        {cls.room    && <div className="room">🚪{cls.room}</div>}
+      <div className="pv-cell">
+        <span className="pv-cell-pill" style={{ background: ts.color }}>{ts.icon} {ts.label || ''}</span>
+        <span className="pv-cell-course">{cls.course}</span>
+        {cls.teacher && <span className="pv-cell-teacher">👤 {cls.teacher}</span>}
+        {cls.room    && <span className="pv-cell-room">🚪 {cls.room}</span>}
       </div>
     );
   };
 
+  // ── Render sections ──────────────────────────────────────────────────────
   const renderByGroup = () =>
-    (selectedGroup ? [selectedGroup] : filteredGroups).map(group => (
-      <div key={group} className="print-section">
-        <h3>📋 {group}</h3>
-        <table>
-          <thead><tr>
-            <th style={{width:55}}>{t('day')||'Day'}</th>
-            {timeSlots.map(tm => <th key={tm}>{tm}</th>)}
-          </tr></thead>
-          <tbody>{days.map(day => (
-            <tr key={day}>
-              <td className="day-col">{t(day)||day}</td>
-              {timeSlots.map(tm => <td key={tm}>{renderCell(getClass(group, day, tm))}</td>)}
-            </tr>
-          ))}</tbody>
-        </table>
-      </div>
-    ));
+    (selectedGroup ? [selectedGroup] : filteredGroups).map(group => {
+      const totalClasses = days.reduce((acc, day) =>
+        acc + timeSlots.filter(tm => getClass(group, day, tm)).length, 0);
+      return (
+        <div key={group} className="pv-section">
+          <div className="pv-section-head">
+            <div className="pv-section-icon">📋</div>
+            <span className="pv-section-name">{group}</span>
+            <span className="pv-section-count">{totalClasses} classes</span>
+          </div>
+          <table className="pv-table">
+            <thead>
+              <tr>
+                <th className="th-label" style={{width:60}}>{t('day')||'Day'}</th>
+                {timeSlots.map(tm => <th key={tm}>{tm}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {days.map(day => (
+                <tr key={day}>
+                  <td className="td-label">{t(day)||day}</td>
+                  {timeSlots.map(tm => (
+                    <td key={tm}>{renderCell(getClass(group, day, tm))}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    });
 
   const renderByDay = () =>
     (selectedDay ? [selectedDay] : days).map(day => (
-      <div key={day} className="print-section">
-        <h3>📅 {t(day)||day}</h3>
-        <table>
-          <thead><tr>
-            <th style={{width:70}}>{t('groupTime')||'Group'}</th>
-            {timeSlots.map(tm => <th key={tm}>{tm}</th>)}
-          </tr></thead>
-          <tbody>{filteredGroups.map(group => (
-            <tr key={group}>
-              <td className="group-col">{group}</td>
-              {timeSlots.map(tm => <td key={tm}>{renderCell(getClass(group, day, tm))}</td>)}
+      <div key={day} className="pv-section">
+        <div className="pv-section-head">
+          <div className="pv-section-icon">📅</div>
+          <span className="pv-section-name">{t(day)||day}</span>
+          <span className="pv-section-count">{filteredGroups.length} groups</span>
+        </div>
+        <table className="pv-table">
+          <thead>
+            <tr>
+              <th className="th-label" style={{width:80}}>{t('groupTime')||'Group'}</th>
+              {timeSlots.map(tm => <th key={tm}>{tm}</th>)}
             </tr>
-          ))}</tbody>
+          </thead>
+          <tbody>
+            {filteredGroups.map(group => (
+              <tr key={group}>
+                <td className="td-label">{group}</td>
+                {timeSlots.map(tm => (
+                  <td key={tm}>{renderCell(getClass(group, day, tm))}</td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
         </table>
       </div>
     ));
 
   return (
-    <div className="print-view-wrap">
+    <div className="pv-wrap">
 
-      {/* ── Controls bar — matches original app style ── */}
-      <div className="print-controls-bar">
+      {/* Controls */}
+      <div className="pv-bar">
 
-        {/* Department picker */}
-        <div className="print-ctrl-group">
-          <span className="print-ctrl-label">🏛 Department</span>
-          <div className="print-dept-row">
-            <button className={`print-dept-btn${deptId===''?' active':''}`}
-              onClick={() => { setDeptId(''); setSelectedGroup(''); }}>
-              🌐 {t('allGroups')||'All'}
-            </button>
-            {DEPARTMENTS.map(d => (
-              <button key={d.id}
-                className={`print-dept-btn${deptId===d.id?' active':''}`}
+        {/* Department filter */}
+        <div className="pv-ctrl">
+          <span className="pv-lbl">🏛 Department</span>
+          <div className="pv-row">
+            {[{id:'',icon:'🌐',en:'All',ru:'Все',ky:'Баары'}, ...DEPARTMENTS].map(d => (
+              <button
+                key={d.id}
+                className={`pv-btn${deptId === d.id ? ' pv-btn-on' : ''}`}
                 onClick={() => { setDeptId(d.id); setSelectedGroup(''); }}
-                title={d.groups.join(', ')}
+                title={d.groups ? d.groups.join(', ') : 'All departments'}
               >
                 {d.icon} {deptLabel(d)}
               </button>
@@ -152,13 +232,13 @@ const PrintView = () => {
         </div>
 
         {/* View mode */}
-        <div className="print-ctrl-group">
-          <span className="print-ctrl-label">{t('printByGroup')||'View'}</span>
-          <div className="print-mode-row">
-            <button className={`print-mode-btn${mode==='group'?' active':''}`} onClick={()=>setMode('group')}>
+        <div className="pv-ctrl">
+          <span className="pv-lbl">View Mode</span>
+          <div className="pv-row">
+            <button className={`pv-mode${mode === 'group' ? ' pv-mode-on' : ''}`} onClick={() => setMode('group')}>
               👥 {t('printByGroup')||'By Group'}
             </button>
-            <button className={`print-mode-btn${mode==='day'?' active':''}`} onClick={()=>setMode('day')}>
+            <button className={`pv-mode${mode === 'day' ? ' pv-mode-on' : ''}`} onClick={() => setMode('day')}>
               📅 {t('printByDay')||'By Day'}
             </button>
           </div>
@@ -166,44 +246,68 @@ const PrintView = () => {
 
         {/* Group / Day selector */}
         {mode === 'group' ? (
-          <div className="print-ctrl-group">
-            <span className="print-ctrl-label">{t('selectGroup')||'Group'}</span>
-            <select className="print-select" value={selectedGroup} onChange={e=>setSelectedGroup(e.target.value)}>
-              <option value="">{t('allGroups')||'All'} ({filteredGroups.length})</option>
-              {filteredGroups.map(g=><option key={g} value={g}>{g}</option>)}
+          <div className="pv-ctrl">
+            <span className="pv-lbl">{t('selectGroup')||'Select Group'}</span>
+            <select className="pv-sel" value={selectedGroup} onChange={e => setSelectedGroup(e.target.value)}>
+              <option value="">{t('allGroups')||'All Groups'} ({filteredGroups.length})</option>
+              {filteredGroups.map(g => <option key={g} value={g}>{g}</option>)}
             </select>
           </div>
         ) : (
-          <div className="print-ctrl-group">
-            <span className="print-ctrl-label">{t('selectDay')||'Day'}</span>
-            <select className="print-select" value={selectedDay} onChange={e=>setSelectedDay(e.target.value)}>
-              <option value="">{t('allDays')||'All'}</option>
-              {days.map(d=><option key={d} value={d}>{t(d)||d}</option>)}
+          <div className="pv-ctrl">
+            <span className="pv-lbl">{t('selectDay')||'Select Day'}</span>
+            <select className="pv-sel" value={selectedDay} onChange={e => setSelectedDay(e.target.value)}>
+              <option value="">{t('allDays')||'All Days'}</option>
+              {days.map(d => <option key={d} value={d}>{t(d)||d}</option>)}
             </select>
           </div>
         )}
 
-        <button className="print-btn" onClick={handlePrint}>
-          🖨️ {t('printNow')||'Print / PDF'}
+        <button className="pv-print" onClick={handlePrint}>
+          🖨️ {t('printNow')||'Print / Save PDF'}
         </button>
       </div>
 
       {/* Dept badge */}
       {dept && (
-        <div className="print-dept-badge">
-          {dept.icon} <strong>{deptLabel(dept)}</strong> — {filteredGroups.length} groups
-          <button className="print-dept-badge-x" onClick={()=>setDeptId('')}>✕</button>
+        <div className="pv-badge">
+          {dept.icon} <strong>{deptLabel(dept)}</strong>
+          &nbsp;—&nbsp;{filteredGroups.length} groups
+          <button className="pv-badge-x" onClick={() => setDeptId('')}>✕</button>
         </div>
       )}
 
-      {/* Preview */}
-      <div ref={printRef} className="print-preview">
-        <h1>🏛 Alatoo International University</h1>
-        <h2>
-          {dept ? deptLabel(dept) : (t('tabSchedule')||'Schedule')}
-          {' — '}{new Date().toLocaleDateString()}
-        </h2>
-        {mode === 'group' ? renderByGroup() : renderByDay()}
+      {/* ── Printable preview ── */}
+      <div ref={printRef} className="pv-preview">
+
+        {/* Dark header */}
+        <div className="pv-header">
+          <div className="pv-header-left">
+            <div className="pv-header-logo">🏛</div>
+            <div>
+              <div className="pv-header-title">Alatoo International University</div>
+              <div className="pv-header-sub">Academic Schedule — {new Date().getFullYear()}</div>
+            </div>
+          </div>
+          <div className="pv-header-meta">
+            <div className="pv-header-dept">
+              {dept ? deptLabel(dept) : (t('tabSchedule')||'All Departments')}
+            </div>
+            <div className="pv-header-date">Generated: {new Date().toLocaleDateString('en-GB', {day:'2-digit', month:'long', year:'numeric'})}</div>
+          </div>
+        </div>
+
+        {/* Sections */}
+        <div className="pv-sections">
+          {mode === 'group' ? renderByGroup() : renderByDay()}
+        </div>
+
+        {/* Footer */}
+        <div className="pv-footer">
+          <span className="pv-footer-txt">🏛 Alatoo International University — Bishkek, Kyrgyzstan</span>
+          <span className="pv-footer-txt">Confidential · Internal use only · Page 1</span>
+        </div>
+
       </div>
     </div>
   );

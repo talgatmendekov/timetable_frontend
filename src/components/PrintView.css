@@ -1,288 +1,323 @@
-/* PrintView.css — matches original app aesthetic */
+/* =============================================================
+   PrintView.css - World-class university schedule design
+   Inspired by: Linear, Notion, Swiss design systems
+   ============================================================= */
 
-.print-view-wrap {
-  padding: 20px 16px 48px;
-  max-width: 1200px;
-  margin: 0 auto;
+.pv-wrap {
+  min-height: 100vh;
+  background: #eef0f6;
+  padding: 28px 24px 60px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-/* ── Controls bar ─────────────────────────────────────────────────────────── */
-.print-controls-bar {
+/* ─── Controls bar ─────────────────────────────────────────── */
+.pv-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: 20px;
-  background: var(--bg-secondary, #f8fafc);
-  border: 1px solid var(--border-color, #e2e8f0);
-  border-radius: 12px;
-  padding: 18px 20px;
-  margin-bottom: 18px;
+  gap: 24px;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 22px 28px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.05);
+}
+.pv-ctrl { display: flex; flex-direction: column; gap: 8px; }
+.pv-lbl {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #8b95a1;
+}
+.pv-row { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.pv-btn {
+  padding: 7px 14px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #4a5568;
+  background: #f7f8fa;
+  border: 1.5px solid #e4e7ed;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.14s ease;
+  line-height: 1.2;
+}
+.pv-btn:hover { background: #eef0fb; border-color: #a5b4fc; color: #4338ca; }
+.pv-btn.pv-btn-on {
+  background: #4f46e5;
+  border-color: #4f46e5;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(79,70,229,.3);
+}
+.pv-mode {
+  padding: 8px 18px;
+  font-size: 0.83rem;
+  font-weight: 500;
+  color: #4a5568;
+  background: #f7f8fa;
+  border: 1.5px solid #e4e7ed;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+.pv-mode:hover { background: #eef0fb; border-color: #a5b4fc; color: #4338ca; }
+.pv-mode.pv-mode-on { background: #0f172a; border-color: #0f172a; color: #fff; font-weight: 600; }
+
+.pv-sel {
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #1e293b;
+  background: #f7f8fa;
+  border: 1.5px solid #e4e7ed;
+  border-radius: 8px;
+  outline: none;
+  min-width: 190px;
+  cursor: pointer;
+}
+.pv-sel:focus { border-color: #4f46e5; background: #fff; }
+
+.pv-print {
+  padding: 10px 26px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(79,70,229,.38);
+  transition: transform 0.14s, box-shadow 0.14s;
+}
+.pv-print:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(79,70,229,.42); }
+.pv-print:active { transform: translateY(0); }
+
+.pv-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #eef2ff, #f5f3ff);
+  border: 1.5px solid #c7d2fe;
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #3730a3;
+  margin-bottom: 16px;
+}
+.pv-badge-x {
+  background: none; border: none; cursor: pointer;
+  color: #818cf8; font-size: 1.1rem; padding: 0; margin-left: 2px;
+}
+.pv-badge-x:hover { color: #ef4444; }
+
+/* ─── Preview card ─────────────────────────────────────────── */
+.pv-preview {
+  background: #ffffff;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,.06), 0 12px 40px rgba(0,0,0,.08);
 }
 
-.print-ctrl-group {
+/* University header banner */
+.pv-header {
+  background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+  padding: 30px 36px 26px;
   display: flex;
-  flex-direction: column;
-  gap: 7px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
 }
+.pv-header-left { display: flex; align-items: center; gap: 18px; }
+.pv-header-logo {
+  width: 54px;
+  height: 54px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.7rem;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(99,102,241,.4);
+}
+.pv-header-title {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #fff;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+.pv-header-sub { font-size: 0.8rem; color: #94a3b8; margin-top: 3px; }
+.pv-header-meta { text-align: right; }
+.pv-header-dept {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #818cf8;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 5px;
+}
+.pv-header-date { font-size: 0.85rem; color: #cbd5e1; font-weight: 500; }
 
-.print-ctrl-label {
-  font-size: 0.74rem;
+/* Sections */
+.pv-sections { padding: 30px 32px 38px; display: flex; flex-direction: column; gap: 30px; }
+
+.pv-section-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.pv-section-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(99,102,241,.3);
+}
+.pv-section-name  { font-size: 1rem; font-weight: 700; color: #0f172a; letter-spacing: -0.01em; }
+.pv-section-count { font-size: 0.72rem; color: #94a3b8; background: #f1f5f9; padding: 2px 9px; border-radius: 99px; margin-left: 2px; }
+
+/* ─── Table ─────────────────────────────────────────────────── */
+.pv-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.pv-table thead { background: #f8fafc; }
+.pv-table th {
+  padding: 10px 8px;
+  font-size: 0.68rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
-  color: var(--text-secondary, #64748b);
-}
-
-/* Dept buttons */
-.print-dept-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.print-dept-btn {
-  padding: 6px 13px;
-  border: 1.5px solid var(--border-color, #e2e8f0);
-  border-radius: 8px;
-  background: var(--bg-primary, #fff);
-  font-size: 0.83rem;
-  font-weight: 500;
-  color: var(--text-primary, #374151);
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.15s;
-}
-.print-dept-btn:hover {
-  border-color: #6366f1;
-  color: #4f46e5;
-  background: #eef2ff;
-}
-.print-dept-btn.active {
-  background: #6366f1;
-  color: #fff;
-  border-color: #6366f1;
-  font-weight: 700;
-}
-
-/* Mode buttons */
-.print-mode-row {
-  display: flex;
-  gap: 5px;
-}
-
-.print-mode-btn {
-  padding: 6px 14px;
-  border: 1.5px solid var(--border-color, #e2e8f0);
-  border-radius: 8px;
-  background: var(--bg-primary, #fff);
-  font-size: 0.88rem;
-  font-weight: 500;
-  color: var(--text-primary, #374151);
-  cursor: pointer;
-  transition: all 0.15s;
-}
-.print-mode-btn:hover { border-color: #6366f1; color: #4f46e5; }
-.print-mode-btn.active {
-  background: #4f46e5;
-  color: #fff;
-  border-color: #4f46e5;
-  font-weight: 700;
-}
-
-.print-select {
-  padding: 7px 11px;
-  border: 1.5px solid var(--border-color, #e2e8f0);
-  border-radius: 8px;
-  font-size: 0.88rem;
-  color: var(--text-primary, #374151);
-  background: var(--bg-primary, #fff);
-  outline: none;
-  min-width: 180px;
-}
-.print-select:focus { border-color: #6366f1; }
-
-.print-btn {
-  padding: 9px 22px;
-  background: #4f46e5;
-  color: #fff;
-  border: none;
-  border-radius: 9px;
-  font-size: 0.95rem;
-  font-weight: 700;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: background 0.15s, transform 0.1s;
-}
-.print-btn:hover { background: #4338ca; transform: translateY(-1px); }
-.print-btn:active { transform: translateY(0); }
-
-/* Dept badge */
-.print-dept-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  background: #eef2ff;
-  border: 1.5px solid #c7d2fe;
-  border-radius: 9px;
-  padding: 6px 14px;
-  font-size: 0.88rem;
-  color: #3730a3;
-  margin-bottom: 14px;
-}
-.print-dept-badge-x {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #6366f1;
-  font-size: 1rem;
-  padding: 0 0 0 4px;
-  line-height: 1;
-}
-.print-dept-badge-x:hover { color: #be123c; }
-
-/* ── Print preview area ───────────────────────────────────────────────────── */
-.print-preview {
-  background: var(--bg-primary, #fff);
-  border: 1px solid var(--border-color, #e2e8f0);
-  border-radius: 12px;
-  padding: 20px 20px 28px;
-}
-
-.print-preview h1 {
-  font-size: 1.25rem;
+  color: #64748b;
+  border-bottom: 2px solid #e2e8f0;
+  border-right: 1px solid #edf0f4;
   text-align: center;
-  margin-bottom: 3px;
-  color: var(--text-primary, #0f172a);
-}
-.print-preview h2 {
-  font-size: 0.92rem;
-  text-align: center;
-  color: var(--text-secondary, #64748b);
-  margin-bottom: 20px;
-}
-
-.print-section {
-  margin-bottom: 24px;
-}
-
-.print-section h3 {
-  font-size: 0.95rem;
-  font-weight: 700;
-  color: var(--text-primary, #1e293b);
-  padding: 7px 12px;
-  background: var(--bg-secondary, #f1f5f9);
-  border-left: 4px solid #6366f1;
-  border-radius: 0 8px 8px 0;
-  margin-bottom: 8px;
-}
-
-.print-section table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 0.8rem;
-  table-layout: fixed;
-}
-
-.print-section th {
-  background: var(--bg-secondary, #f8fafc);
-  padding: 7px 8px;
-  text-align: center;
-  font-weight: 700;
-  font-size: 0.72rem;
-  color: var(--text-secondary, #475569);
-  border: 1px solid var(--border-color, #e2e8f0);
   white-space: nowrap;
   overflow: hidden;
 }
+.pv-table th:last-child { border-right: none; }
+.pv-table th.th-label { text-align: left; padding-left: 16px; background: #f1f5f9; color: #475569; }
 
-.print-section td {
-  border: 1px solid var(--border-color, #e2e8f0);
-  padding: 6px 8px;
+.pv-table tbody tr:nth-child(odd)  { background: #ffffff; }
+.pv-table tbody tr:nth-child(even) { background: #fafbfd; }
+.pv-table tbody tr:hover { background: #f0f4ff; }
+
+.pv-table td {
+  padding: 9px 8px;
+  border-bottom: 1px solid #edf0f4;
+  border-right: 1px solid #edf0f4;
   vertical-align: top;
-  font-size: 0.78rem;
 }
-
-.print-section td.day-col,
-.print-section td.group-col {
+.pv-table td:last-child { border-right: none; }
+.pv-table tbody tr:last-child td { border-bottom: none; }
+.pv-table td.td-label {
   font-weight: 700;
-  background: var(--bg-secondary, #f8fafc);
-  white-space: nowrap;
   font-size: 0.78rem;
-  color: var(--text-primary, #374151);
+  color: #334155;
+  background: #f8fafc;
+  white-space: nowrap;
+  padding-left: 16px;
+  border-right: 2px solid #e2e8f0;
 }
 
-.print-section .course {
-  font-weight: 600;
-  font-size: 0.78rem;
-  color: var(--text-primary, #0f172a);
-  margin-bottom: 1px;
-  line-height: 1.3;
-}
-.print-section .teacher {
-  font-size: 0.7rem;
-  color: var(--text-secondary, #475569);
-  line-height: 1.3;
-}
-.print-section .room {
-  font-size: 0.7rem;
-  color: var(--text-secondary, #64748b);
-  line-height: 1.3;
-}
-.print-section .pill {
-  display: inline-block;
-  padding: 1px 5px;
-  border-radius: 3px;
-  font-size: 0.65rem;
+/* Cell content */
+.pv-cell { display: flex; flex-direction: column; gap: 2px; }
+.pv-cell-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.6rem;
+  font-weight: 700;
   color: #fff;
+  width: fit-content;
   margin-bottom: 2px;
 }
-.print-section .empty {
-  color: #cbd5e1;
-  text-align: center;
-  font-size: 0.88rem;
+.pv-cell-course  { font-size: 0.78rem; font-weight: 700; color: #0f172a; line-height: 1.3; }
+.pv-cell-teacher { font-size: 0.68rem; color: #475569; line-height: 1.3; }
+.pv-cell-room    { font-size: 0.64rem; color: #94a3b8; line-height: 1.3; }
+.pv-cell-empty   { color: #e2e8f0; text-align: center; font-size: 1.1rem; display: block; padding: 4px 0; }
+
+/* Footer */
+.pv-footer {
+  border-top: 1px solid #e2e8f0;
+  padding: 14px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f8fafc;
+}
+.pv-footer-txt { font-size: 0.73rem; color: #94a3b8; }
+
+/* ─── PRINT - A4 Landscape ──────────────────────────────────── */
+@media print {
+  @page { size: A4 landscape; margin: 6mm 7mm; }
+
+  .pv-bar, .pv-badge { display: none !important; }
+  .pv-wrap    { background: #fff !important; padding: 0 !important; }
+  .pv-preview { box-shadow: none !important; border-radius: 0 !important; }
+
+  .pv-header       { padding: 10px 14px 8px !important; }
+  .pv-header-logo  { width: 32px !important; height: 32px !important; font-size: 1rem !important; border-radius: 8px !important; }
+  .pv-header-title { font-size: 0.88rem !important; }
+  .pv-header-sub   { font-size: 0.58rem !important; }
+  .pv-header-dept  { font-size: 0.56rem !important; }
+  .pv-header-date  { font-size: 0.62rem !important; }
+
+  .pv-sections     { padding: 7px 10px 10px !important; gap: 7px !important; }
+  .pv-section-head { margin-bottom: 4px !important; }
+  .pv-section-icon { width: 18px !important; height: 18px !important; font-size: 0.5rem !important; border-radius: 5px !important; }
+  .pv-section-name { font-size: 0.68rem !important; }
+
+  .pv-table th          { padding: 3px 2px !important; font-size: 0.54rem !important; }
+  .pv-table td          { padding: 2px 2px !important; }
+  .pv-table td.td-label { font-size: 0.56rem !important; padding-left: 4px !important; }
+  .pv-cell-pill         { font-size: 0.46rem !important; padding: 0 2px !important; }
+  .pv-cell-course       { font-size: 0.56rem !important; }
+  .pv-cell-teacher      { font-size: 0.5rem !important; }
+  .pv-cell-room         { font-size: 0.48rem !important; }
+
+  .pv-section { page-break-inside: avoid; }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
 }
 
-/* ── Actual print media ───────────────────────────────────────────────────── */
-@media print {
-  .print-controls-bar,
-  .print-dept-badge { display: none !important; }
-
-  .print-view-wrap { padding: 0; }
-
-  .print-preview {
-    border: none;
-    border-radius: 0;
-    padding: 0;
-  }
-
-  /* A4 landscape */
-  @page {
-    size: A4 landscape;
-    margin: 8mm 8mm 8mm 8mm;
-  }
-
-  body {
-    font-size: 8px !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-
-  .print-section {
-    page-break-inside: avoid;
-    margin-bottom: 10px;
-  }
-
-  .print-section table {
-    font-size: 7px !important;
-  }
-
-  .print-section th,
-  .print-section td {
-    padding: 2px 3px !important;
-    font-size: 7px !important;
-  }
-
-  .print-section .course  { font-size: 7px !important; }
-  .print-section .teacher { font-size: 6px !important; }
-  .print-section .room    { font-size: 6px !important; }
+/* Dark mode (screen only) */
+@media (prefers-color-scheme: dark) {
+  .pv-wrap          { background: #0f172a; }
+  .pv-bar           { background: #1e293b; border: 1px solid #334155; }
+  .pv-lbl           { color: #64748b; }
+  .pv-btn           { background: #1e293b; border-color: #334155; color: #94a3b8; }
+  .pv-btn:hover     { background: #2d3748; border-color: #6366f1; color: #a5b4fc; }
+  .pv-mode          { background: #1e293b; border-color: #334155; color: #94a3b8; }
+  .pv-sel           { background: #1e293b; border-color: #334155; color: #e2e8f0; }
+  .pv-preview       { background: #1e293b; border: 1px solid #334155; }
+  .pv-table thead   { background: #0f172a; }
+  .pv-table th      { color: #64748b; border-color: #334155; }
+  .pv-table th.th-label { background: #0f172a; }
+  .pv-table tbody tr:nth-child(even) { background: #162032; }
+  .pv-table tbody tr:hover           { background: #1e2d45; }
+  .pv-table td      { border-color: #1e2d3d; }
+  .pv-table td.td-label { background: #162032; color: #94a3b8; border-color: #334155; }
+  .pv-cell-course   { color: #f1f5f9; }
+  .pv-cell-teacher  { color: #94a3b8; }
+  .pv-cell-room     { color: #64748b; }
+  .pv-footer        { background: #0f172a; border-color: #334155; }
+  .pv-footer-txt    { color: #475569; }
 }
