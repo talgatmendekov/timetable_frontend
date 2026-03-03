@@ -1,269 +1,528 @@
-// src/components/TeacherDashboard.js
-import React, { useState, useMemo } from 'react';
+// Frontend: src/components/TeacherTelegramManagement.js
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSchedule } from '../context/ScheduleContext';
+import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { SUBJECT_TYPES, SUBJECT_TYPE_LABELS } from '../data/i18n';
-import { normalizeTeacherName } from '../context/ScheduleContext';
-import './TeacherDashboard.css';
+import BroadcastMessage from './BroadcastMessage';
+import './TeacherTelegramManagement.css';
 
-const TeacherDashboard = () => {
-  const { schedule, teachers, days, timeSlots } = useSchedule();
-  const { t, lang } = useLanguage();
-  const typeLabels = SUBJECT_TYPE_LABELS[lang] || SUBJECT_TYPE_LABELS.en;
+const API_URL = process.env.REACT_APP_API_URL || 'https://timetablebackend-production.up.railway.app/api';
+const getToken = () =>
+  localStorage.getItem('scheduleToken') ||
+  localStorage.getItem('token') ||
+  localStorage.getItem('authToken') || '';
 
-  // ── Use the SAME normalizeTeacherName from ScheduleContext ─────────────────
-  // teachers[] from context is already normalized — just use it directly
-  const scheduleEntries = useMemo(() => Object.values(schedule || {}), [schedule]);
+const TeacherTelegramManagement = ({ isDark = false }) => {
+  // ── Wait for auth before fetching ───────────────────────────────────────────
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { t } = useLanguage();
+  // ── teachers comes from context — SAME list as the filter dropdown, zero dupes
+  const { teachers: canonicalTeachers } = useSchedule();
 
-  // teachers from context is already the deduped normalized list
-  const allTeacherNames = useMemo(() => {
-    return (teachers || []).filter(Boolean).sort((a, b) => a.localeCompare(b));
-  }, [teachers]);
+  const [dbTeachers, setDbTeachers]   = useState([]);  // raw DB rows for telegram_id lookup
+  const [groups, setGroups]           = useState([]);
+  const [loading, setLoading]         = useState(true);
+  const [tab, setTab]                 = useState('teachers');
+  const [search, setSearch]           = useState('');
 
-  const [selectedTeacher, setSelectedTeacher] = useState('');
-  const effectiveSelected = selectedTeacher || allTeacherNames[0] || '';
+  // Teacher row state
+  const [editingName, setEditingName]       = useState(null); // canonical name being edited
+  const [telegramInput, setTelegramInput]   = useState('');
+  const [nameInput, setNameInput]           = useState('');
+  const [editField, setEditField]           = useState(null); // 'telegram' | 'name'
 
-  // Build stats — match using normalizeTeacherName exactly like ScheduleContext does
-  const allStats = useMemo(() => {
-    return allTeacherNames.map(teacher => {
-      // teacher is already normalized (from buildTeacherList in ScheduleContext)
-      // match raw schedule entries using the same normalize function
-      const classes = scheduleEntries.filter(e =>
-        normalizeTeacherName(e.teacher) === teacher
-      );
+  // Group row state
+  const [editingGroup, setEditingGroup]     = useState(null);
+  const [addingGroup, setAddingGroup]       = useState(false);
+  const [groupError, setGroupError]         = useState('');
+  const [newGroupName, setNewGroupName]     = useState('');
+  const [newGroupChat, setNewGroupChat]     = useState('');
+  const [groupChatInput, setGroupChatInput] = useState('');
+  const [confirmDelete, setConfirmDelete]   = useState(null); // group_name pending delete
 
-      const byDay = {};
-      (days || []).forEach(d => { byDay[d] = []; });
-      classes.forEach(c => {
-        if (c.day && byDay[c.day] !== undefined) byDay[c.day].push(c);
-      });
-
-      const byType = {};
-      (SUBJECT_TYPES || []).forEach(st => { byType[st.value] = 0; });
-      classes.forEach(c => {
-        const type = c.subjectType || c.subject_type || 'lecture';
-        byType[type] = (byType[type] || 0) + 1;
-      });
-
-      const freeDays = (days || []).filter(d => byDay[d]?.length === 0);
-
-      return { teacher, classes, byDay, byType, freeDays, total: classes.length };
-    }).sort((a, b) => b.total - a.total);
-  }, [allTeacherNames, scheduleEntries, days]);
-
-  // Selected teacher detail
-  const detail = useMemo(() => {
-    return allStats.find(s => s.teacher === effectiveSelected);
-  }, [allStats, effectiveSelected]);
-
-  // Heatmap
-  const heatmap = useMemo(() => {
-    if (!detail) return {};
-    const map = {};
-    detail.classes.forEach(c => {
-      const key = `${c.day}-${c.time}`;
-      map[key] = (map[key] || 0) + 1;
-    });
-    return map;
-  }, [detail]);
-
-  const maxHeat = Math.max(...Object.values(heatmap), 1);
-
-  const heatColor = (val) => {
-    if (!val) return undefined;
-    const intensity = val / maxHeat;
-    const r = Math.round(37  + (239 - 37)  * (1 - intensity));
-    const g = Math.round(99  + (68  - 99)  * (1 - intensity));
-    const b = Math.round(235 + (68  - 235) * (1 - intensity));
-    return `rgba(${r},${g},${b},${0.2 + intensity * 0.75})`;
+  // ── Fetch DB data ────────────────────────────────────────────────────────────
+  const fetchDbTeachers = async () => {
+    try {
+      const res  = await fetch(`${API_URL}/teachers`, { headers: { Authorization: `Bearer ${getToken()}` } });
+      const data = await res.json();
+      if (data.success) setDbTeachers(data.data);
+    } catch (e) { console.error(e); }
   };
 
-  if (!allTeacherNames.length) {
-    return (
-      <div className="dashboard-empty">
-        <div className="empty-icon">👨‍🏫</div>
-        <h3>{t('noTeachersYet') || 'No teachers yet'}</h3>
-        <p>{t('addClassesFirst') || 'Add some classes with teacher names to see the dashboard.'}</p>
-      </div>
-    );
-  }
+  const fetchGroups = async () => {
+    try {
+      const res  = await fetch(`${API_URL}/group-channels`, { headers: { Authorization: `Bearer ${getToken()}` } });
+      const data = await res.json();
+      if (data.success) setGroups(data.data);
+    } catch (e) { console.error(e); }
+  };
+
+  const fetchAll = async () => {
+    setLoading(true);
+    await Promise.all([fetchDbTeachers(), fetchGroups()]);
+    setLoading(false);
+  };
+
+  // Only fetch once auth is confirmed — avoids "No token" on first load
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      fetchAll();
+    }
+  }, [isAuthenticated, authLoading]);
+
+  // ── Merge canonical list with DB telegram data ───────────────────────────────
+  // canonicalTeachers = ['Dr. Ahmad Sarosh', 'Dr. Daniiar Satybaldiev', ...]
+  // dbTeachers = [{ id, name, telegram_id }, ...]  (raw dirty names)
+  //
+  // Strategy: for each canonical name, find DB rows whose name normalizes to it.
+  // Keep the row with a telegram_id (prefer), else the first match.
+  const { normalizeTeacherName } = useMemo(() => {
+    // Import normalizer lazily to avoid circular ref issues
+    try {
+      return require('../context/ScheduleContext');
+    } catch {
+      return { normalizeTeacherName: (n) => n };
+    }
+  }, []);
+
+  const merged = useMemo(() => {
+    return canonicalTeachers.map(canonName => {
+      // Find all DB rows that map to this canonical name
+      const matches = dbTeachers.filter(row =>
+        (normalizeTeacherName(row.name) || row.name.trim()) === canonName
+      );
+      const winner = matches.find(r => r.telegram_id) || matches[0] || null;
+      return {
+        canonName,
+        id:                    winner?.id   || null,
+        telegram_id:           winner?.telegram_id || null,
+        notifications_enabled: winner?.notifications_enabled !== false, // default true
+        allIds:                matches.map(r => r.id),
+        dupCount:              matches.length,
+      };
+    });
+  }, [canonicalTeachers, dbTeachers, normalizeTeacherName]);
+
+  // ── Filtered list ────────────────────────────────────────────────────────────
+  const displayed = useMemo(() => {
+    if (!search.trim()) return merged;
+    const q = search.toLowerCase();
+    return merged.filter(t => t.canonName.toLowerCase().includes(q));
+  }, [merged, search]);
+
+  // ── Stats ────────────────────────────────────────────────────────────────────
+  const linked   = merged.filter(t => t.telegram_id).length;
+  const gLinked  = groups.filter(g => g.chat_id).length;
+
+  // ── API helpers ──────────────────────────────────────────────────────────────
+  const apiCall = async (url, method, body) => {
+    try {
+      const res  = await fetch(url, {
+        method,
+        headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
+        ...(body ? { body: JSON.stringify(body) } : {}),
+      });
+      const text = await res.text();
+      try { return { ok: res.ok, ...JSON.parse(text) }; }
+      catch { return { ok: false, error: text }; }
+    } catch (err) {
+      return { ok: false, error: err.message };
+    }
+  };
+
+  // ── Teacher actions ──────────────────────────────────────────────────────────
+  const startEdit = (t, field) => {
+    setEditingName(t.canonName);
+    setEditField(field);
+    setTelegramInput(t.telegram_id || '');
+    setNameInput(t.canonName);
+  };
+
+  const cancelEdit = () => { setEditingName(null); setEditField(null); };
+
+  const saveTelegramId = async (t) => {
+    const trimmed = telegramInput.trim();
+    if (!trimmed) { cancelEdit(); return; }
+
+    const token = getToken();
+    if (!token) {
+      alert('Not logged in — please refresh the page and try again.');
+      return;
+    }
+
+    const data = await apiCall(`${API_URL}/teachers/save-telegram`, 'POST', {
+      id:          t.id || null,
+      name:        t.canonName,
+      telegram_id: trimmed,
+    });
+
+    if (data.success) {
+      cancelEdit();
+      fetchDbTeachers();
+    } else if (data.error?.includes('Access denied') || data.error?.includes('token')) {
+      alert('Session expired — please refresh the page and log in again.');
+    } else {
+      alert('Error saving Telegram ID: ' + (data.error || 'unknown'));
+    }
+  };
+
+  const removeTelegramId = async (t) => {
+    if (!t.id || !t.telegram_id) return;
+    if (!window.confirm(`Remove Telegram ID for ${t.canonName}?`)) return;
+    const data = await apiCall(`${API_URL}/teachers/${t.id}/telegram`, 'DELETE');
+    if (data.success) fetchDbTeachers();
+    else alert('Error: ' + (data.error || 'unknown'));
+  };
+
+  const saveTeacherName = async (t) => {
+    const newName = nameInput.trim();
+    if (!newName || newName === t.canonName) { cancelEdit(); return; }
+    if (!t.allIds.length) { cancelEdit(); return; }
+    // Update ALL duplicate rows to the new canonical name
+    await Promise.all(t.allIds.map(id =>
+      apiCall(`${API_URL}/teachers/${id}/name`, 'PUT', { name: newName })
+    ));
+    cancelEdit();
+    await fetchDbTeachers();
+  };
+
+  const toggleNotifications = async (teacher) => {
+    if (!teacher.id) return;
+    const newVal = !teacher.notifications_enabled;
+    const data = await apiCall(`${API_URL}/teachers/${teacher.id}/notifications`, 'PUT', { enabled: newVal });
+    if (data.success) fetchDbTeachers();
+    else alert('Error: ' + (data.error || 'unknown'));
+  };
+
+  const deleteTeacher = async (t) => {
+    if (!t.allIds.length) {
+      alert(`"${t.canonName}" has no database record — nothing to delete.`);
+      return;
+    }
+    const note = t.dupCount > 1 ? `\n(removes ${t.dupCount} duplicate DB records)` : '';
+    if (!window.confirm(`Delete "${t.canonName}"?${note}`)) return;
+    await Promise.all(t.allIds.map(id =>
+      apiCall(`${API_URL}/teachers/${id}`, 'DELETE')
+    ));
+    fetchDbTeachers();
+  };
+
+  // ── Group actions ────────────────────────────────────────────────────────────
+  const saveGroup = async (groupName) => {
+    const data = await apiCall(`${API_URL}/group-channels`, 'POST', { group_name: groupName, chat_id: groupChatInput.trim() });
+    if (data.success) { setEditingGroup(null); setGroupChatInput(''); fetchGroups(); }
+    else alert('Error: ' + data.error);
+  };
+
+  const addNewGroup = async () => {
+    setGroupError('');
+    if (!newGroupName.trim()) { setGroupError('Please enter a group name'); return; }
+    if (!newGroupChat.trim()) { setGroupError('Please enter a Chat ID or @username'); return; }
+    const url = `${API_URL}/group-channels`;
+    console.log('Saving to:', url);
+    const data = await apiCall(url, 'POST', {
+      group_name: newGroupName.trim(),
+      chat_id: newGroupChat.trim(),
+    });
+    if (data.success) {
+      setAddingGroup(false);
+      setNewGroupName('');
+      setNewGroupChat('');
+      setGroupError('');
+      fetchGroups();
+    } else {
+      setGroupError(`Failed (${url}): ${data.error || 'unknown error'}`);
+    }
+  };
+
+  const deleteGroup = async (groupName) => {
+    setGroupError('');
+    // Optimistically remove immediately so UI feels instant
+    setGroups(prev => prev.filter(g => g.group_name !== groupName));
+    setConfirmDelete(null);
+    const url = `${API_URL}/group-channels/${encodeURIComponent(groupName)}`;
+    const data = await apiCall(url, 'DELETE');
+    if (!data.success) {
+      // Revert on failure
+      setGroupError('Delete failed: ' + (data.error || 'unknown'));
+      fetchGroups(); // reload to restore correct state
+    }
+    // Do NOT call fetchGroups() on success — optimistic update is already correct
+  };
+
+  // ── Render ───────────────────────────────────────────────────────────────────
+  if (loading) return <div className="ttm-loading">{t('loadingData') || 'Loading…'}</div>;
 
   return (
-    <div className="teacher-dashboard">
-      <h2 className="dashboard-title">📊 {t('teacherDashboard') || 'Teacher Workload Dashboard'}</h2>
+    <div className="ttm" data-theme={isDark ? "dark" : "light"}>
 
-      {/* Overview cards — all teachers */}
-      <div className="overview-grid">
-        {allStats.map(stat => (
-          <button
-            key={stat.teacher}
-            className={`teacher-card ${effectiveSelected === stat.teacher ? 'active' : ''}`}
-            onClick={() => setSelectedTeacher(stat.teacher)}
-          >
-            <div className="teacher-card-name">👨‍🏫 {stat.teacher}</div>
-            <div className="teacher-card-total">
-              <span className="card-num">{stat.total}</span>
-              <span className="card-label">{t('classesPerWeek') || 'classes/week'}</span>
-            </div>
-            <div className="teacher-card-days">
-              {(days || []).map(day => (
-                <span
-                  key={day}
-                  className={`day-dot ${stat.byDay[day]?.length > 0 ? 'busy' : 'free'}`}
-                  title={`${t(day) || day}: ${stat.byDay[day]?.length || 0} classes`}
-                />
-              ))}
-            </div>
-            {stat.freeDays.length > 0 && (
-              <div className="teacher-card-free">
-                🟢 {t('freeDays') || 'Free'}: {stat.freeDays.map(d => (t(d) || d).slice(0,3)).join(', ')}
-              </div>
-            )}
+      {/* HEADER */}
+      <div className="ttm-head">
+        <div>
+          <h2 className="ttm-title">Telegram</h2>
+          <p className="ttm-sub">Notifications · Group Channels · Broadcast</p>
+        </div>
+        <button className="ttm-ico-btn" onClick={fetchAll} title={t('refresh') || 'Refresh'}>↻</button>
+      </div>
+
+      {/* STATS */}
+      <div className="ttm-stats">
+        <Stat val={linked}              lbl={t('linked') || 'linked'}  />
+        <Stat val={merged.length - linked} lbl={t('notLinked') || 'not linked'} color="muted" />
+        <Stat val={gLinked}             lbl={t('tabGroupChannels') || 'group channels'}  />
+        <Stat val={merged.length}       lbl={t('tabTeachers') || 'total teachers'} color="muted" />
+      </div>
+
+      {/* TABS */}
+      <div className="ttm-tabs">
+        {['teachers','groups','broadcast'].map(id => (
+          <button key={id} className={`ttm-tab${tab===id?' active':''}`} onClick={() => setTab(id)}>
+            {id === 'teachers' ? (t('tabTeachers') || 'Teachers') : id === 'groups' ? (t('tabGroupChannels') || 'Group Channels') : (t('tabBroadcast') || 'Broadcast')}
           </button>
         ))}
       </div>
 
-      {/* Detail panel */}
-      {detail && (
-        <div className="detail-panel">
-          <div className="detail-header">
-            <h3>👨‍🏫 {detail.teacher}</h3>
-            <div className="detail-summary">
-              <div className="summary-chip">
-                <span className="chip-num">{detail.total}</span>
-                <span className="chip-label">{t('totalClasses') || 'Total Classes'}</span>
-              </div>
-              <div className="summary-chip">
-                <span className="chip-num">{(days || []).length - detail.freeDays.length}</span>
-                <span className="chip-label">{t('workDays') || 'Work Days'}</span>
-              </div>
-              <div className="summary-chip free">
-                <span className="chip-num">{detail.freeDays.length}</span>
-                <span className="chip-label">{t('freeDays') || 'Free Days'}</span>
-              </div>
+      {/* ── TEACHERS ── */}
+      {tab === 'teachers' && (
+        <div className="ttm-pane">
+          <div className="ttm-toolbar">
+            <div className="ttm-search-box">
+              <span className="ttm-search-icon">⌕</span>
+              <input
+                className="ttm-search"
+                {...{placeholder: t('teacherName') ? `${t('teacherName')}…` : 'Search teacher…'}}
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+              {search && <button className="ttm-search-x" onClick={() => setSearch('')}>×</button>}
             </div>
+            <span className="ttm-count">{displayed.length} {t('tabTeachers') || 'teachers'}</span>
           </div>
 
-          {/* Subject type breakdown */}
-          <div className="type-breakdown">
-            <h4>{t('bySubjectType') || 'By Subject Type'}</h4>
-            <div className="type-bars">
-              {(SUBJECT_TYPES || []).map(st => {
-                const count = detail.byType[st.value] || 0;
-                const pct = detail.total > 0 ? (count / detail.total) * 100 : 0;
-                return (
-                  <div key={st.value} className="type-bar-row">
-                    <span className="type-bar-label" style={{ color: st.color }}>
-                      {st.icon} {typeLabels[st.value]}
-                    </span>
-                    <div className="type-bar-track">
-                      <div className="type-bar-fill"
-                        style={{ width: `${pct}%`, background: st.color }}
-                      />
-                    </div>
-                    <span className="type-bar-count" style={{ color: st.color }}>{count}</span>
-                  </div>
-                );
-              })}
-            </div>
+          <div className="ttm-hint">
+            {t('teacherSetupStep1') || 'Teacher sends'} <code>/start</code> → {t('teacherSetupStep2') || 'paste ID below'}
           </div>
 
-          {/* Per-day breakdown */}
-          <div className="day-breakdown">
-            <h4>{t('byDay') || 'Classes Per Day'}</h4>
-            <div className="day-bars">
-              {(days || []).map(day => {
-                const count = detail.byDay[day]?.length || 0;
-                const maxDay = Math.max(...(days || []).map(d => detail.byDay[d]?.length || 0), 1);
-                const pct = (count / maxDay) * 100;
-                return (
-                  <div key={day} className="day-bar-col">
-                    <div className="day-bar-track">
-                      <div className="day-bar-fill" style={{ height: `${pct}%` }} />
-                    </div>
-                    <span className="day-bar-num">{count}</span>
-                    <span className="day-bar-label">{(t(day) || day).slice(0,3)}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+          <div className="ttm-scroll">
+            <table className="ttm-tbl">
+              <thead>
+                <tr>
+                  <th>{t('teacherName') || 'Teacher'}</th>
+                  <th>{t('telegramId') || 'Telegram ID'}</th>
+                  <th>{t('notifications') || 'Notifs'}</th>
+                  <th>{t('status') || 'Status'}</th>
+                  <th>{t('actions') || 'Actions'}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {displayed.length === 0 && (
+                  <tr><td colSpan={4} className="ttm-empty">{t('noTeachersFound') || 'No teachers found'}</td></tr>
+                )}
+                {displayed.map(teacher => {
+                  const isEditing     = editingName === teacher.canonName;
+                  const editTelegram  = isEditing && editField === 'telegram';
+                  const editName      = isEditing && editField === 'name';
 
-          {/* Weekly heatmap */}
-          <div className="heatmap-section">
-            <h4>{t('weeklyHeatmap') || 'Weekly Schedule Heatmap'}</h4>
-            <div className="heatmap-wrapper">
-              <table className="heatmap-table">
-                <thead>
-                  <tr>
-                    <th className="hm-corner" />
-                    {(timeSlots || []).map(time => (
-                      <th key={time} className="hm-time">{time}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {(days || []).map(day => (
-                    <tr key={day}>
-                      <td className="hm-day">{(t(day) || day).slice(0,3)}</td>
-                      {(timeSlots || []).map(time => {
-                        const key = `${day}-${time}`;
-                        const val = heatmap[key] || 0;
-                        const cls = detail.classes.find(c => c.day === day && c.time === time);
-                        return (
-                          <td key={time}
-                            className={`hm-cell ${val > 0 ? 'hm-busy' : 'hm-free'}`}
-                            style={val > 0 ? { background: heatColor(val) } : undefined}
-                            title={cls ? `${cls.course} (${cls.group})` : ''}
-                          >
-                            {val > 0 && <span className="hm-dot" />}
-                          </td>
-                        );
-                      })}
+                  return (
+                    <tr key={teacher.canonName} className={teacher.telegram_id ? 'tr-linked' : ''}>
+
+                      {/* NAME */}
+                      <td className="td-name">
+                        {editName ? (
+                          <input
+                            className="ttm-input ttm-input-name"
+                            value={nameInput}
+                            onChange={e => setNameInput(e.target.value)}
+                            onKeyDown={e => { if(e.key==='Enter') saveTeacherName(teacher); if(e.key==='Escape') cancelEdit(); }}
+                            autoFocus
+                          />
+                        ) : (
+                          <span className="teacher-name">{teacher.canonName}</span>
+                        )}
+                      </td>
+
+                      {/* TELEGRAM ID */}
+                      <td className="td-id">
+                        {editTelegram ? (
+                          <input
+                            className="ttm-input ttm-input-id"
+                            value={telegramInput}
+                            onChange={e => setTelegramInput(e.target.value)}
+                            placeholder={t('telegramIdPlaceholder') || 'e.g. 1300165738'}
+                            onKeyDown={e => { if(e.key==='Enter') saveTelegramId(teacher); if(e.key==='Escape') cancelEdit(); }}
+                            autoFocus
+                          />
+                        ) : (
+                          <span className={teacher.telegram_id ? 'id-chip set' : 'id-chip empty'}>
+                            {teacher.telegram_id || t('notSet') || 'not set'}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* NOTIFICATIONS TOGGLE */}
+                      <td style={{textAlign:'center'}}>
+                        {teacher.telegram_id ? (
+                          <label className="notif-toggle" title={teacher.notifications_enabled ? (t('notificationsOn')||'ON') : (t('notificationsOff')||'OFF')}>
+                            <input
+                              type="checkbox"
+                              checked={teacher.notifications_enabled}
+                              onChange={() => toggleNotifications(teacher)}
+                            />
+                            <span className="notif-slider" />
+                          </label>
+                        ) : <span style={{color:'var(--text-muted)',fontSize:'0.8rem'}}>—</span>}
+                      </td>
+
+                      {/* STATUS */}
+                      <td>
+                        <span className={`status-dot ${teacher.telegram_id ? 'on' : 'off'}`}>
+                          {teacher.telegram_id ? (t('linked') || 'Linked') : (t('notSet') || 'Not set')}
+                        </span>
+                      </td>
+
+                      {/* ACTIONS */}
+                      <td className="td-actions">
+                        {isEditing ? (
+                          <div className="act-row">
+                            <button className="act save" onClick={() => editField==='name' ? saveTeacherName(teacher) : saveTelegramId(teacher)}>{t('save') || 'Save'}</button>
+                            <button className="act cancel" onClick={cancelEdit}>{t('cancel') || 'Cancel'}</button>
+                          </div>
+                        ) : (
+                          <div className="act-row">
+                            <button className="act edit" onClick={() => startEdit(teacher, 'telegram')}>{t('edit') || 'Edit'} ID</button>
+                            <button className="act rename" onClick={() => startEdit(teacher, 'name')}>{t('edit') || 'Rename'}</button>
+                            {teacher.telegram_id && (
+                              <button className="act remove" onClick={() => removeTelegramId(teacher)}>{t('deleteTelegramId') || 'Remove ID'}</button>
+                            )}
+                            <button className="act del" onClick={() => deleteTeacher(teacher)}>{t('delete') || 'Delete'}</button>
+                          </div>
+                        )}
+                      </td>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-              <div className="heatmap-legend">
-                <span>{t('free') || 'Free'}</span>
-                <div className="hm-gradient" />
-                <span>{t('busy') || 'Busy'}</span>
-              </div>
-            </div>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
 
-          {/* Class list */}
-          <div className="class-list-section">
-            <h4>{t('allClasses') || 'All Classes This Week'}</h4>
-            <div className="class-list">
-              {(days || []).map(day => detail.byDay[day]?.length > 0 && (
-                <div key={day} className="class-list-day">
-                  <div className="class-list-day-header">{t(day) || day}</div>
-                  {detail.byDay[day]
-                    .slice()
-                    .sort((a, b) => (a.time || '').localeCompare(b.time || ''))
-                    .map((cls, i) => {
-                      const ts = (SUBJECT_TYPES || []).find(
-                        s => s.value === (cls.subjectType || cls.subject_type || 'lecture')
-                      );
-                      return (
-                        <div key={i} className="class-list-item"
-                          style={{ borderLeft: `3px solid ${ts?.color || '#4f46e5'}` }}>
-                          <span className="cli-time">{cls.time}</span>
-                          <span className="cli-course">{cls.course}</span>
-                          <span className="cli-group">{cls.group}</span>
-                          {cls.room && <span className="cli-room">🚪 {cls.room}</span>}
-                        </div>
-                      );
-                    })}
-                </div>
-              ))}
-            </div>
+          <div className="ttm-footer-note">
+            <code>/start</code> — get Telegram ID &nbsp;·&nbsp; <code>/status</code> — check registration
           </div>
         </div>
       )}
+
+      {/* ── GROUPS ── */}
+      {tab === 'groups' && (
+        <div className="ttm-pane">
+          <div className="ttm-hint">
+            Add bot as <strong>Admin</strong> → get chat ID from <code>@getidsbot</code> or use <code>@channelusername</code> → paste below
+          </div>
+          <div className="ttm-toolbar">
+            <button className="act save" onClick={() => { setAddingGroup(true); setNewGroupName(''); setNewGroupChat(''); setGroupError(''); }}>
+              + {t('tabGroupChannels') || 'Add Channel'}
+            </button>
+          </div>
+          {groupError && (
+            <div style={{background:'#4c0519',color:'#fecdd3',border:'1px solid #be123c',borderRadius:'8px',padding:'10px 14px',marginBottom:'10px',fontSize:'0.88rem'}}>
+              ⚠️ {groupError}
+            </div>
+          )}
+          <div className="ttm-scroll">
+            <table className="ttm-tbl">
+              <thead>
+                <tr><th>{t('group') || 'Group'} / Channel</th><th>Chat ID</th><th>{t('status') || 'Status'}</th><th>{t('actions') || 'Actions'}</th></tr>
+              </thead>
+              <tbody>
+                {/* ── Add new row ── */}
+                {addingGroup && (
+                  <tr style={{background:'var(--hint-bg)'}}>
+                    <td><input
+                      className="ttm-input ttm-input-name"
+                      placeholder="e.g. CS101-A"
+                      value={newGroupName}
+                      onChange={e => setNewGroupName(e.target.value)}
+                      autoFocus
+                    /></td>
+                    <td><input
+                      className="ttm-input ttm-input-id"
+                      placeholder="@username or -100123..."
+                      value={newGroupChat}
+                      onChange={e => setNewGroupChat(e.target.value)}
+                      onKeyDown={e => { if(e.key==='Enter') addNewGroup(); if(e.key==='Escape') setAddingGroup(false); }}
+                    /></td>
+                    <td><span className="status-dot off">New</span></td>
+                    <td><div className="act-row">
+                      <button className="act save" onClick={addNewGroup}>{t('save') || 'Save'}</button>
+                      <button className="act cancel" onClick={() => setAddingGroup(false)}>{t('cancel') || 'Cancel'}</button>
+                    </div></td>
+                  </tr>
+                )}
+                {groups.length === 0 && !addingGroup && (
+                  <tr><td colSpan={4} className="ttm-empty">No channels yet — click "+ {t('tabGroupChannels') || 'Add Channel'}" above</td></tr>
+                )}
+                {groups.map(g => (
+                  <tr key={g.group_name} className={g.chat_id ? 'tr-linked' : ''}>
+                    <td className="td-name"><span className="teacher-name">{g.group_name}</span></td>
+                    <td className="td-id">
+                      {editingGroup === g.group_name ? (
+                        <input
+                          className="ttm-input ttm-input-id"
+                          value={groupChatInput}
+                          onChange={e => setGroupChatInput(e.target.value)}
+                          placeholder="-1001234567890"
+                          onKeyDown={e => { if(e.key==='Enter') saveGroup(g.group_name); if(e.key==='Escape') setEditingGroup(null); }}
+                          autoFocus
+                        />
+                      ) : (
+                        <span className={g.chat_id ? 'id-chip set' : 'id-chip empty'}>
+                          {g.chat_id || (t('notSet') || 'not set')}
+                        </span>
+                      )}
+                    </td>
+                    <td>
+                      <span className={`status-dot ${g.chat_id ? 'on' : 'off'}`}>
+                        {g.chat_id ? (t('linked') || 'Linked') : (t('notSet') || 'Not set')}
+                      </span>
+                    </td>
+                    <td className="td-actions">
+                      {editingGroup === g.group_name ? (
+                        <div className="act-row">
+                          <button className="act save" onClick={() => saveGroup(g.group_name)}>{t('save') || 'Save'}</button>
+                          <button className="act cancel" onClick={() => setEditingGroup(null)}>{t('cancel') || 'Cancel'}</button>
+                        </div>
+                      ) : (
+                        <div className="act-row">
+                          <button className="act edit" onClick={() => { setEditingGroup(g.group_name); setGroupChatInput(g.chat_id||''); setConfirmDelete(null); }}>{t('edit') || 'Edit'}</button>
+                          {confirmDelete === g.group_name ? (
+                            <>
+                              <button className="act save" onClick={() => { deleteGroup(g.group_name); setConfirmDelete(null); }}>✓ Yes</button>
+                              <button className="act cancel" onClick={() => setConfirmDelete(null)}>✗ No</button>
+                            </>
+                          ) : (
+                            <button className="act del" onClick={() => setConfirmDelete(g.group_name)}>{t('delete') || 'Delete'}</button>
+                          )}
+                        </div>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ── BROADCAST ── */}
+      {tab === 'broadcast' && <BroadcastMessage />}
     </div>
   );
 };
 
-export default TeacherDashboard;
+const Stat = ({ val, lbl, color }) => (
+  <div className={`stat-item${color?' stat-'+color:''}`}>
+    <span className="stat-val">{val}</span>
+    <span className="stat-lbl">{lbl}</span>
+  </div>
+);
+
+export default TeacherTelegramManagement;

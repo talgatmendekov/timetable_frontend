@@ -51,9 +51,29 @@ const AppContent = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [currentCell, setCurrentCell] = useState({ group: null, day: null, time: null });
   const [importing, setImporting] = useState(false);
-  const [showBooking, setShowBooking] = useState(false);
+  const [showBooking, setShowBooking]       = useState(false);
+  const [selectedRoom, setSelectedRoom]     = useState('');
+  const [guestBookCell, setGuestBookCell]   = useState(null); // { group, day, time }
+  const [activeBookings, setActiveBookings] = useState([]);
 
   const fileInputRef = useRef(null);
+
+  // All known rooms from schedule
+  const allRooms = React.useMemo(() => {
+    const rooms = new Set();
+    Object.values(schedule).forEach(e => { if (e.room) rooms.add(e.room); });
+    return [...rooms].sort();
+  }, [schedule]);
+
+  // Fetch guest bookings so we can overlay them on the schedule
+  React.useEffect(() => {
+    if (!isAuthenticated) {
+      fetch(`${process.env.REACT_APP_API_URL || 'https://timetablebackend-production.up.railway.app/api'}/booking-requests`)
+        .then(r => r.json())
+        .then(d => { if (d.success) setActiveBookings(d.data || []); })
+        .catch(() => {});
+    }
+  }, [isAuthenticated]);
 
   // Count all conflicts for badge
   const conflictCount = React.useMemo(() => {
@@ -217,9 +237,15 @@ const AppContent = () => {
     { id: 'schedule',  icon: '📅', label: t('tabSchedule')   || 'Schedule' },
     { id: 'print',     icon: '🖨️', label: t('tabPrint')      || 'Print / PDF' },
     { id: 'dashboard', icon: '📊', label: t('tabDashboard')  || 'Teacher Stats' },
-    { id: 'conflicts', icon: '⚠️', label: t('tabConflicts')  || 'Conflicts', badge: conflictCount },
+    // Hidden in guest mode
+    ...( isAuthenticated ? [
+      { id: 'conflicts', icon: '⚠️', label: t('tabConflicts')  || 'Conflicts', badge: conflictCount },
+    ] : []),
     { id: 'bookings',  icon: '🏫', label: t('tabBookings')   || 'Lab Bookings', badge: 0 },
-    { id: 'telegram',  icon: '📱', label: t('tabTelegram')   || 'Telegram' },
+    // Hidden in guest mode
+    ...( isAuthenticated ? [
+      { id: 'telegram',  icon: '📱', label: t('tabTelegram')   || 'Telegram' },
+    ] : []),
   ];
 
   return (
@@ -263,7 +289,19 @@ const AppContent = () => {
           <button onClick={() => setShowBooking(true)} className="btn btn-primary">
             🏫 {t('bookLab') || 'Book a Lab'}
           </button>
-          <GuestBooking isOpen={showBooking} onClose={() => setShowBooking(false)} />
+          <GuestBooking
+            isOpen={showBooking || !!guestBookCell}
+            prefilledGroup={guestBookCell?.group}
+            prefilledDay={guestBookCell?.day}
+            prefilledTime={guestBookCell?.time}
+            onClose={() => { setShowBooking(false); setGuestBookCell(null); }}
+            onBooked={() => {
+              setGuestBookCell(null); setShowBooking(false);
+              // Refresh bookings
+              fetch(`${process.env.REACT_APP_API_URL || 'https://timetablebackend-production.up.railway.app/api'}/booking-requests`)
+                .then(r => r.json()).then(d => { if (d.success) setActiveBookings(d.data || []); }).catch(()=>{});
+            }}
+          />
         </>
       )}
 
@@ -285,11 +323,35 @@ const AppContent = () => {
 
       <div className="tab-content">
         {activeTab === 'schedule' && (
-          <ScheduleTable
-            selectedDay={selectedDay} selectedTeacher={selectedTeacher}
-            selectedGroup={selectedGroup}
-            onEditClass={handleEditClass} onDeleteGroup={deleteGroup}
-          />
+          <>
+            {/* Empty room filter */}
+            <div style={{padding:'0 8px 12px',display:'flex',alignItems:'center',gap:10,flexWrap:'wrap'}}>
+              <label style={{fontSize:'0.82rem',fontWeight:600,color:'#64748b',whiteSpace:'nowrap'}}>
+                🚪 {t('filterByRoom') || 'Filter by empty room:'}
+              </label>
+              <select
+                value={selectedRoom}
+                onChange={e => setSelectedRoom(e.target.value)}
+                style={{padding:'6px 10px',border:'1.5px solid #e2e8f0',borderRadius:8,fontSize:'0.88rem',background:'#fff',color:'#374151',minWidth:160}}
+              >
+                <option value="">— {t('allRooms') || 'Show all rooms'} —</option>
+                {allRooms.map(r => <option key={r} value={r}>{r}</option>)}
+              </select>
+              {selectedRoom && (
+                <span style={{fontSize:'0.82rem',color:'#4f46e5',background:'#eef2ff',padding:'4px 10px',borderRadius:6}}>
+                  Showing where <strong>{selectedRoom}</strong> is free
+                  <button onClick={() => setSelectedRoom('')} style={{background:'none',border:'none',cursor:'pointer',marginLeft:6,color:'#6366f1'}}>✕</button>
+                </span>
+              )}
+            </div>
+            <ScheduleTable
+              selectedDay={selectedDay} selectedTeacher={selectedTeacher}
+              selectedGroup={selectedGroup} selectedRoom={selectedRoom}
+              onEditClass={handleEditClass} onDeleteGroup={deleteGroup}
+              bookings={!isAuthenticated ? activeBookings : []}
+              onGuestBookCell={(group, day, time) => setGuestBookCell({ group, day, time })}
+            />
+          </>
         )}
         {activeTab === 'print'     && <PrintView />}
         {activeTab === 'dashboard' && <TeacherDashboard />}

@@ -1,183 +1,192 @@
 // src/components/GuestBooking.js
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSchedule } from '../context/ScheduleContext';
 import { useLanguage } from '../context/LanguageContext';
-import './GuestBooking.css';
 
-const GuestBooking = ({ isOpen, onClose }) => {
+const API_URL = process.env.REACT_APP_API_URL || 'https://timetablebackend-production.up.railway.app/api';
+
+const GuestBooking = ({
+  isOpen, onClose, onBooked,
+  prefilledGroup = '', prefilledDay = '', prefilledTime = '',
+}) => {
+  const { groups, days, timeSlots } = useSchedule();
   const { t } = useLanguage();
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    room: '',
-    day: 'Monday',
-    startTime: '08:00',
-    duration: 1,
-    purpose: '',
+
+  const [form, setForm] = useState({
+    guest_name: '', phone: '', group_name: '', day: '',
+    start_time: '', end_time: '', purpose: '', room: '',
   });
-  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitted, setSubmitted]   = useState(false);
+  const [error, setError]           = useState('');
 
-  const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const TIMES = ['08:00', '08:45', '09:30', '10:15', '11:00', '11:45', '12:30', 
-                 '13:10', '14:00', '14:45', '15:30', '16:15', '17:00', '17:45'];
+  // Pre-fill when opened from cell click
+  useEffect(() => {
+    if (isOpen) {
+      setForm(prev => ({
+        ...prev,
+        group_name: prefilledGroup || prev.group_name,
+        day:        prefilledDay   || prev.day,
+        start_time: prefilledTime  || prev.start_time,
+      }));
+      setSubmitted(false);
+      setError('');
+    }
+  }, [isOpen, prefilledGroup, prefilledDay, prefilledTime]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
+  const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }));
+
+  const handleSubmit = async () => {
+    setError('');
+    if (!form.guest_name.trim()) { setError('Please enter your name'); return; }
+    if (!form.group_name)        { setError('Please select a group'); return; }
+    if (!form.day)               { setError('Please select a day'); return; }
+    if (!form.start_time)        { setError('Please select a time'); return; }
+    if (!form.purpose.trim())    { setError('Please enter a purpose'); return; }
+
+    setSubmitting(true);
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:3001/api'}/booking-requests`, {
+      const res = await fetch(`${API_URL}/booking-requests`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(form),
       });
-
-      if (response.ok) {
+      const data = await res.json();
+      if (data.success) {
         setSubmitted(true);
-        setTimeout(() => {
-          onClose();
-          setSubmitted(false);
-          setFormData({
-            name: '', email: '', phone: '', room: '', day: 'Monday',
-            startTime: '08:00', duration: 1, purpose: '',
-          });
-        }, 2000);
+        if (onBooked) onBooked(data.data);
       } else {
-        alert(t('bookingFailed') || 'Booking request failed. Please try again.');
+        setError(data.error || 'Submission failed');
       }
-    } catch (error) {
-      alert(t('bookingError') || 'Network error. Please check your connection.');
+    } catch (e) {
+      setError('Network error — please try again');
+    } finally {
+      setSubmitting(false);
     }
   };
 
   if (!isOpen) return null;
 
+  const inputStyle = {
+    width:'100%', padding:'9px 12px', border:'1.5px solid #e2e8f0',
+    borderRadius:8, fontSize:'0.9rem', color:'#374151', background:'#fff',
+    outline:'none', boxSizing:'border-box', marginTop:4,
+  };
+  const labelStyle = { fontSize:'0.82rem', fontWeight:600, color:'#374151', display:'block' };
+  const fieldStyle = { marginBottom:14 };
+
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content guest-booking-modal" onClick={e => e.stopPropagation()}>
-        <div className="modal-header">
-          <h2>🏫 {t('bookLab') || 'Book a Lab'}</h2>
-          <button className="close-btn" onClick={onClose}>×</button>
+    <div style={{
+      position:'fixed', inset:0, background:'rgba(0,0,0,0.5)',
+      zIndex:1000, display:'flex', alignItems:'center', justifyContent:'center', padding:16,
+    }}>
+      <div style={{
+        background:'#fff', borderRadius:16, padding:28, width:'100%', maxWidth:480,
+        maxHeight:'90vh', overflowY:'auto', boxShadow:'0 20px 60px rgba(0,0,0,0.25)',
+      }}>
+        <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:20}}>
+          <h2 style={{margin:0,fontSize:'1.2rem',color:'#0f172a'}}>🏫 {t('bookLab')||'Book a Lab'}</h2>
+          <button onClick={onClose} style={{background:'none',border:'none',fontSize:'1.4rem',cursor:'pointer',color:'#64748b'}}>×</button>
         </div>
 
         {submitted ? (
-          <div className="booking-success">
-            <div className="success-icon">✅</div>
-            <h3>{t('bookingSubmitted') || 'Request Submitted!'}</h3>
-            <p>{t('bookingSubmittedMsg') || 'Admin will review and approve your booking request.'}</p>
+          <div style={{textAlign:'center',padding:'24px 0'}}>
+            <div style={{fontSize:'2.5rem',marginBottom:12}}>✅</div>
+            <h3 style={{color:'#166534',marginBottom:8}}>{t('bookingSubmitted')||'Request Submitted!'}</h3>
+            <p style={{color:'#64748b',fontSize:'0.9rem',marginBottom:20}}>
+              {t('bookingSubmittedMsg')||'Admin will review and approve your request. You can see the status in yellow on the schedule.'}
+            </p>
+            <button onClick={onClose} style={{
+              padding:'10px 24px',background:'#4f46e5',color:'#fff',border:'none',
+              borderRadius:10,fontSize:'0.95rem',fontWeight:700,cursor:'pointer',
+            }}>Close</button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit}>
-            <div className="modal-body">
-              <div className="form-row">
-                <div className="form-group">
-                  <label>{t('yourName') || 'Your Name'} *</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={e => setFormData({...formData, name: e.target.value})}
-                    required
-                    placeholder={t('enterName') || 'Enter your name'}
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>{t('email') || 'Email'} *</label>
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={e => setFormData({...formData, email: e.target.value})}
-                    required
-                    placeholder="example@mail.com"
-                  />
-                </div>
+          <>
+            {/* Pre-filled info badge */}
+            {(prefilledGroup || prefilledDay || prefilledTime) && (
+              <div style={{
+                background:'#eef2ff',border:'1.5px solid #c7d2fe',borderRadius:10,
+                padding:'8px 14px',marginBottom:16,fontSize:'0.85rem',color:'#3730a3',
+              }}>
+                📅 Booking for: <strong>{prefilledGroup}</strong> — {prefilledDay} at <strong>{prefilledTime}</strong>
               </div>
+            )}
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label>{t('phone') || 'Phone'}</label>
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={e => setFormData({...formData, phone: e.target.value})}
-                    placeholder="+996..."
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>{t('roomNumber') || 'Room/Lab'} *</label>
-                  <input
-                    type="text"
-                    value={formData.room}
-                    onChange={e => setFormData({...formData, room: e.target.value})}
-                    required
-                    placeholder="BIGLAB, B107, etc."
-                  />
-                </div>
+            {error && (
+              <div style={{background:'#fff1f2',border:'1px solid #fecdd3',borderRadius:8,padding:'8px 12px',marginBottom:14,color:'#be123c',fontSize:'0.88rem'}}>
+                ⚠️ {error}
               </div>
+            )}
 
-              <div className="form-row">
-                <div className="form-group">
-                  <label>{t('day') || 'Day'} *</label>
-                  <select
-                    value={formData.day}
-                    onChange={e => setFormData({...formData, day: e.target.value})}
-                    required
-                  >
-                    {DAYS.map(day => (
-                      <option key={day} value={day}>{t(day)}</option>
-                    ))}
-                  </select>
-                </div>
+            <div style={fieldStyle}>
+              <label style={labelStyle}>{t('yourName')||'Your Name'} *</label>
+              <input style={inputStyle} placeholder={t('enterName')||'Enter your name'} value={form.guest_name} onChange={e=>set('guest_name',e.target.value)} />
+            </div>
 
-                <div className="form-group">
-                  <label>{t('startTime') || 'Start Time'} *</label>
-                  <select
-                    value={formData.startTime}
-                    onChange={e => setFormData({...formData, startTime: e.target.value})}
-                    required
-                  >
-                    {TIMES.map(time => (
-                      <option key={time} value={time}>{time}</option>
-                    ))}
-                  </select>
-                </div>
+            <div style={fieldStyle}>
+              <label style={labelStyle}>{t('phone')||'Phone'}</label>
+              <input style={inputStyle} placeholder="+996 XXX XXX XXX" value={form.phone} onChange={e=>set('phone',e.target.value)} />
+            </div>
 
-                <div className="form-group">
-                  <label>{t('duration') || 'Duration'} *</label>
-                  <select
-                    value={formData.duration}
-                    onChange={e => setFormData({...formData, duration: parseInt(e.target.value)})}
-                    required
-                  >
-                    <option value={1}>1 {t('slot')} (40 min)</option>
-                    <option value={2}>2 {t('slots')} (80 min)</option>
-                    <option value={3}>3 {t('slots')} (120 min)</option>
-                    <option value={4}>4 {t('slots')} (160 min)</option>
-                  </select>
-                </div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:14}}>
+              <div>
+                <label style={labelStyle}>{t('selectGroup')||'Group'} *</label>
+                <select style={inputStyle} value={form.group_name} onChange={e=>set('group_name',e.target.value)}>
+                  <option value="">Select group</option>
+                  {groups.map(g=><option key={g} value={g}>{g}</option>)}
+                </select>
               </div>
-
-              <div className="form-group">
-                <label>{t('purpose') || 'Purpose/Reason'} *</label>
-                <textarea
-                  value={formData.purpose}
-                  onChange={e => setFormData({...formData, purpose: e.target.value})}
-                  required
-                  rows="3"
-                  placeholder={t('describePurpose') || 'Describe why you need this lab...'}
-                />
+              <div>
+                <label style={labelStyle}>{t('selectDay')||'Day'} *</label>
+                <select style={inputStyle} value={form.day} onChange={e=>set('day',e.target.value)}>
+                  <option value="">Select day</option>
+                  {days.map(d=><option key={d} value={d}>{t(d)||d}</option>)}
+                </select>
               </div>
             </div>
 
-            <div className="modal-footer">
-              <button type="button" onClick={onClose} className="btn btn-secondary">
-                {t('cancel')}
-              </button>
-              <button type="submit" className="btn btn-primary">
-                📨 {t('submitRequest') || 'Submit Request'}
-              </button>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:14}}>
+              <div>
+                <label style={labelStyle}>{t('startTime')||'Start Time'} *</label>
+                <select style={inputStyle} value={form.start_time} onChange={e=>set('start_time',e.target.value)}>
+                  <option value="">Select time</option>
+                  {timeSlots.map(tm=><option key={tm} value={tm}>{tm}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>End Time</label>
+                <select style={inputStyle} value={form.end_time} onChange={e=>set('end_time',e.target.value)}>
+                  <option value="">Optional</option>
+                  {timeSlots.map(tm=><option key={tm} value={tm}>{tm}</option>)}
+                </select>
+              </div>
             </div>
-          </form>
+
+            <div style={fieldStyle}>
+              <label style={labelStyle}>Room (optional)</label>
+              <input style={inputStyle} placeholder="e.g. B201" value={form.room} onChange={e=>set('room',e.target.value)} />
+            </div>
+
+            <div style={fieldStyle}>
+              <label style={labelStyle}>{t('purpose')||'Purpose'} *</label>
+              <textarea style={{...inputStyle, minHeight:80, resize:'vertical'}}
+                placeholder={t('describePurpose')||'Describe why you need this lab...'}
+                value={form.purpose} onChange={e=>set('purpose',e.target.value)}
+              />
+            </div>
+
+            <button
+              onClick={handleSubmit} disabled={submitting}
+              style={{
+                width:'100%', padding:'11px', background: submitting ? '#94a3b8' : '#4f46e5',
+                color:'#fff', border:'none', borderRadius:10,
+                fontSize:'1rem', fontWeight:700, cursor: submitting ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {submitting ? '⏳ Submitting...' : `📤 ${t('submitRequest')||'Submit Request'}`}
+            </button>
+          </>
         )}
       </div>
     </div>

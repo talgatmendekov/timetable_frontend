@@ -1,4 +1,4 @@
-// src/components/ScheduleTable.js - FIXED with colSpan + normalised teacher filter
+// src/components/ScheduleTable.js
 import React, { useState, useRef, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSchedule } from '../context/ScheduleContext';
@@ -12,69 +12,88 @@ const getTodayName = () => {
   return days[new Date().getDay()];
 };
 
-const getTypeStyle = (subjectType) => {
-  return SUBJECT_TYPES.find(s => s.value === subjectType) || SUBJECT_TYPES[0];
-};
+const getTypeStyle = (subjectType) =>
+  SUBJECT_TYPES.find(s => s.value === subjectType) || SUBJECT_TYPES[0];
 
-const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClass, onDeleteGroup }) => {
+const ScheduleTable = ({
+  selectedDay, selectedTeacher, selectedGroup,
+  selectedRoom,   // ← new: filter by empty room
+  onEditClass, onDeleteGroup,
+  bookings = [],  // ← booking overlays for guest mode
+  onGuestBookCell, // ← guest clicks empty cell to book
+}) => {
   const { isAuthenticated } = useAuth();
   const { groups, timeSlots, days, schedule, moveClass } = useSchedule();
   const { t, lang } = useLanguage();
 
-  const todayName = getTodayName();
-  const daysToShow = selectedDay ? [selectedDay] : days;
+  const todayName   = getTodayName();
+  const daysToShow  = selectedDay   ? [selectedDay]                        : days;
   const groupsToShow = selectedGroup ? groups.filter(g => g === selectedGroup) : groups;
-  const typeLabels = SUBJECT_TYPE_LABELS[lang] || SUBJECT_TYPE_LABELS.en;
+  const typeLabels  = SUBJECT_TYPE_LABELS[lang] || SUBJECT_TYPE_LABELS.en;
 
-  // Pre-normalise the selected teacher once per render
   const normSelectedTeacher = useMemo(
     () => selectedTeacher ? normalizeTeacherName(selectedTeacher) : '',
     [selectedTeacher]
   );
 
   const [dragSource, setDragSource] = useState(null);
-  const [dragOver, setDragOver] = useState(null);
+  const [dragOver,   setDragOver]   = useState(null);
   const dragNode = useRef(null);
 
-  const cellsToSkipGlobal = useMemo(() => {
-    const skipSet = new Set();
-    Object.values(schedule).forEach(classData => {
-      if (classData.duration && classData.duration > 1) {
-        const timeIdx = timeSlots.indexOf(classData.time);
-        if (timeIdx !== -1) {
-          for (let i = 1; i < classData.duration; i++) {
-            if (timeIdx + i < timeSlots.length) {
-              skipSet.add(`${classData.group}-${classData.day}-${timeSlots[timeIdx + i]}`);
-            }
-          }
+  // Build set of cells occupied by multi-slot classes
+  const cellsToSkip = useMemo(() => {
+    const s = new Set();
+    Object.values(schedule).forEach(cls => {
+      if (cls.duration > 1) {
+        const idx = timeSlots.indexOf(cls.time);
+        for (let i = 1; i < cls.duration; i++) {
+          if (timeSlots[idx + i]) s.add(`${cls.group}-${cls.day}-${timeSlots[idx + i]}`);
         }
       }
     });
-    return skipSet;
+    return s;
   }, [schedule, timeSlots]);
+
+  // ── When "show only empty rooms for <room>" is active, we filter to cells
+  //    where that room is not occupied ────────────────────────────────────────
+  const occupiedRoomCells = useMemo(() => {
+    if (!selectedRoom) return new Set();
+    const s = new Set();
+    Object.values(schedule).forEach(cls => {
+      if (cls.room?.toLowerCase() === selectedRoom.toLowerCase()) {
+        s.add(`${cls.day}-${cls.time}`);
+      }
+    });
+    return s;
+  }, [schedule, selectedRoom]);
 
   const getClass = (group, day, time) => schedule[`${group}-${day}-${time}`] || null;
 
-  // Compare via normalised names — dropdown shows "Dr. X" but DB stores "Dr. X B110 LAB"
-  const shouldShowCell = (classData) => {
-    if (!classData) return true;
-    if (normSelectedTeacher &&
+  const shouldShow = (classData, day, time) => {
+    // Teacher filter
+    if (normSelectedTeacher && classData &&
         normalizeTeacherName(classData.teacher) !== normSelectedTeacher) return false;
+    // Empty-room filter: show only cells where this room is free
+    if (selectedRoom) {
+      return !occupiedRoomCells.has(`${day}-${time}`);
+    }
     return true;
   };
 
-  const getCellConflicts = (group, day, time, classData) => {
+  const getConflicts = (group, day, time, classData) => {
     if (!classData) return [];
-    const conflicts = [];
-    Object.values(schedule).forEach(entry => {
-      if (entry.group === group || entry.day !== day || entry.time !== time) return;
-      if (classData.teacher && entry.teacher?.toLowerCase() === classData.teacher.toLowerCase())
-        conflicts.push('teacher');
-      if (classData.room && entry.room?.toLowerCase() === classData.room.toLowerCase())
-        conflicts.push('room');
+    const out = [];
+    Object.values(schedule).forEach(e => {
+      if (e.group === group || e.day !== day || e.time !== time) return;
+      if (classData.teacher && e.teacher?.toLowerCase() === classData.teacher.toLowerCase()) out.push('teacher');
+      if (classData.room    && e.room?.toLowerCase()    === classData.room.toLowerCase())    out.push('room');
     });
-    return [...new Set(conflicts)];
+    return [...new Set(out)];
   };
+
+  // Booking overlay helpers
+  const getBooking = (group, day, time) =>
+    bookings.find(b => b.group_name === group && b.day === day && b.start_time === time);
 
   const handleDragStart = (e, group, day, time) => {
     setDragSource({ group, day, time });
@@ -82,32 +101,24 @@ const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClas
     setTimeout(() => { if (dragNode.current) dragNode.current.style.opacity = '0.4'; }, 0);
     e.dataTransfer.effectAllowed = 'move';
   };
-
   const handleDragEnd = () => {
     if (dragNode.current) dragNode.current.style.opacity = '1';
-    setDragSource(null);
-    setDragOver(null);
-    dragNode.current = null;
+    setDragSource(null); setDragOver(null); dragNode.current = null;
   };
-
   const handleDragOver = (e, group, day, time) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    if (!dragOver || dragOver.group !== group || dragOver.day !== day || dragOver.time !== time) {
+    e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+    if (!dragOver || dragOver.group !== group || dragOver.day !== day || dragOver.time !== time)
       setDragOver({ group, day, time });
-    }
   };
-
   const handleDragLeave = (e) => {
     if (!e.currentTarget.contains(e.relatedTarget)) setDragOver(null);
   };
-
   const handleDrop = (e, toGroup, toDay, toTime) => {
     e.preventDefault();
     if (!dragSource) return;
-    const { group: fromGroup, day: fromDay, time: fromTime } = dragSource;
-    if (fromGroup === toGroup && fromDay === toDay && fromTime === toTime) { handleDragEnd(); return; }
-    moveClass(fromGroup, fromDay, fromTime, toGroup, toDay, toTime);
+    const { group: fg, day: fd, time: ft } = dragSource;
+    if (fg === toGroup && fd === toDay && ft === toTime) { handleDragEnd(); return; }
+    moveClass(fg, fd, ft, toGroup, toDay, toTime);
     handleDragEnd();
   };
 
@@ -119,6 +130,10 @@ const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClas
           <span className="legend-label">{type.icon} {typeLabels[type.value]}</span>
         </div>
       ))}
+      {!isAuthenticated && bookings.length > 0 && <>
+        <div className="legend-item"><span className="legend-dot" style={{background:'#eab308'}}/><span className="legend-label">⏳ Pending booking</span></div>
+        <div className="legend-item"><span className="legend-dot" style={{background:'#22c55e'}}/><span className="legend-label">✅ Approved booking</span></div>
+      </>}
       {isAuthenticated && <div className="legend-item legend-drag-hint">↔ {t('dragHint')}</div>}
     </div>
   );
@@ -134,7 +149,10 @@ const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClas
                 {t('groupTime')}{!isAuthenticated && <div className="lock-icon">🔒</div>}
               </th>
               {daysToShow.map(day => (
-                <th key={day} className={`day-header ${day === todayName ? 'today-col' : ''}`} colSpan={timeSlots.length}>
+                <th key={day}
+                  className={`day-header ${day === todayName ? 'today-col' : ''}`}
+                  colSpan={timeSlots.length}
+                >
                   {t(day)}{day === todayName && <span className="today-badge"> ★</span>}
                 </th>
               ))}
@@ -142,7 +160,9 @@ const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClas
             <tr>
               <th className="group-header" />
               {daysToShow.map(day => timeSlots.map(time => (
-                <th key={`${day}-${time}`} className={`time-header ${day === todayName ? 'today-time' : ''}`}>{time}</th>
+                <th key={`${day}-${time}`}
+                  className={`time-header ${day === todayName ? 'today-time' : ''}`}
+                >{time}</th>
               )))}
             </tr>
           </thead>
@@ -159,24 +179,43 @@ const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClas
                     )}
                   </div>
                 </td>
+
                 {daysToShow.map(day => timeSlots.map(time => {
                   const cellKey = `${group}-${day}-${time}`;
-                  if (cellsToSkipGlobal.has(cellKey)) return null;
+                  if (cellsToSkip.has(cellKey)) return null;
 
                   const classData  = getClass(group, day, time);
-                  const show       = shouldShowCell(classData);
+                  const show       = shouldShow(classData, day, time);
                   const isToday    = day === todayName;
-                  const conflicts  = getCellConflicts(group, day, time, classData);
-                  const isDragSource = dragSource?.group === group && dragSource?.day === day && dragSource?.time === time;
-                  const isDragOver   = dragOver?.group   === group && dragOver?.day   === day && dragOver?.time   === time;
+                  const conflicts  = getConflicts(group, day, time, classData);
+                  const isDragSrc  = dragSource?.group === group && dragSource?.day === day && dragSource?.time === time;
+                  const isDragOvr  = dragOver?.group   === group && dragOver?.day   === day && dragOver?.time   === time;
                   const typeStyle  = classData ? getTypeStyle(classData.subjectType) : null;
                   const duration   = classData?.duration ? parseInt(classData.duration) : 1;
+                  const booking    = getBooking(group, day, time);
 
                   if (!show) {
                     return (
-                      <td key={cellKey} className={`schedule-cell filtered-out ${isToday ? 'today-cell' : ''}`} colSpan={duration}>
+                      <td key={cellKey}
+                        className={`schedule-cell filtered-out ${isToday ? 'today-cell' : ''}`}
+                        colSpan={duration}
+                      >
                         <div className="filtered-label">{t('filtered')}</div>
                       </td>
+                    );
+                  }
+
+                  // Booking overlay styles
+                  let bookingStyle = {};
+                  let bookingLabel = null;
+                  if (!isAuthenticated && booking) {
+                    bookingStyle = booking.status === 'approved'
+                      ? { background: '#dcfce7', borderLeft: '3px solid #22c55e' }
+                      : { background: '#fef9c3', borderLeft: '3px solid #eab308' };
+                    bookingLabel = (
+                      <div style={{fontSize:'0.72rem',marginTop:3,color: booking.status === 'approved' ? '#166534' : '#854d0e',fontWeight:600}}>
+                        {booking.status === 'approved' ? '✅ Booked' : '⏳ Pending'}
+                      </div>
                     );
                   }
 
@@ -184,18 +223,27 @@ const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClas
                     <td key={cellKey}
                       className={[
                         'schedule-cell',
-                        classData       ? 'filled'        : '',
-                        isAuthenticated ? 'editable'      : '',
-                        isToday         ? 'today-cell'    : '',
+                        classData   ? 'filled'       : '',
+                        isAuthenticated ? 'editable' : (!classData && !booking) ? 'guest-bookable' : '',
+                        isToday     ? 'today-cell'   : '',
                         conflicts.includes('teacher') ? 'conflict-teacher' : '',
                         conflicts.includes('room')    ? 'conflict-room'    : '',
-                        isDragSource    ? 'drag-source'   : '',
-                        isDragOver ? (classData ? 'drag-over-filled' : 'drag-over-empty') : '',
-                        duration > 1    ? 'multi-slot'    : '',
+                        isDragSrc   ? 'drag-source'  : '',
+                        isDragOvr   ? (classData ? 'drag-over-filled' : 'drag-over-empty') : '',
+                        duration > 1 ? 'multi-slot'  : '',
                       ].filter(Boolean).join(' ')}
-                      style={classData && typeStyle ? { background: typeStyle.light, borderLeft: `3px solid ${typeStyle.color}` } : {}}
+                      style={
+                        booking ? bookingStyle :
+                        (classData && typeStyle ? { background: typeStyle.light, borderLeft: `3px solid ${typeStyle.color}` } : {})
+                      }
                       colSpan={duration}
-                      onClick={() => { if (isAuthenticated && !dragSource) onEditClass(group, day, time); }}
+                      onClick={() => {
+                        if (isAuthenticated && !dragSource) { onEditClass(group, day, time); return; }
+                        // Guest: click empty cell to book
+                        if (!isAuthenticated && !classData && !booking && onGuestBookCell) {
+                          onGuestBookCell(group, day, time);
+                        }
+                      }}
                       draggable={isAuthenticated && !!classData}
                       onDragStart={classData ? (e) => handleDragStart(e, group, day, time) : undefined}
                       onDragEnd={handleDragEnd}
@@ -228,12 +276,24 @@ const ScheduleTable = ({ selectedDay, selectedTeacher, selectedGroup, onEditClas
                               🚪 {classData.room}
                             </div>
                           )}
+                          {bookingLabel}
                           {isAuthenticated && <div className="drag-handle">⠿</div>}
                         </div>
                       ) : (
                         <>
-                          {isAuthenticated && <div className="empty-cell">+</div>}
-                          {isDragOver && <div className="drop-indicator">Drop here</div>}
+                          {booking ? (
+                            <div className="cell-content">
+                              <div className="course-name">{booking.purpose}</div>
+                              <div className="teacher-name">👤 {booking.guest_name}</div>
+                              {bookingLabel}
+                            </div>
+                          ) : (
+                            <>
+                              {isAuthenticated && <div className="empty-cell">+</div>}
+                              {!isAuthenticated && <div className="guest-book-hint">📅 Tap to book</div>}
+                              {isDragOvr && <div className="drop-indicator">Drop here</div>}
+                            </>
+                          )}
                         </>
                       )}
                     </td>
