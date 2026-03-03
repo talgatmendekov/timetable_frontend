@@ -238,11 +238,11 @@ const ScheduleTable = ({
                       }
                       colSpan={duration}
                       onClick={() => {
-                        if (isAuthenticated && !dragSource) { onEditClass(group, day, time); return; }
-                        // Guest: click empty cell to book
-                        if (!isAuthenticated && !classData && !booking && onGuestBookCell) {
+                        if (isAuthenticated && !dragSource) onEditClass(group, day, time);
+                      }}
+                      onDoubleClick={() => {
+                        if (!isAuthenticated && !classData && !booking && onGuestBookCell)
                           onGuestBookCell(group, day, time);
-                        }
                       }}
                       draggable={isAuthenticated && !!classData}
                       onDragStart={classData ? (e) => handleDragStart(e, group, day, time) : undefined}
@@ -290,7 +290,7 @@ const ScheduleTable = ({
                           ) : (
                             <>
                               {isAuthenticated && <div className="empty-cell">+</div>}
-                              {!isAuthenticated && <div className="guest-book-hint">📅 Tap to book</div>}
+                              {!isAuthenticated && <div className="guest-book-hint">📅 ↩ Double-click to book</div>}
                               {isDragOvr && <div className="drop-indicator">Drop here</div>}
                             </>
                           )}

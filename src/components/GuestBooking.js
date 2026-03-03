@@ -9,11 +9,11 @@ const GuestBooking = ({
   isOpen, onClose, onBooked,
   prefilledGroup = '', prefilledDay = '', prefilledTime = '',
 }) => {
-  const { groups, days, timeSlots } = useSchedule();
+  const { days, timeSlots } = useSchedule();
   const { t } = useLanguage();
 
   const [form, setForm] = useState({
-    guest_name: '', phone: '', group_name: '', day: '',
+    name: '', phone: '', day: '',
     start_time: '', end_time: '', purpose: '', room: '',
   });
   const [submitting, setSubmitting] = useState(false);
@@ -25,7 +25,6 @@ const GuestBooking = ({
     if (isOpen) {
       setForm(prev => ({
         ...prev,
-        group_name: prefilledGroup || prev.group_name,
         day:        prefilledDay   || prev.day,
         start_time: prefilledTime  || prev.start_time,
       }));
@@ -38,8 +37,8 @@ const GuestBooking = ({
 
   const handleSubmit = async () => {
     setError('');
-    if (!form.guest_name.trim()) { setError('Please enter your name'); return; }
-    if (!form.group_name)        { setError('Please select a group'); return; }
+    if (!form.name.trim()) { setError('Please enter your name'); return; }
+    if (!form.room.trim())    { setError('Please enter a room'); return; }
     if (!form.day)               { setError('Please select a day'); return; }
     if (!form.start_time)        { setError('Please select a time'); return; }
     if (!form.purpose.trim())    { setError('Please enter a purpose'); return; }
@@ -49,7 +48,16 @@ const GuestBooking = ({
       const res = await fetch(`${API_URL}/booking-requests`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          name: form.name.trim(),
+          phone: form.phone.trim(),
+          group_name: prefilledGroup || '',
+          day: form.day,
+          start_time: form.start_time,
+          end_time: form.end_time,
+          purpose: form.purpose.trim(),
+          room: form.room.trim(),
+        }),
       });
       const data = await res.json();
       if (data.success) {
@@ -121,7 +129,7 @@ const GuestBooking = ({
 
             <div style={fieldStyle}>
               <label style={labelStyle}>{t('yourName')||'Your Name'} *</label>
-              <input style={inputStyle} placeholder={t('enterName')||'Enter your name'} value={form.guest_name} onChange={e=>set('guest_name',e.target.value)} />
+              <input style={inputStyle} placeholder={t('enterName')||'Enter your name'} value={form.name} onChange={e=>set('name',e.target.value)} />
             </div>
 
             <div style={fieldStyle}>
@@ -129,21 +137,12 @@ const GuestBooking = ({
               <input style={inputStyle} placeholder="+996 XXX XXX XXX" value={form.phone} onChange={e=>set('phone',e.target.value)} />
             </div>
 
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:14}}>
-              <div>
-                <label style={labelStyle}>{t('selectGroup')||'Group'} *</label>
-                <select style={inputStyle} value={form.group_name} onChange={e=>set('group_name',e.target.value)}>
-                  <option value="">Select group</option>
-                  {groups.map(g=><option key={g} value={g}>{g}</option>)}
-                </select>
-              </div>
-              <div>
-                <label style={labelStyle}>{t('selectDay')||'Day'} *</label>
-                <select style={inputStyle} value={form.day} onChange={e=>set('day',e.target.value)}>
-                  <option value="">Select day</option>
-                  {days.map(d=><option key={d} value={d}>{t(d)||d}</option>)}
-                </select>
-              </div>
+            <div style={fieldStyle}>
+              <label style={labelStyle}>{t('selectDay')||'Day'} *</label>
+              <select style={inputStyle} value={form.day} onChange={e=>set('day',e.target.value)}>
+                <option value="">Select day</option>
+                {days.map(d=><option key={d} value={d}>{t(d)||d}</option>)}
+              </select>
             </div>
 
             <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:12,marginBottom:14}}>
@@ -164,7 +163,7 @@ const GuestBooking = ({
             </div>
 
             <div style={fieldStyle}>
-              <label style={labelStyle}>Room (optional)</label>
+              <label style={labelStyle}>Room *</label>
               <input style={inputStyle} placeholder="e.g. B201" value={form.room} onChange={e=>set('room',e.target.value)} />
             </div>
 
