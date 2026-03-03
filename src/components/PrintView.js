@@ -34,37 +34,42 @@ const PrintView = () => {
   const [mode, setMode]               = useState('group');
   const [selectedGroup, setSelectedGroup] = useState('');
   const [selectedDay, setSelectedDay]     = useState('');
-  const [deptId, setDeptId]           = useState('');
+  const [deptId, setDeptId]               = useState('');
   const printRef = useRef();
 
-  const dept = DEPARTMENTS.find(d => d.id === deptId);
-  const deptLabel = (d) => d[lang] || d.en;
+  const dept         = DEPARTMENTS.find(d => d.id === deptId);
+  const deptLabel    = (d) => d?.[lang] || d?.en || '';
   const filteredGroups = deptId ? groups.filter(g => dept?.groups.includes(g)) : groups;
 
-  const getClass  = (group, day, time) => schedule[`${group}-${day}-${time}`] || null;
-  const typeOf    = (st) => SUBJECT_TYPES.find(s => s.value === st) || SUBJECT_TYPES[0];
+  const getClass = (group, day, time) => schedule[`${group}-${day}-${time}`] || null;
+  const typeOf   = (st) => SUBJECT_TYPES.find(s => s.value === st) || SUBJECT_TYPES[0];
 
   const handlePrint = () => {
     const html = printRef.current?.innerHTML;
     if (!html) return;
     const w = window.open('', '_blank');
-    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+    w.document.write(`<!DOCTYPE html><html><head>
+      <meta charset="UTF-8">
       <title>Schedule — Alatoo International University</title>
       <style>
-        *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:Arial,sans-serif;font-size:11px;color:#000;padding:16px}
-        h1{font-size:15px;text-align:center;margin:0 0 4px}
-        h2{font-size:11px;text-align:center;color:#555;margin:0 0 14px}
-        h3{font-size:11px;margin:14px 0 5px;padding:4px 8px;background:#f0f0f0;border-left:3px solid #6366f1}
-        table{width:100%;border-collapse:collapse;margin-bottom:12px;page-break-inside:avoid}
-        th,td{border:1px solid #ccc;padding:4px 6px;font-size:9px;vertical-align:top}
-        th{background:#e8e8e8;font-weight:700;text-align:center;white-space:nowrap}
-        .course{font-weight:700;font-size:9px}
-        .teacher,.room{color:#555;font-size:8px}
-        .pill{display:inline-block;padding:1px 4px;border-radius:3px;font-size:7px;color:#fff;margin-bottom:2px}
-        .empty{color:#bbb;text-align:center}
-        @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
-      </style></head><body>${html}</body></html>`);
+        @page { size: A4 landscape; margin: 8mm; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: Arial, sans-serif; font-size: 8px; color: #000; }
+        h1 { font-size: 12px; text-align: center; margin: 0 0 2px; font-weight: 800; }
+        h2 { font-size: 9px; text-align: center; color: #555; margin: 0 0 8px; }
+        h3 { font-size: 9px; margin: 8px 0 4px; padding: 3px 6px; background: #f0f0f0; border-left: 3px solid #6366f1; font-weight: 700; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 8px; page-break-inside: avoid; table-layout: fixed; }
+        th, td { border: 1px solid #ccc; padding: 2px 3px; font-size: 7px; vertical-align: top; overflow: hidden; }
+        th { background: #e8e8e8; font-weight: 700; text-align: center; white-space: nowrap; }
+        td.day-col { font-weight: 700; background: #f8f8f8; white-space: nowrap; width: 55px; font-size: 7px; }
+        td.group-col { font-weight: 700; background: #f8f8f8; white-space: nowrap; width: 65px; font-size: 7px; }
+        .course { font-weight: 700; font-size: 7px; line-height: 1.2; }
+        .teacher, .room { color: #555; font-size: 6px; line-height: 1.2; }
+        .pill { display: inline-block; padding: 0 3px; border-radius: 2px; font-size: 6px; color: #fff; margin-bottom: 1px; }
+        .empty { color: #ccc; text-align: center; font-size: 9px; }
+        @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+      </style>
+      </head><body>${html}</body></html>`);
     w.document.close();
     setTimeout(() => { w.focus(); w.print(); }, 400);
   };
@@ -72,27 +77,29 @@ const PrintView = () => {
   const renderCell = (cls) => {
     if (!cls) return <span className="empty">—</span>;
     const ts = typeOf(cls.subjectType);
-    return <>
-      <div className="pill" style={{background: ts.color}}>{ts.icon}</div>
-      <div className="course">{cls.course}</div>
-      {cls.teacher && <div className="teacher">👨‍🏫 {cls.teacher}</div>}
-      {cls.room    && <div className="room">🚪 {cls.room}</div>}
-    </>;
+    return (
+      <div>
+        <span className="pill" style={{background: ts.color}}>{ts.icon}</span>
+        <div className="course">{cls.course}</div>
+        {cls.teacher && <div className="teacher">{cls.teacher}</div>}
+        {cls.room    && <div className="room">🚪{cls.room}</div>}
+      </div>
+    );
   };
 
   const renderByGroup = () =>
     (selectedGroup ? [selectedGroup] : filteredGroups).map(group => (
-      <div key={group} style={{marginBottom:24}}>
+      <div key={group} className="print-section">
         <h3>📋 {group}</h3>
         <table>
           <thead><tr>
-            <th style={{width:70}}>{t('day')||'Day'}</th>
+            <th style={{width:55}}>{t('day')||'Day'}</th>
             {timeSlots.map(tm => <th key={tm}>{tm}</th>)}
           </tr></thead>
           <tbody>{days.map(day => (
             <tr key={day}>
-              <td style={{fontWeight:700,background:'#f8f8f8',whiteSpace:'nowrap'}}>{t(day)||day}</td>
-              {timeSlots.map(tm => <td key={tm}>{renderCell(getClass(group,day,tm))}</td>)}
+              <td className="day-col">{t(day)||day}</td>
+              {timeSlots.map(tm => <td key={tm}>{renderCell(getClass(group, day, tm))}</td>)}
             </tr>
           ))}</tbody>
         </table>
@@ -101,17 +108,17 @@ const PrintView = () => {
 
   const renderByDay = () =>
     (selectedDay ? [selectedDay] : days).map(day => (
-      <div key={day} style={{marginBottom:24}}>
+      <div key={day} className="print-section">
         <h3>📅 {t(day)||day}</h3>
         <table>
           <thead><tr>
-            <th style={{width:110}}>{t('groupTime')||'Group'}</th>
+            <th style={{width:70}}>{t('groupTime')||'Group'}</th>
             {timeSlots.map(tm => <th key={tm}>{tm}</th>)}
           </tr></thead>
           <tbody>{filteredGroups.map(group => (
             <tr key={group}>
-              <td style={{fontWeight:700,background:'#f8f8f8'}}>{group}</td>
-              {timeSlots.map(tm => <td key={tm}>{renderCell(getClass(group,day,tm))}</td>)}
+              <td className="group-col">{group}</td>
+              {timeSlots.map(tm => <td key={tm}>{renderCell(getClass(group, day, tm))}</td>)}
             </tr>
           ))}</tbody>
         </table>
@@ -119,89 +126,83 @@ const PrintView = () => {
     ));
 
   return (
-    <div style={{maxWidth:1100,margin:'0 auto',padding:'24px 16px'}}>
+    <div className="print-view-wrap">
 
-      {/* Controls */}
-      <div style={{background:'#f8fafc',border:'1px solid #e2e8f0',borderRadius:14,padding:'20px 24px',marginBottom:20,display:'flex',flexWrap:'wrap',gap:20,alignItems:'flex-end'}}>
+      {/* ── Controls bar — matches original app style ── */}
+      <div className="print-controls-bar">
 
-        {/* Department */}
-        <div style={{display:'flex',flexDirection:'column',gap:8}}>
-          <label style={{fontSize:'0.75rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.07em',color:'#64748b'}}>🏛 Department</label>
-          <div style={{display:'flex',flexWrap:'wrap',gap:6}}>
-            {[{id:'',icon:'🌐',en:'All',ru:'Все',ky:'Баары'},...DEPARTMENTS].map(d => (
+        {/* Department picker */}
+        <div className="print-ctrl-group">
+          <span className="print-ctrl-label">🏛 Department</span>
+          <div className="print-dept-row">
+            <button className={`print-dept-btn${deptId===''?' active':''}`}
+              onClick={() => { setDeptId(''); setSelectedGroup(''); }}>
+              🌐 {t('allGroups')||'All'}
+            </button>
+            {DEPARTMENTS.map(d => (
               <button key={d.id}
+                className={`print-dept-btn${deptId===d.id?' active':''}`}
                 onClick={() => { setDeptId(d.id); setSelectedGroup(''); }}
-                style={{
-                  padding:'7px 13px',border:'1.5px solid',borderRadius:9,
-                  fontSize:'0.83rem',fontWeight: deptId===d.id ? 700 : 500,cursor:'pointer',
-                  background: deptId===d.id ? '#6366f1' : '#fff',
-                  color:      deptId===d.id ? '#fff'    : '#374151',
-                  borderColor:deptId===d.id ? '#6366f1' : '#e2e8f0',
-                  transition:'all 0.15s',
-                }}
-              >{d.icon} {deptLabel(d)}</button>
+                title={d.groups.join(', ')}
+              >
+                {d.icon} {deptLabel(d)}
+              </button>
             ))}
           </div>
         </div>
 
-        {/* Mode */}
-        <div style={{display:'flex',flexDirection:'column',gap:8}}>
-          <label style={{fontSize:'0.75rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.07em',color:'#64748b'}}>{t('printByGroup')||'Mode'}</label>
-          <div style={{display:'flex',gap:6}}>
-            {[{id:'group',label:`👥 ${t('printByGroup')||'By Group'}`},{id:'day',label:`📅 ${t('printByDay')||'By Day'}`}].map(m => (
-              <button key={m.id} onClick={()=>setMode(m.id)} style={{
-                padding:'7px 16px',border:'1.5px solid',borderRadius:9,fontSize:'0.88rem',
-                fontWeight: mode===m.id ? 700 : 500,cursor:'pointer',
-                background: mode===m.id ? '#4f46e5' : '#fff',
-                color:      mode===m.id ? '#fff'    : '#374151',
-                borderColor:mode===m.id ? '#4f46e5' : '#e2e8f0',
-              }}>{m.label}</button>
-            ))}
+        {/* View mode */}
+        <div className="print-ctrl-group">
+          <span className="print-ctrl-label">{t('printByGroup')||'View'}</span>
+          <div className="print-mode-row">
+            <button className={`print-mode-btn${mode==='group'?' active':''}`} onClick={()=>setMode('group')}>
+              👥 {t('printByGroup')||'By Group'}
+            </button>
+            <button className={`print-mode-btn${mode==='day'?' active':''}`} onClick={()=>setMode('day')}>
+              📅 {t('printByDay')||'By Day'}
+            </button>
           </div>
         </div>
 
-        {/* Group select */}
-        {mode === 'group' && (
-          <div style={{display:'flex',flexDirection:'column',gap:8}}>
-            <label style={{fontSize:'0.75rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.07em',color:'#64748b'}}>{t('filterByGroup')||'Group'}</label>
-            <select value={selectedGroup} onChange={e=>setSelectedGroup(e.target.value)}
-              style={{padding:'8px 12px',border:'1.5px solid #e2e8f0',borderRadius:9,fontSize:'0.9rem',minWidth:180,background:'#fff'}}>
-              <option value="">{t('allGroups')||'All Groups'} ({filteredGroups.length})</option>
+        {/* Group / Day selector */}
+        {mode === 'group' ? (
+          <div className="print-ctrl-group">
+            <span className="print-ctrl-label">{t('selectGroup')||'Group'}</span>
+            <select className="print-select" value={selectedGroup} onChange={e=>setSelectedGroup(e.target.value)}>
+              <option value="">{t('allGroups')||'All'} ({filteredGroups.length})</option>
               {filteredGroups.map(g=><option key={g} value={g}>{g}</option>)}
             </select>
           </div>
-        )}
-
-        {/* Day select */}
-        {mode === 'day' && (
-          <div style={{display:'flex',flexDirection:'column',gap:8}}>
-            <label style={{fontSize:'0.75rem',fontWeight:700,textTransform:'uppercase',letterSpacing:'0.07em',color:'#64748b'}}>{t('filterByDay')||'Day'}</label>
-            <select value={selectedDay} onChange={e=>setSelectedDay(e.target.value)}
-              style={{padding:'8px 12px',border:'1.5px solid #e2e8f0',borderRadius:9,fontSize:'0.9rem',minWidth:160,background:'#fff'}}>
-              <option value="">{t('allDays')||'All Days'}</option>
+        ) : (
+          <div className="print-ctrl-group">
+            <span className="print-ctrl-label">{t('selectDay')||'Day'}</span>
+            <select className="print-select" value={selectedDay} onChange={e=>setSelectedDay(e.target.value)}>
+              <option value="">{t('allDays')||'All'}</option>
               {days.map(d=><option key={d} value={d}>{t(d)||d}</option>)}
             </select>
           </div>
         )}
 
-        <button onClick={handlePrint} style={{
-          padding:'10px 24px',background:'#4f46e5',color:'#fff',border:'none',
-          borderRadius:10,fontSize:'0.95rem',fontWeight:700,cursor:'pointer',whiteSpace:'nowrap',
-        }}>🖨️ {t('printNow')||'Print / PDF'}</button>
+        <button className="print-btn" onClick={handlePrint}>
+          🖨️ {t('printNow')||'Print / PDF'}
+        </button>
       </div>
 
       {/* Dept badge */}
       {dept && (
-        <div style={{display:'inline-flex',alignItems:'center',gap:8,background:'#eef2ff',border:'1.5px solid #c7d2fe',borderRadius:10,padding:'7px 14px',marginBottom:16,fontSize:'0.88rem',color:'#3730a3'}}>
+        <div className="print-dept-badge">
           {dept.icon} <strong>{deptLabel(dept)}</strong> — {filteredGroups.length} groups
-          <button onClick={()=>setDeptId('')} style={{background:'none',border:'none',cursor:'pointer',color:'#6366f1',fontSize:'1rem',padding:'0 0 0 4px'}}>✕</button>
+          <button className="print-dept-badge-x" onClick={()=>setDeptId('')}>✕</button>
         </div>
       )}
 
-      {/* Printable area */}
-      <div ref={printRef}>
+      {/* Preview */}
+      <div ref={printRef} className="print-preview">
         <h1>🏛 Alatoo International University</h1>
-        <h2>{dept ? deptLabel(dept) : (t('tabSchedule')||'Schedule')} — {new Date().toLocaleDateString()}</h2>
+        <h2>
+          {dept ? deptLabel(dept) : (t('tabSchedule')||'Schedule')}
+          {' — '}{new Date().toLocaleDateString()}
+        </h2>
         {mode === 'group' ? renderByGroup() : renderByDay()}
       </div>
     </div>

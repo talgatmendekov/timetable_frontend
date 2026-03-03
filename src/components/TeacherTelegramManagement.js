@@ -23,6 +23,7 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
   const [groups, setGroups]           = useState([]);
   const [loading, setLoading]         = useState(true);
   const [tab, setTab]                 = useState('teachers');
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [search, setSearch]           = useState('');
 
   // Teacher row state
@@ -57,9 +58,29 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
     } catch (e) { console.error(e); }
   };
 
+  const fetchGlobalNotifSetting = async () => {
+    try {
+      const res  = await fetch(`${API_URL}/settings/notifications_enabled`);
+      const data = await res.json();
+      if (data.success) setNotificationsEnabled(data.value !== 'false');
+    } catch { /* ignore */ }
+  };
+
+  const toggleGlobalNotifications = async () => {
+    const newVal = !notificationsEnabled;
+    try {
+      await fetch(`${API_URL}/settings/notifications_enabled`, {
+        method: 'PUT',
+        headers: { Authorization: `Bearer ${getToken()}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value: String(newVal) }),
+      });
+      setNotificationsEnabled(newVal);
+    } catch (e) { alert('Error: ' + e.message); }
+  };
+
   const fetchAll = async () => {
     setLoading(true);
-    await Promise.all([fetchDbTeachers(), fetchGroups()]);
+    await Promise.all([fetchDbTeachers(), fetchGroups(), fetchGlobalNotifSetting()]);
     setLoading(false);
   };
 
@@ -94,10 +115,11 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
       const winner = matches.find(r => r.telegram_id) || matches[0] || null;
       return {
         canonName,
-        id:           winner?.id   || null,
-        telegram_id:  winner?.telegram_id || null,
-        allIds:       matches.map(r => r.id),
-        dupCount:     matches.length,
+        id:                    winner?.id   || null,
+        telegram_id:           winner?.telegram_id || null,
+        notifications_enabled: winner?.notifications_enabled !== false, // default true
+        allIds:                matches.map(r => r.id),
+        dupCount:              matches.length,
       };
     });
   }, [canonicalTeachers, dbTeachers, normalizeTeacherName]);
@@ -185,6 +207,14 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
     await fetchDbTeachers();
   };
 
+  const toggleNotifications = async (teacher) => {
+    if (!teacher.id) return;
+    const newVal = !teacher.notifications_enabled;
+    const data = await apiCall(`${API_URL}/teachers/${teacher.id}/notifications`, 'PUT', { enabled: newVal });
+    if (data.success) fetchDbTeachers();
+    else alert('Error: ' + (data.error || 'unknown'));
+  };
+
   const deleteTeacher = async (t) => {
     if (!t.allIds.length) {
       alert(`"${t.canonName}" has no database record — nothing to delete.`);
@@ -253,8 +283,35 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
           <h2 className="ttm-title">Telegram</h2>
           <p className="ttm-sub">Notifications · Group Channels · Broadcast</p>
         </div>
-        <button className="ttm-ico-btn" onClick={fetchAll} title={t('refresh') || 'Refresh'}>↻</button>
+        <div style={{display:'flex',alignItems:'center',gap:12}}>
+          {/* Global notifications master switch */}
+          <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',userSelect:'none'}}>
+            <span style={{fontSize:'0.82rem',fontWeight:600,color: notificationsEnabled ? 'var(--badge-on-txt)' : 'var(--badge-off-txt)'}}>
+              {notificationsEnabled ? `🔔 ${t('notificationsOn')||'Notifications ON'}` : `🔕 ${t('notificationsOff')||'Notifications OFF'}`}
+            </span>
+            <label className="notif-toggle" title="Toggle all Telegram notifications">
+              <input
+                type="checkbox"
+                checked={notificationsEnabled}
+                onChange={toggleGlobalNotifications}
+              />
+              <span className="notif-slider" />
+            </label>
+          </label>
+          <button className="ttm-ico-btn" onClick={fetchAll} title={t('refresh') || 'Refresh'}>↻</button>
+        </div>
       </div>
+
+      {/* Global notifications warning banner */}
+      {!notificationsEnabled && (
+        <div style={{
+          background:'#4c0519',color:'#fecdd3',border:'1px solid #be123c',
+          borderRadius:10,padding:'10px 16px',marginBottom:16,
+          fontSize:'0.88rem',display:'flex',alignItems:'center',gap:10,
+        }}>
+          🔕 <strong>Telegram notifications are disabled.</strong> No messages will be sent to teachers or groups until you turn this back on.
+        </div>
+      )}
 
       {/* STATS */}
       <div className="ttm-stats">
@@ -300,6 +357,7 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
                 <tr>
                   <th>{t('teacherName') || 'Teacher'}</th>
                   <th>{t('telegramId') || 'Telegram ID'}</th>
+                  <th>{t('notifications') || 'Notifs'}</th>
                   <th>{t('status') || 'Status'}</th>
                   <th>{t('actions') || 'Actions'}</th>
                 </tr>
@@ -347,6 +405,20 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
                             {teacher.telegram_id || t('notSet') || 'not set'}
                           </span>
                         )}
+                      </td>
+
+                      {/* NOTIFICATIONS TOGGLE */}
+                      <td style={{textAlign:'center'}}>
+                        {teacher.telegram_id ? (
+                          <label className="notif-toggle" title={teacher.notifications_enabled ? (t('notificationsOn')||'ON') : (t('notificationsOff')||'OFF')}>
+                            <input
+                              type="checkbox"
+                              checked={teacher.notifications_enabled}
+                              onChange={() => toggleNotifications(teacher)}
+                            />
+                            <span className="notif-slider" />
+                          </label>
+                        ) : <span style={{color:'var(--text-muted)',fontSize:'0.8rem'}}>—</span>}
                       </td>
 
                       {/* STATUS */}
