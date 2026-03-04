@@ -99,7 +99,13 @@ export const ScheduleProvider = ({ children }) => {
           groupsAPI.getAll(),
         ]);
         setSchedule(scheduleData || {});
-        if (groupsData?.length > 0) setGroups(groupsData);
+        // groupsData = { success, data: [{group_name, chat_id}] }
+        // Extract group names from the response, dedupe with schedule keys
+        const fromAPI = (groupsData?.data || []).map(g => g.group_name).filter(Boolean);
+        // Also extract any groups directly present in schedule data (covers booking-created groups)
+        const fromSchedule = [...new Set(Object.values(scheduleData || {}).map(e => e.group).filter(Boolean))];
+        const merged = [...new Set([...fromAPI, ...fromSchedule])].sort();
+        if (merged.length > 0) setGroups(merged);
         setError(null);
         setLoading(false);
         return;
