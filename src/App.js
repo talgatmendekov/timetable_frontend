@@ -339,7 +339,12 @@ const AppContent = () => {
             <ScheduleTable
               selectedDay={selectedDay} selectedTeacher={selectedTeacher}
               selectedGroup={selectedGroup} selectedRoom={selectedRoom}
-              onEditClass={handleEditClass} onDeleteGroup={deleteGroup}
+              onEditClass={handleEditClass} onDeleteGroup={async (groupName) => {
+                await deleteGroup(groupName);
+                setActiveBookings(prev => prev.filter(b =>
+                  b.entity !== groupName && b.name !== groupName
+                ));
+              }}
               bookings={activeBookings}
               onGuestBookCell={(group, day, time) => setGuestBookCell({ group, day, time })}
             />
