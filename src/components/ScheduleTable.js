@@ -205,16 +205,20 @@ const ScheduleTable = ({
                     );
                   }
 
-                  // Booking overlay styles
+                  // Booking overlay styles — shown for all users
                   let bookingStyle = {};
                   let bookingLabel = null;
-                  if (!isAuthenticated && booking) {
+                  if (booking) {
                     bookingStyle = booking.status === 'approved'
                       ? { background: '#dcfce7', borderLeft: '3px solid #22c55e' }
                       : { background: '#fef9c3', borderLeft: '3px solid #eab308' };
                     bookingLabel = (
-                      <div style={{fontSize:'0.72rem',marginTop:3,color: booking.status === 'approved' ? '#166534' : '#854d0e',fontWeight:600}}>
-                        {booking.status === 'approved' ? '✅ Booked' : '⏳ Pending'}
+                      <div style={{fontSize:'0.68rem',marginTop:3,fontWeight:600,
+                        color: booking.status === 'approved' ? '#166534' : '#854d0e',
+                        display:'flex',alignItems:'center',gap:3}}>
+                        {booking.status === 'approved' ? '✅' : '⏳'}
+                        <span>{booking.name || ''}</span>
+                        {booking.room && <span style={{opacity:0.7}}>· {booking.room}</span>}
                       </div>
                     );
                   }
@@ -238,9 +242,7 @@ const ScheduleTable = ({
                       }
                       colSpan={duration}
                       onClick={() => {
-                        if (isAuthenticated && !dragSource) onEditClass(group, day, time);
-                      }}
-                      onDoubleClick={() => {
+                        if (isAuthenticated && !dragSource) { onEditClass(group, day, time); return; }
                         if (!isAuthenticated && !classData && !booking && onGuestBookCell)
                           onGuestBookCell(group, day, time);
                       }}
@@ -290,7 +292,7 @@ const ScheduleTable = ({
                           ) : (
                             <>
                               {isAuthenticated && <div className="empty-cell">+</div>}
-                              {!isAuthenticated && <div className="guest-book-hint">📅 ↩ Double-click to book</div>}
+                              {!isAuthenticated && <div className="guest-book-hint">📅 📅 Click to book</div>}
                               {isDragOvr && <div className="drop-indicator">Drop here</div>}
                             </>
                           )}

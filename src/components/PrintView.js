@@ -51,13 +51,22 @@ const PrintView = () => {
     if (!html) return;
     const w = window.open('', '_blank');
 
-    // Dynamic font size based on number of groups / time slots
-    const groupCount = (selectedGroup ? 1 : filteredGroups.length);
-    const colCount   = timeSlots.length + 1;
-    // More groups → smaller font; target: fit ~6 groups per page comfortably
-    const baseFontPx = Math.max(4.5, Math.min(7, Math.floor(48 / colCount)));
-    const cellPad    = groupCount <= 8 ? '3px 2px' : '2px 1px';
-    const thFontPx   = Math.max(4, baseFontPx - 0.5);
+    // Dynamic sizing: fit all groups of a department on 1-2 A4 landscape pages
+    const groupCount = selectedGroup ? 1 : filteredGroups.length;
+    const colCount   = timeSlots.length + 1; // +1 for label column
+
+    // A4 landscape usable height ≈ 190mm. Header ≈ 18mm, footer ≈ 8mm, section head ≈ 5mm per group.
+    // Each table row ≈ needs ~7-9px at minimum. Target: ≤ 2 pages.
+    // Row height budget per group = (190 - 18 - 8) / groupCount - 5 (section head)
+    // Base font scales with both column count and group count.
+    const rowBudgetMm  = Math.max(8, Math.floor((164) / Math.max(groupCount, 1)));
+    const byColFont    = Math.floor(52 / colCount);           // shrink for many columns
+    const byGroupFont  = Math.floor(rowBudgetMm * 0.85);     // shrink for many groups
+    const baseFontPx   = Math.max(4, Math.min(7, Math.min(byColFont, byGroupFont)));
+    const cellPad      = groupCount <= 4 ? '3px 2px' : groupCount <= 8 ? '2px 2px' : '1px 1px';
+    const thFontPx     = Math.max(3.5, baseFontPx - 0.5);
+    const sectionGap   = groupCount <= 6 ? '5px' : '3px';
+    const headerPad    = groupCount <= 6 ? '8px 12px' : '5px 10px';
 
     w.document.write(`<!DOCTYPE html><html><head>
       <meta charset="UTF-8">
@@ -68,7 +77,7 @@ const PrintView = () => {
         body { font-family: Arial, Helvetica, sans-serif; font-size:${baseFontPx}px; color:#000; background:#fff; }
 
         .pv-header {
-          background: #0f172a; padding: 8px 12px;
+          background: #0f172a; padding: ${headerPad};
           display:flex; align-items:center; justify-content:space-between;
         }
         .pv-header-left { display:flex; align-items:center; gap:8px; }
@@ -84,7 +93,7 @@ const PrintView = () => {
 
         .pv-sections { padding:4px 6px 6px; display:flex; flex-direction:column; gap:5px; }
 
-        .pv-section-head { display:flex; align-items:center; gap:5px; margin-bottom:2px; }
+        .pv-section-head { display:flex; align-items:center; gap:4px; margin-bottom:1px; }
         .pv-section-icon {
           width:13px; height:13px; border-radius:3px; background:#6366f1;
           display:flex; align-items:center; justify-content:center; font-size:7px;

@@ -66,15 +66,19 @@ const AppContent = () => {
     return [...rooms].sort();
   }, [schedule]);
 
-  // Fetch guest bookings so we can overlay them on the schedule
-  React.useEffect(() => {
-    if (!isAuthenticated) {
-      fetch(`${process.env.REACT_APP_API_URL || 'https://timetablebackend-production.up.railway.app/api'}/booking-requests`)
-        .then(r => r.json())
-        .then(d => { if (d.success) setActiveBookings(d.data || []); })
-        .catch(() => {});
-    }
-  }, [isAuthenticated]);
+  // Fetch bookings for ALL users - admins see highlights too
+  const API_URL = process.env.REACT_APP_API_URL || 'https://timetablebackend-production.up.railway.app/api';
+  const fetchActiveBookings = React.useCallback(() => {
+    const token = localStorage.getItem('scheduleToken') || '';
+    fetch(`${API_URL}/booking-requests`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then(r => r.json())
+      .then(d => { if (d.success) setActiveBookings(d.data || []); })
+      .catch(() => {});
+  }, [API_URL]);
+
+  React.useEffect(() => { fetchActiveBookings(); }, [fetchActiveBookings]);
 
   // Count all conflicts for badge
   const conflictCount = React.useMemo(() => {
@@ -294,9 +298,7 @@ const AppContent = () => {
             onClose={() => { setShowBooking(false); setGuestBookCell(null); }}
             onBooked={() => {
               setGuestBookCell(null); setShowBooking(false);
-              // Refresh bookings
-              fetch(`${process.env.REACT_APP_API_URL || 'https://timetablebackend-production.up.railway.app/api'}/booking-requests`)
-                .then(r => r.json()).then(d => { if (d.success) setActiveBookings(d.data || []); }).catch(()=>{});
+              fetchActiveBookings();
             }}
           />
         </>
@@ -334,7 +336,7 @@ const AppContent = () => {
               selectedDay={selectedDay} selectedTeacher={selectedTeacher}
               selectedGroup={selectedGroup} selectedRoom={selectedRoom}
               onEditClass={handleEditClass} onDeleteGroup={deleteGroup}
-              bookings={!isAuthenticated ? activeBookings : []}
+              bookings={activeBookings}
               onGuestBookCell={(group, day, time) => setGuestBookCell({ group, day, time })}
             />
           </>
