@@ -28,7 +28,19 @@ const ScheduleTable = ({
 
   const todayName   = getTodayName();
   const daysToShow  = selectedDay   ? [selectedDay]                        : days;
-  const groupsToShow = selectedGroup ? groups.filter(g => g === selectedGroup) : groups;
+  // Booking groups (entity/name from pending+approved bookings) float to the top
+  const bookingGroups = [...new Set(
+    bookings
+      .filter(b => b.status === 'pending' || b.status === 'approved')
+      .map(b => (b.entity && b.entity.trim()) ? b.entity.trim() : b.name)
+      .filter(Boolean)
+  )];
+  const baseGroups   = selectedGroup ? groups.filter(g => g === selectedGroup) : groups;
+  // Put booking groups first, then regular groups (no duplicates)
+  const groupsToShow = [
+    ...bookingGroups.filter(g => !baseGroups.includes(g)),
+    ...baseGroups,
+  ];
   const typeLabels  = SUBJECT_TYPE_LABELS[lang] || SUBJECT_TYPE_LABELS.en;
 
   const normSelectedTeacher = useMemo(
