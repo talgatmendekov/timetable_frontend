@@ -216,7 +216,10 @@ export const ScheduleProvider = ({ children }) => {
   const clearSchedule = async () => {
     try {
       await Promise.all(Object.values(schedule).map(e => scheduleAPI.delete(e.group, e.day, e.time)));
+      // Also delete all booking-created groups (entity groups not in the university list)
+      await Promise.all(groups.map(g => groupsAPI.delete(g))).catch(() => {});
       setSchedule({});
+      setGroups([]);
     } catch (err) {
       alert(`Failed to clear schedule: ${err.message}`);
       loadAll();
