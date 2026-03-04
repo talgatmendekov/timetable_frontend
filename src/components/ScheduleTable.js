@@ -44,9 +44,11 @@ const ScheduleTable = ({
   const cellsToSkip = useMemo(() => {
     const s = new Set();
     Object.values(schedule).forEach(cls => {
-      if (cls.duration > 1) {
+      // parseInt + clamp: duration must be 1-6 max (safety against corrupt data)
+      const dur = Math.min(6, Math.max(1, parseInt(cls.duration) || 1));
+      if (dur > 1) {
         const idx = timeSlots.indexOf(cls.time);
-        for (let i = 1; i < cls.duration; i++) {
+        for (let i = 1; i < dur; i++) {
           if (timeSlots[idx + i]) s.add(`${cls.group}-${cls.day}-${timeSlots[idx + i]}`);
         }
       }
@@ -197,7 +199,7 @@ const ScheduleTable = ({
                   const isDragSrc  = dragSource?.group === group && dragSource?.day === day && dragSource?.time === time;
                   const isDragOvr  = dragOver?.group   === group && dragOver?.day   === day && dragOver?.time   === time;
                   const typeStyle  = classData ? getTypeStyle(classData.subjectType) : null;
-                  const duration   = classData?.duration ? parseInt(classData.duration) : 1;
+                  const duration   = Math.min(6, Math.max(1, parseInt(classData?.duration) || 1));
                   const booking    = getBooking(group, day, time);
 
                   if (!show) {
