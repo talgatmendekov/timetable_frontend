@@ -81,9 +81,12 @@ const PrintView = () => {
           display:flex; align-items:center; justify-content:space-between;
         }
         .pv-header-left { display:flex; align-items:center; gap:8px; }
-        .pv-header-logo {
-          width:24px; height:24px; background:#6366f1; border-radius:5px;
-          display:flex; align-items:center; justify-content:center; font-size:12px;
+        .pv-header-logo { display:none; }
+        .pv-header-seal {
+          width:28px; height:28px; background:#fff; border:2px solid #818cf8;
+          border-radius:50%; display:flex; align-items:center; justify-content:center;
+          font-size:6px; font-weight:900; color:#4f46e5; letter-spacing:-0.5px;
+          flex-shrink:0;
         }
         .pv-header-title { font-size:10px; font-weight:800; color:#fff; }
         .pv-header-sub   { font-size:6px; color:#94a3b8; margin-top:1px; }
@@ -152,15 +155,21 @@ const PrintView = () => {
   };
 
   // ── Cell renderer ─────────────────────────────────────────────────────────
+  // Short text labels for subject types (no emoji for official print)
+  const typeShort = (st) => {
+    const map = { lecture:'Lec', seminar:'Sem', lab:'Lab', practice:'Prac', other:'—' };
+    return map[st] || 'Lec';
+  };
+
   const renderCell = (cls) => {
-    if (!cls) return <span className="pv-cell-empty">·</span>;
+    if (!cls) return <span className="pv-cell-empty"> </span>;
     const ts = typeOf(cls.subjectType);
     return (
       <div className="pv-cell">
-        <span className="pv-cell-pill" style={{ background: ts.color }}>{ts.icon}</span>
+        <span className="pv-cell-pill" style={{ background: ts.color }}>{typeShort(cls.subjectType)}</span>
         <span className="pv-cell-course">{cls.course}</span>
         {cls.teacher && <span className="pv-cell-teacher">{cls.teacher}</span>}
-        {cls.room    && <span className="pv-cell-room">🚪{cls.room}</span>}
+        {cls.room    && <span className="pv-cell-room">{cls.room}</span>}
       </div>
     );
   };
@@ -172,9 +181,8 @@ const PrintView = () => {
       return (
         <div key={group} className="pv-section">
           <div className="pv-section-head">
-            <div className="pv-section-icon">📋</div>
             <span className="pv-section-name">{group}</span>
-            <span className="pv-section-count">{total} classes/week</span>
+            <span className="pv-section-count">{total} classes / week</span>
           </div>
           <table className="pv-table">
             <thead>
@@ -200,7 +208,6 @@ const PrintView = () => {
     (selectedDay ? [selectedDay] : days).map(day => (
       <div key={day} className="pv-section">
         <div className="pv-section-head">
-          <div className="pv-section-icon">📅</div>
           <span className="pv-section-name">{t(day)||day}</span>
           <span className="pv-section-count">{filteredGroups.length} groups</span>
         </div>
@@ -284,7 +291,7 @@ const PrintView = () => {
       <div ref={printRef} className="pv-preview">
         <div className="pv-header">
           <div className="pv-header-left">
-            <div className="pv-header-logo">🏛</div>
+            <div className="pv-header-seal">AIU</div>
             <div>
               <div className="pv-header-title">Alatoo International University</div>
               <div className="pv-header-sub">Academic Schedule — {new Date().getFullYear()}</div>
@@ -301,7 +308,7 @@ const PrintView = () => {
         </div>
 
         <div className="pv-footer">
-          <span className="pv-footer-txt">🏛 Alatoo International University · Bishkek, Kyrgyzstan</span>
+          <span className="pv-footer-txt">Alatoo International University · Bishkek, Kyrgyzstan</span>
           <span className="pv-footer-txt">Internal use only · {new Date().getFullYear()}</span>
         </div>
       </div>
