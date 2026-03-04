@@ -92,8 +92,14 @@ const ScheduleTable = ({
   };
 
   // Booking overlay helpers
-  const getBooking = (group, day, time) =>
-    bookings.find(b => b.group_name === group && b.day === day && b.start_time === time);
+  const getBooking = (group, day, time) => {
+    const classEntry = schedule[`${group}-${day}-${time}`];
+    if (classEntry?.room) {
+      const byRoom = bookings.find(b => b.room === classEntry.room && b.day === day && b.start_time === time);
+      if (byRoom) return byRoom;
+    }
+    return bookings.find(b => b.day === day && b.start_time === time) || null;
+  };
 
   const handleDragStart = (e, group, day, time) => {
     setDragSource({ group, day, time });

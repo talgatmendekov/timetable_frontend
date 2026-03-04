@@ -18,6 +18,7 @@ import BookingManagement from './components/BookingManagement';
 import * as XLSX from 'xlsx';
 import TeacherTelegramManagement from './components/TeacherTelegramManagement';
 import EmptyRoomPanel from './components/EmptyRoomPanel';
+import GuestBookingStatus from './components/GuestBookingStatus';
 import './App.css';
 
 const getTodayScheduleDay = () => {
@@ -239,7 +240,10 @@ const AppContent = () => {
   }
 
   const tabs = [
-    { id: 'schedule', icon: '📅', label: t('tabSchedule') || 'Schedule' },
+    { id: 'schedule',  icon: '📅', label: t('tabSchedule')  || 'Schedule' },
+    ...(!isAuthenticated ? [
+      { id: 'mybookings', icon: '📋', label: 'My Bookings' },
+    ] : []),
     ...( isAuthenticated ? [
       { id: 'print',     icon: '🖨️', label: t('tabPrint')     || 'Print / PDF' },
       { id: 'dashboard', icon: '📊', label: t('tabDashboard') || 'Teacher Stats' },
@@ -341,6 +345,7 @@ const AppContent = () => {
             />
           </>
         )}
+        {activeTab === 'mybookings' && <GuestBookingStatus bookings={activeBookings} onRefresh={setActiveBookings} />}
         {activeTab === 'print'     && <PrintView />}
         {activeTab === 'dashboard' && <TeacherDashboard />}
         {activeTab === 'conflicts' && <ConflictPage onJumpToCell={handleJumpToCell} />}
