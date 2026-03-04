@@ -4,26 +4,26 @@ import { useLanguage } from '../context/LanguageContext';
 import { useSchedule } from '../context/ScheduleContext';
 import './BookingManagement.css';
 
+const API_URL = process.env.REACT_APP_API_URL || 'https://timetablebackend-production.up.railway.app/api';
+const getToken = () => localStorage.getItem('scheduleToken');
+
 const BookingManagement = () => {
   const { t } = useLanguage();
-  const { reload } = useSchedule(); // ← get reload from schedule context
-  const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('pending');
-
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+  const { reload } = useSchedule();
+  const [bookings, setBookings]  = useState([]);
+  const [loading, setLoading]    = useState(true);
+  const [filter, setFilter]      = useState('pending');
 
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('scheduleToken');
-      const response = await fetch(`${API_URL}/booking-requests`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const res  = await fetch(`${API_URL}/booking-requests`, {
+        headers: { Authorization: `Bearer ${getToken()}` },
       });
-      const data = await response.json();
+      const data = await res.json();
       if (data.success) setBookings(data.data);
-    } catch (error) {
-      console.error('Error fetching bookings:', error);
+    } catch (err) {
+      console.error('Error fetching bookings:', err);
     } finally {
       setLoading(false);
     }
@@ -31,70 +31,64 @@ const BookingManagement = () => {
 
   useEffect(() => { fetchBookings(); }, []);
 
+  // ── Approve ────────────────────────────────────────────────────────────────
   const handleApprove = async (id) => {
-    if (!window.confirm(t('confirmApproveBooking') || 'Approve this booking and add to schedule?')) return;
+    if (!window.confirm(t('confirmApproveBooking') || 'Approve this booking?')) return;
     try {
-      const token = localStorage.getItem('scheduleToken');
-      const response = await fetch(`${API_URL}/booking-requests/${id}/approve`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+      const res  = await fetch(`${API_URL}/booking-requests/${id}`, {
+        method:  'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body:    JSON.stringify({ status: 'approved' }),
       });
-      const data = await response.json();
+      const data = await res.json();
       if (data.success) {
-        alert(t('bookingApproved') || 'Booking approved and added to schedule!');
-        fetchBookings();
-        await reload(); // ← refresh schedule so it appears instantly without page reload
+        setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'approved' } : b));
+        if (reload) await reload();
       } else {
         alert(`Error: ${data.error}`);
       }
-    } catch (error) {
-      alert(`Error: ${error.message}`);
-    }
+    } catch (err) { alert(`Error: ${err.message}`); }
   };
 
+  // ── Reject ─────────────────────────────────────────────────────────────────
   const handleReject = async (id) => {
-    if (!window.confirm(t('confirmRejectBooking') || 'Reject this booking request?')) return;
+    if (!window.confirm(t('confirmRejectBooking') || 'Reject this booking?')) return;
     try {
-      const token = localStorage.getItem('scheduleToken');
-      const response = await fetch(`${API_URL}/booking-requests/${id}/reject`, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+      const res  = await fetch(`${API_URL}/booking-requests/${id}`, {
+        method:  'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${getToken()}` },
+        body:    JSON.stringify({ status: 'rejected' }),
       });
-      const data = await response.json();
+      const data = await res.json();
       if (data.success) {
-        alert(t('bookingRejected') || 'Booking rejected.');
-        fetchBookings();
+        setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'rejected' } : b));
       } else {
         alert(`Error: ${data.error}`);
       }
-    } catch (error) {
-      alert(`Error: ${error.message}`);
-    }
+    } catch (err) { alert(`Error: ${err.message}`); }
   };
 
+  // ── Delete ─────────────────────────────────────────────────────────────────
   const handleDelete = async (id) => {
-    if (!window.confirm(t('confirmDeleteBooking') || 'Delete this booking request?')) return;
+    if (!window.confirm(t('confirmDeleteBooking') || 'Delete this booking?')) return;
     try {
-      const token = localStorage.getItem('scheduleToken');
-      const response = await fetch(`${API_URL}/booking-requests/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
+      const res  = await fetch(`${API_URL}/booking-requests/${id}`, {
+        method:  'DELETE',
+        headers: { Authorization: `Bearer ${getToken()}` },
       });
-      const data = await response.json();
+      const data = await res.json();
       if (data.success) {
-        fetchBookings();
+        setBookings(prev => prev.filter(b => b.id !== id)); // ← state only, no reload
       } else {
         alert(`Error: ${data.error}`);
       }
-    } catch (error) {
-      alert(`Error: ${error.message}`);
-    }
+    } catch (err) { alert(`Error: ${err.message}`); }
   };
 
-  const filteredBookings = bookings.filter(b => filter === 'all' ? true : b.status === filter);
-  const pendingCount = bookings.filter(b => b.status === 'pending').length;
+  const filteredBookings = bookings.filter(b => filter === 'all' || b.status === filter);
+  const pendingCount     = bookings.filter(b => b.status === 'pending').length;
 
-  if (loading) return <div className="booking-loading">Loading bookings...</div>;
+  if (loading) return <div className="booking-loading">⏳ Loading bookings...</div>;
 
   return (
     <div className="booking-management">
@@ -104,8 +98,8 @@ const BookingManagement = () => {
       </div>
 
       <div className="booking-filters">
-        <button className={`filter-btn ${filter === 'pending' ? 'active' : ''}`} onClick={() => setFilter('pending')}>
-          ⏳ {t('pending') || 'Pending'} {pendingCount > 0 && <span className="badge">{pendingCount}</span>}
+        <button className={`filter-btn ${filter === 'pending'  ? 'active' : ''}`} onClick={() => setFilter('pending')}>
+          ⏳ {t('pending')  || 'Pending'} {pendingCount > 0 && <span className="badge">{pendingCount}</span>}
         </button>
         <button className={`filter-btn ${filter === 'approved' ? 'active' : ''}`} onClick={() => setFilter('approved')}>
           ✅ {t('approved') || 'Approved'}
@@ -113,8 +107,8 @@ const BookingManagement = () => {
         <button className={`filter-btn ${filter === 'rejected' ? 'active' : ''}`} onClick={() => setFilter('rejected')}>
           ❌ {t('rejected') || 'Rejected'}
         </button>
-        <button className={`filter-btn ${filter === 'all' ? 'active' : ''}`} onClick={() => setFilter('all')}>
-          📋 {t('all') || 'All'}
+        <button className={`filter-btn ${filter === 'all'      ? 'active' : ''}`} onClick={() => setFilter('all')}>
+          📋 {t('all')      || 'All'}
         </button>
       </div>
 
@@ -127,11 +121,12 @@ const BookingManagement = () => {
         <div className="booking-list">
           {filteredBookings.map(booking => (
             <div key={booking.id} className={`booking-card status-${booking.status}`}>
+
               <div className="booking-status-badge">
-                {booking.status === 'pending' && '⏳'}
+                {booking.status === 'pending'  && '⏳'}
                 {booking.status === 'approved' && '✅'}
                 {booking.status === 'rejected' && '❌'}
-                {booking.status}
+                {' '}{booking.status}
               </div>
 
               <div className="booking-info">
@@ -141,8 +136,8 @@ const BookingManagement = () => {
                     <span className="field-value">{booking.name}</span>
                   </div>
                   <div className="booking-field">
-                    <span className="field-label">📧 {t('email') || 'Email'}:</span>
-                    <span className="field-value">{booking.email}</span>
+                    <span className="field-label">📧 Email:</span>
+                    <span className="field-value">{booking.email || '—'}</span>
                   </div>
                 </div>
 
@@ -153,22 +148,29 @@ const BookingManagement = () => {
                   </div>
                 )}
 
+                {booking.entity && (
+                  <div className="booking-field">
+                    <span className="field-label">🏢 Entity:</span>
+                    <span className="field-value">{booking.entity}</span>
+                  </div>
+                )}
+
                 <div className="booking-row">
                   <div className="booking-field">
-                    <span className="field-label">🏫 {t('room') || 'Room'}:</span>
+                    <span className="field-label">🚪 {t('room') || 'Room'}:</span>
                     <span className="field-value highlight">{booking.room}</span>
                   </div>
                   <div className="booking-field">
                     <span className="field-label">📅 {t('day') || 'Day'}:</span>
-                    <span className="field-value">{t(booking.day)}</span>
+                    <span className="field-value">{t(booking.day) || booking.day}</span>
                   </div>
                   <div className="booking-field">
-                    <span className="field-label">⏰ {t('time') || 'Time'}:</span>
+                    <span className="field-label">⏰ Start:</span>
                     <span className="field-value">{booking.start_time}</span>
                   </div>
                   <div className="booking-field">
-                    <span className="field-label">⏱ {t('duration') || 'Duration'}:</span>
-                    <span className="field-value">{booking.duration * 40} min</span>
+                    <span className="field-label">⏱ End:</span>
+                    <span className="field-value">{booking.end_time || '—'}</span>
                   </div>
                 </div>
 
@@ -178,7 +180,7 @@ const BookingManagement = () => {
                 </div>
 
                 <div className="booking-meta">
-                  <small>{t('submitted') || 'Submitted'}: {new Date(booking.created_at).toLocaleString()}</small>
+                  <small>Submitted: {new Date(booking.created_at).toLocaleString()}</small>
                 </div>
               </div>
 
@@ -197,6 +199,7 @@ const BookingManagement = () => {
                   🗑️ {t('delete') || 'Delete'}
                 </button>
               </div>
+
             </div>
           ))}
         </div>
