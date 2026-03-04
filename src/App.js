@@ -242,7 +242,7 @@ const AppContent = () => {
       { id: 'conflicts', icon: '⚠️',  label: t('tabConflicts') || 'Conflicts', badge: conflictCount },
       { id: 'bookings',  icon: '🏫', label: t('tabBookings')  || 'Lab Bookings', badge: 0 },
       { id: 'telegram',  icon: '📱', label: t('tabTelegram')  || 'Telegram' },
-    ]),
+    ] : []),
   ];
 
   return (
@@ -288,7 +288,7 @@ const AppContent = () => {
           </button>
           <GuestBooking
             isOpen={showBooking || !!guestBookCell}
-            prefilledRoom={guestBookCell?.room || ''}
+            prefilledGroup={guestBookCell?.group || ''}
             prefilledDay={guestBookCell?.day || ''}
             prefilledTime={guestBookCell?.time || ''}
             onClose={() => { setShowBooking(false); setGuestBookCell(null); }}
