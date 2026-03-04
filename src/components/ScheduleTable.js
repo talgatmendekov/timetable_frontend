@@ -94,13 +94,24 @@ const ScheduleTable = ({
   };
 
   // Booking overlay helpers
+  // Match booking strictly by room+day+time.
+  // Never fall back to day+time-only — that would highlight ALL groups at that slot.
   const getBooking = (group, day, time) => {
     const classEntry = schedule[`${group}-${day}-${time}`];
+    // If the cell has a room, match booking by that exact room+day+time
     if (classEntry?.room) {
-      const byRoom = bookings.find(b => b.room === classEntry.room && b.day === day && b.start_time === time);
-      if (byRoom) return byRoom;
+      return bookings.find(b =>
+        b.room === classEntry.room &&
+        b.day  === day &&
+        b.start_time === time
+      ) || null;
     }
-    return bookings.find(b => b.day === day && b.start_time === time) || null;
+    // Empty cell — match only if the booking's entity/group matches this group
+    return bookings.find(b =>
+      b.day === day &&
+      b.start_time === time &&
+      (b.entity === group || b.name === group)
+    ) || null;
   };
 
   const handleDragStart = (e, group, day, time) => {
