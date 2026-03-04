@@ -1,176 +1,280 @@
 // src/components/EmptyRoomPanel.js
-// Shows available (empty) rooms with per-slot stats and a filter
+// Admin Room Heatmap — fullscreen modal showing room × timeslot availability
 import React, { useState, useMemo } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import './EmptyRoomPanel.css';
 
 const EmptyRoomPanel = ({
-  allRooms = [],
-  schedule = {},
-  days = [],
-  timeSlots = [],
+  allRooms    = [],
+  schedule    = {},
+  days        = [],
+  timeSlots   = [],
   selectedRoom,
   setSelectedRoom,
 }) => {
-  const { t } = useLanguage();
-  const [expandStats, setExpandStats] = useState(false);
+  const { t }            = useLanguage();
+  const [open, setOpen]  = useState(false);
+  const [selDay, setDay] = useState('');   // '' = all days
+  const [search, setSrc] = useState('');
+  const [sortBy, setSrt] = useState('name'); // 'name' | 'free' | 'busy'
 
-  // For each room, compute how many slots are occupied
-  const roomStats = useMemo(() => {
-    const total = days.length * timeSlots.length;
-    return allRooms.map(room => {
-      const occupied = Object.values(schedule).filter(e => e.room === room).length;
-      const free     = total - occupied;
-      const pct      = total > 0 ? Math.round((free / total) * 100) : 0;
-      return { room, occupied, free, total, pct };
-    }).sort((a, b) => b.pct - a.pct); // most available first
-  }, [allRooms, schedule, days, timeSlots]);
-
-  // For each (day, time) slot, which rooms are free?
-  const slotFreeRooms = useMemo(() => {
+  // ── Build occupancy map ────────────────────────────────────────────────────
+  const occupancy = useMemo(() => {
+    // occupancy[room][day][time] = true if occupied
     const map = {};
-    days.forEach(day => {
-      timeSlots.forEach(time => {
-        const occupiedRooms = new Set(
-          Object.values(schedule)
-            .filter(e => e.day === day && e.time === time && e.room)
-            .map(e => e.room)
-        );
-        map[`${day}-${time}`] = allRooms.filter(r => !occupiedRooms.has(r));
-      });
+    allRooms.forEach(r => {
+      map[r] = {};
+      days.forEach(d => { map[r][d] = {}; });
+    });
+    Object.values(schedule).forEach(e => {
+      if (!e.room || !map[e.room]) return;
+      if (!map[e.room][e.day]) map[e.room][e.day] = {};
+      // Mark this slot + spanned slots as occupied
+      const dur = Math.min(6, Math.max(1, parseInt(e.duration) || 1));
+      const idx = timeSlots.indexOf(e.time);
+      for (let i = 0; i < dur; i++) {
+        const tm = timeSlots[idx + i];
+        if (tm) map[e.room][e.day][tm] = { course: e.course, teacher: e.teacher };
+      }
     });
     return map;
   }, [allRooms, schedule, days, timeSlots]);
 
-  const totalSlots = days.length * timeSlots.length * allRooms.length;
-  const totalOccupied = Object.values(schedule).filter(e => e.room).length;
-  const totalFree = totalSlots - totalOccupied;
-  const overallPct = totalSlots > 0 ? Math.round((totalFree / totalSlots) * 100) : 0;
+  // ── Per-room stats ─────────────────────────────────────────────────────────
+  const roomStats = useMemo(() => {
+    const daysFilter = selDay ? [selDay] : days;
+    return allRooms
+      .filter(r => r.toLowerCase().includes(search.toLowerCase()))
+      .map(room => {
+        const total  = daysFilter.length * timeSlots.length;
+        const busy   = daysFilter.reduce((a, d) =>
+          a + timeSlots.filter(tm => occupancy[room]?.[d]?.[tm]).length, 0);
+        const free   = total - busy;
+        const pct    = total > 0 ? Math.round((free / total) * 100) : 0;
+        return { room, total, busy, free, pct };
+      })
+      .sort((a, b) => {
+        if (sortBy === 'free') return b.free - a.free;
+        if (sortBy === 'busy') return b.busy - a.busy;
+        return a.room.localeCompare(b.room);
+      });
+  }, [allRooms, occupancy, days, timeSlots, selDay, search, sortBy]);
 
-  if (allRooms.length === 0) return null;
+  // ── Summary stats ──────────────────────────────────────────────────────────
+  const summary = useMemo(() => {
+    const daysFilter = selDay ? [selDay] : days;
+    const total  = allRooms.length * daysFilter.length * timeSlots.length;
+    const busy   = roomStats.reduce((a, r) => a + r.busy, 0);
+    return { total, busy, free: total - busy,
+      pct: total > 0 ? Math.round(((total - busy) / total) * 100) : 0 };
+  }, [roomStats, allRooms, days, timeSlots, selDay]);
+
+  // ── Color helpers ──────────────────────────────────────────────────────────
+  const heatColor = (pct) => {
+    if (pct >= 70) return { bg: '#dcfce7', border: '#22c55e', text: '#166534' };
+    if (pct >= 40) return { bg: '#fef9c3', border: '#eab308', text: '#854d0e' };
+    return { bg: '#fff1f2', border: '#ef4444', text: '#be123c' };
+  };
+  const cellColor = (occ) =>
+    occ ? { bg: '#fee2e2', text: '#991b1b' } : { bg: '#dcfce7', text: '#166534' };
+
+  const daysToShow = selDay ? [selDay] : days;
+
+  // ── Trigger button ────────────────────────────────────────────────────────
+  const freeNow = roomStats.filter(r => r.pct >= 50).length;
 
   return (
-    <div className="erp-wrap">
-      {/* ── Top bar: summary + room selector ── */}
-      <div className="erp-bar">
-
-        {/* Summary pill */}
-        <div className="erp-summary">
-          <div className="erp-summary-icon">🚪</div>
-          <div className="erp-summary-body">
-            <div className="erp-summary-title">
-              {t('roomAvailability') || 'Room Availability'}
-            </div>
-            <div className="erp-summary-sub">
-              <span className="erp-free">{totalFree} free slots</span>
-              <span className="erp-sep">·</span>
-              <span className="erp-occ">{totalOccupied} occupied</span>
-              <span className="erp-sep">·</span>
-              <span className="erp-pct">{overallPct}% available</span>
-            </div>
-          </div>
-          <button
-            className={`erp-expand-btn${expandStats ? ' active' : ''}`}
-            onClick={() => setExpandStats(v => !v)}
-            title="Show room stats"
-          >
-            {expandStats ? '▲' : '▼'} Stats
-          </button>
+    <>
+      {/* ── Compact trigger bar ───────────────────────────────────────────── */}
+      <div className="erp-trigger-bar">
+        <div className="erp-trigger-stats">
+          <span className="erp-stat-pill free">{summary.free} free slots</span>
+          <span className="erp-stat-pill busy">{summary.busy} occupied</span>
+          <span className="erp-stat-pill rooms">{allRooms.length} rooms · {summary.pct}% available</span>
         </div>
-
-        {/* Room filter dropdown */}
-        <div className="erp-filter">
-          <label className="erp-filter-lbl">
-            {t('filterByRoom') || 'Show free slots for room:'}
-          </label>
-          <select
-            className="erp-filter-sel"
-            value={selectedRoom || ''}
-            onChange={e => setSelectedRoom(e.target.value)}
-          >
-            <option value="">— {t('allRooms') || 'All rooms'} —</option>
-            {roomStats.map(({ room, pct, free }) => (
-              <option key={room} value={room}>
-                {room}  ({free} free / {pct}% available)
-              </option>
-            ))}
-          </select>
+        <div className="erp-trigger-actions">
           {selectedRoom && (
-            <button className="erp-clear" onClick={() => setSelectedRoom('')}>
-              ✕ Clear
-            </button>
+            <div className="erp-active-filter">
+              Filtering: <strong>{selectedRoom}</strong>
+              <button onClick={() => setSelectedRoom('')} className="erp-clear-btn">✕ Clear</button>
+            </div>
           )}
+          <button className="erp-open-btn" onClick={() => setOpen(true)}>
+            🗓 Room Heatmap
+          </button>
         </div>
       </div>
 
-      {/* ── Stats panel (expanded) ── */}
-      {expandStats && (
-        <div className="erp-stats">
-          <div className="erp-stats-grid">
-            {roomStats.map(({ room, free, occupied, total, pct }) => (
-              <div
-                key={room}
-                className={`erp-stat-card${selectedRoom === room ? ' selected' : ''}`}
-                onClick={() => setSelectedRoom(selectedRoom === room ? '' : room)}
-                title={`Click to filter schedule by ${room}`}
-              >
-                <div className="erp-card-room">{room}</div>
-                <div className="erp-card-bar-wrap">
-                  <div
-                    className="erp-card-bar"
-                    style={{ width: `${pct}%`, background: pct > 60 ? '#22c55e' : pct > 30 ? '#f59e0b' : '#ef4444' }}
-                  />
-                </div>
-                <div className="erp-card-nums">
-                  <span className="erp-card-free">{free} free</span>
-                  <span className="erp-card-pct">{pct}%</span>
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* ── Modal ─────────────────────────────────────────────────────────── */}
+      {open && (
+        <div className="erp-overlay" onClick={e => e.target === e.currentTarget && setOpen(false)}>
+          <div className="erp-modal">
 
-          {/* Per-slot availability heatmap for selected room */}
-          {selectedRoom && (
-            <div className="erp-heatmap">
-              <div className="erp-heatmap-title">
-                🗓 Free slots for <strong>{selectedRoom}</strong>
+            {/* Header */}
+            <div className="erp-modal-header">
+              <div className="erp-modal-title-block">
+                <div className="erp-modal-icon">🗓</div>
+                <div>
+                  <div className="erp-modal-title">Room Availability Heatmap</div>
+                  <div className="erp-modal-sub">
+                    {allRooms.length} rooms · {summary.free} free slots · {summary.pct}% available
+                  </div>
+                </div>
               </div>
-              <div className="erp-heatmap-scroll">
-                <table className="erp-heatmap-table">
-                  <thead>
-                    <tr>
-                      <th className="erp-ht-corner"></th>
-                      {timeSlots.map(tm => <th key={tm}>{tm}</th>)}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {days.map(day => (
-                      <tr key={day}>
-                        <td className="erp-ht-day">{t(day) || day}</td>
-                        {timeSlots.map(tm => {
-                          const key = `${day}-${tm}`;
-                          const freeRooms = slotFreeRooms[key] || [];
-                          const isFree = freeRooms.includes(selectedRoom);
-                          return (
-                            <td
-                              key={tm}
-                              className={`erp-ht-cell${isFree ? ' free' : ' occ'}`}
-                              title={isFree ? `${selectedRoom} is FREE` : `${selectedRoom} is OCCUPIED`}
-                            >
-                              {isFree ? '✓' : '✗'}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <button className="erp-close-btn" onClick={() => setOpen(false)}>✕</button>
+            </div>
+
+            {/* Controls */}
+            <div className="erp-modal-controls">
+              <input
+                className="erp-search"
+                placeholder="Search room..."
+                value={search}
+                onChange={e => setSrc(e.target.value)}
+              />
+              <div className="erp-day-tabs">
+                <button
+                  className={`erp-day-tab ${selDay === '' ? 'active' : ''}`}
+                  onClick={() => setDay('')}
+                >All Days</button>
+                {days.map(d => (
+                  <button
+                    key={d}
+                    className={`erp-day-tab ${selDay === d ? 'active' : ''}`}
+                    onClick={() => setDay(d)}
+                  >{t(d) || d}</button>
+                ))}
+              </div>
+              <div className="erp-sort-row">
+                <span className="erp-sort-label">Sort by:</span>
+                {[['name','Name'],['free','Most Free'],['busy','Most Busy']].map(([k,l]) => (
+                  <button
+                    key={k}
+                    className={`erp-sort-btn ${sortBy === k ? 'active' : ''}`}
+                    onClick={() => setSrt(k)}
+                  >{l}</button>
+                ))}
               </div>
             </div>
-          )}
+
+            {/* ── Content ─────────────────────────────────────────────────── */}
+            <div className="erp-modal-body">
+
+              {/* Summary cards row */}
+              <div className="erp-summary-row">
+                {[
+                  { label: 'Total Slots',  val: summary.total,  color: '#6366f1' },
+                  { label: 'Free Slots',   val: summary.free,   color: '#22c55e' },
+                  { label: 'Occupied',     val: summary.busy,   color: '#ef4444' },
+                  { label: '% Available',  val: `${summary.pct}%`, color: '#f59e0b' },
+                  { label: 'Rooms ≥50% free', val: freeNow,    color: '#0ea5e9' },
+                ].map(s => (
+                  <div key={s.label} className="erp-summary-card" style={{ borderTop: `3px solid ${s.color}` }}>
+                    <div className="erp-summary-val" style={{ color: s.color }}>{s.val}</div>
+                    <div className="erp-summary-lbl">{s.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Two-panel layout: room list + heatmap */}
+              <div className="erp-panels">
+
+                {/* LEFT: Room list */}
+                <div className="erp-room-list">
+                  <div className="erp-panel-head">Rooms ({roomStats.length})</div>
+                  {roomStats.map(({ room, free, busy, pct }) => {
+                    const col = heatColor(pct);
+                    const isSelected = selectedRoom === room;
+                    return (
+                      <div
+                        key={room}
+                        className={`erp-room-row ${isSelected ? 'selected' : ''}`}
+                        style={{ borderLeft: `3px solid ${col.border}` }}
+                        onClick={() => { setSelectedRoom(isSelected ? '' : room); setOpen(false); }}
+                        title="Click to filter schedule by this room"
+                      >
+                        <div className="erp-room-name">{room}</div>
+                        <div className="erp-room-bar-wrap">
+                          <div
+                            className="erp-room-bar"
+                            style={{ width: `${pct}%`, background: col.border }}
+                          />
+                        </div>
+                        <div className="erp-room-nums" style={{ color: col.text }}>
+                          {free}✓ {busy}✗ {pct}%
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* RIGHT: Heatmap grid */}
+                <div className="erp-heatmap-wrap">
+                  <div className="erp-panel-head">
+                    Slot Heatmap
+                    <span className="erp-legend">
+                      <span className="erp-leg-item free">■ Free</span>
+                      <span className="erp-leg-item busy">■ Occupied</span>
+                    </span>
+                  </div>
+                  <div className="erp-heatmap-scroll">
+                    <table className="erp-heatmap-table">
+                      <thead>
+                        <tr>
+                          <th className="erp-th-room">Room</th>
+                          {daysToShow.map(d =>
+                            timeSlots.map(tm => (
+                              <th key={`${d}-${tm}`} className="erp-th-slot">
+                                <div className="erp-th-day">{(t(d)||d).slice(0,3)}</div>
+                                <div className="erp-th-time">{tm}</div>
+                              </th>
+                            ))
+                          )}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {roomStats.map(({ room, pct }) => {
+                          const rowCol = heatColor(pct);
+                          return (
+                            <tr key={room}
+                              className={selectedRoom === room ? 'erp-hm-selected' : ''}
+                              onClick={() => { setSelectedRoom(selectedRoom === room ? '' : room); setOpen(false); }}
+                              style={{ cursor: 'pointer' }}
+                            >
+                              <td
+                                className="erp-hm-room"
+                                style={{ color: rowCol.text, borderLeft: `3px solid ${rowCol.border}` }}
+                              >{room}</td>
+                              {daysToShow.map(d =>
+                                timeSlots.map(tm => {
+                                  const occ  = occupancy[room]?.[d]?.[tm];
+                                  const col  = cellColor(!!occ);
+                                  return (
+                                    <td
+                                      key={`${d}-${tm}`}
+                                      className="erp-hm-cell"
+                                      style={{ background: col.bg, color: col.text }}
+                                      title={occ ? `${occ.course}${occ.teacher ? ' · ' + occ.teacher : ''}` : 'Free'}
+                                    >
+                                      {occ ? '✗' : '✓'}
+                                    </td>
+                                  );
+                                })
+                              )}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 
