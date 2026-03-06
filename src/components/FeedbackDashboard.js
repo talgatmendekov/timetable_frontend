@@ -27,7 +27,6 @@ function GuestFeedbackForm({ schedule, groups }) {
   const [category,  setCategory] = useState('');
   const [subject,   setSubject]  = useState('');
   const [message,   setMessage]  = useState('');
-  const [anonymous, setAnonymous]= useState(null); // null=not chosen yet
   const [name,      setName]     = useState('');
   const [submitting,setSubmitting]= useState(false);
   const [error,     setError]    = useState('');
@@ -36,11 +35,11 @@ function GuestFeedbackForm({ schedule, groups }) {
   const allRooms    = useMemo(() => [...new Set(Object.values(schedule || {}).map(e => e.room).filter(Boolean))].sort(), [schedule]);
   const allTeachers = useMemo(() => [...new Set(Object.values(schedule || {}).map(e => e.teacher).filter(Boolean))].sort(), [schedule]);
 
-  const reset = () => { setStep(0); setCategory(''); setSubject(''); setMessage(''); setAnonymous(null); setName(''); setError(''); };
+  const reset = () => { setStep(0); setCategory(''); setSubject(''); setMessage(''); setName(''); setError(''); };
 
   const handleSubmit = async () => {
     if (!message.trim() || message.trim().length < 5) return setError('Please write at least 5 characters.');
-    if (anonymous === false && !name.trim()) return setError('Please enter your name.');
+    if (!name.trim()) return setError('Please enter your name.');
     setSubmitting(true);
     setError('');
     try {
@@ -51,8 +50,8 @@ function GuestFeedbackForm({ schedule, groups }) {
           category,
           subject:     subject || 'General',
           message:     message.trim(),
-          anonymous:   anonymous !== false,
-          sender_name: anonymous === false ? name.trim() : null,
+          anonymous:   false,
+          sender_name: name.trim(),
         }),
       });
       const d = await r.json();
@@ -74,7 +73,6 @@ function GuestFeedbackForm({ schedule, groups }) {
           <div className="fb-success-title">Feedback Submitted!</div>
           <div className="fb-success-msg">
             Thank you — your feedback has been sent to the administration.
-            {anonymous !== false && <><br /><span className="fb-anon-note">🔒 Submitted anonymously</span></>}
           </div>
           <button className="fb-btn-primary" onClick={reset}>Submit Another</button>
         </div>
@@ -91,13 +89,13 @@ function GuestFeedbackForm({ schedule, groups }) {
         <div className="fb-guest-icon">💬</div>
         <div>
           <div className="fb-guest-title">Student Feedback</div>
-          <div className="fb-guest-sub">Help improve your university — anonymous or named</div>
+          <div className="fb-guest-sub">Help improve your university — your name is required</div>
         </div>
       </div>
 
       {/* Progress steps */}
       <div className="fb-steps">
-        {['Category','About','Message','Identity'].map((s, i) => (
+        {['Category','About','Message & Name'].map((s, i) => (
           <div key={i} className={`fb-step ${step === i ? 'active' : step > i ? 'done' : ''}`}>
             <div className="fb-step-dot">{step > i ? '✓' : i + 1}</div>
             <div className="fb-step-label">{s}</div>
@@ -197,70 +195,23 @@ function GuestFeedbackForm({ schedule, groups }) {
               autoFocus
             />
             <div className="fb-char-count">{message.length} characters</div>
+            <input
+              className="fb-input"
+              placeholder="Your full name (e.g. Aizat Mamytova)"
+              value={name}
+              onChange={e => setName(e.target.value)}
+              style={{ marginTop: 4 }}
+            />
             <div className="fb-step-actions">
               <button className="fb-btn-back" onClick={() => { setStep(category === 'general' ? 0 : 1); setError(''); }}>← Back</button>
-              <button className="fb-btn-primary" disabled={message.trim().length < 5} onClick={() => { setError(''); setStep(3); }}>Next →</button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 3 — Identity */}
-        {step === 3 && (
-          <div className="fb-step-content">
-            <div className="fb-step-title">Submit anonymously or with your name?</div>
-            <div className="fb-identity-choices">
-              <button
-                className={`fb-identity-btn ${anonymous === true ? 'selected' : ''}`}
-                onClick={() => setAnonymous(true)}
-              >
-                <span className="fb-identity-icon">🔒</span>
-                <div>
-                  <div className="fb-identity-label">Anonymous</div>
-                  <div className="fb-identity-desc">Admin sees feedback but not who sent it</div>
-                </div>
-              </button>
-              <button
-                className={`fb-identity-btn ${anonymous === false ? 'selected' : ''}`}
-                onClick={() => setAnonymous(false)}
-              >
-                <span className="fb-identity-icon">👤</span>
-                <div>
-                  <div className="fb-identity-label">With my name</div>
-                  <div className="fb-identity-desc">Admin can follow up with you</div>
-                </div>
-              </button>
-            </div>
-            {anonymous === false && (
-              <input
-                className="fb-input"
-                placeholder="Your name (e.g. Aizat Mamytova)"
-                value={name}
-                onChange={e => setName(e.target.value)}
-                autoFocus
-              />
-            )}
-            {/* Summary */}
-            {anonymous !== null && (
-              <div className="fb-summary">
-                <div className="fb-summary-title">Summary</div>
-                <div className="fb-summary-row"><span>Category</span><span>{CAT_ICONS[category]} {category}</span></div>
-                <div className="fb-summary-row"><span>About</span><span>{subject}</span></div>
-                <div className="fb-summary-row"><span>Message</span><span>"{message.slice(0,60)}{message.length > 60 ? '…' : ''}"</span></div>
-                <div className="fb-summary-row"><span>Identity</span><span>{anonymous ? '🔒 Anonymous' : `👤 ${name || '…'}`}</span></div>
-              </div>
-            )}
-            <div className="fb-step-actions">
-              <button className="fb-btn-back" onClick={() => { setStep(2); setError(''); }}>← Back</button>
-              <button
-                className="fb-btn-submit"
-                disabled={anonymous === null || (anonymous === false && !name.trim()) || submitting}
-                onClick={handleSubmit}
-              >
+              <button className="fb-btn-submit" disabled={message.trim().length < 5 || !name.trim() || submitting} onClick={handleSubmit}>
                 {submitting ? 'Submitting...' : '✓ Submit Feedback'}
               </button>
             </div>
           </div>
         )}
+
+
       </div>
     </div>
   );
