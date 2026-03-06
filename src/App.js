@@ -64,6 +64,7 @@ const AppContent = () => {
   const [guestBookCell,     setGuestBookCell]      = useState(null);
   const [activeBookings,    setActiveBookings]     = useState([]);
   const [showExamsToGuests, setShowExamsToGuests]  = useState(false);
+  const [feedbackCount,      setFeedbackCount]       = useState(0);
 
   const fileInputRef = useRef(null);
 
@@ -84,7 +85,7 @@ const AppContent = () => {
   const fetchFeedbackCount = React.useCallback(async () => {
     try {
       const token = localStorage.getItem('token') || localStorage.getItem('scheduleToken') || '';
-      if (!token) return;
+      if (!token || !isAuthenticated) return;
       const r = await fetch(`${API_URL}/feedback/stats`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -93,7 +94,9 @@ const AppContent = () => {
     } catch { /* ignore */ }
   }, []);
 
-  React.useEffect(() => { fetchFeedbackCount(); }, [fetchFeedbackCount]);
+  React.useEffect(() => {
+    if (isAuthenticated) fetchFeedbackCount();
+  }, [fetchFeedbackCount, isAuthenticated]);
 
   // ── Fetch exam-guest setting ──────────────────────────────────────────────
   const fetchExamSetting = React.useCallback(async () => {
