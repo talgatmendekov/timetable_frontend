@@ -29,7 +29,8 @@ import * as XLSX from 'xlsx';
 import './App.css';
 
 // ── Constants ────────────────────────────────────────────────────────────────
-const API_URL = process.env.REACT_APP_API_URL || 'https://timetablebackend-production.up.railway.app/api';
+const API_URL    = process.env.REACT_APP_API_URL    || 'https://timetablebackend-production.up.railway.app/api';
+const PUBLIC_URL = process.env.REACT_APP_BACKEND_URL || 'https://timetablebackend-production.up.railway.app';
 
 const getTodayScheduleDay = () => {
   const dayNames     = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
@@ -65,6 +66,7 @@ const AppContent = () => {
   const [activeBookings,    setActiveBookings]     = useState([]);
   const [showExamsToGuests, setShowExamsToGuests]  = useState(false);
   const [feedbackCount,      setFeedbackCount]       = useState(0);
+  const [shareToast,         setShareToast]          = useState('');
 
   const fileInputRef = useRef(null);
 
@@ -166,6 +168,20 @@ const AppContent = () => {
   const handleDeleteGroup = async (groupName) => {
     await deleteGroup(groupName);
     setActiveBookings(prev => prev.filter(b => b.entity !== groupName && b.name !== groupName));
+  };
+
+  // ── Share public link ─────────────────────────────────────────────────────
+  const handleShare = () => {
+    const group = selectedGroup || (groups.length > 0 ? groups[0] : '');
+    const url   = group
+      ? `${PUBLIC_URL}/schedule/${encodeURIComponent(group)}`
+      : `${PUBLIC_URL}/schedule`;
+    navigator.clipboard?.writeText(url).then(() => {
+      setShareToast(`✓ Copied: /schedule/${group || ''}`);
+      setTimeout(() => setShareToast(''), 2500);
+    }).catch(() => {
+      prompt('Copy this link:', url);
+    });
   };
 
   // ── Export ────────────────────────────────────────────────────────────────
@@ -307,6 +323,26 @@ const AppContent = () => {
         onImport={handleImportClick}
         onClearAll={handleClearAll}
       />
+
+      {/* Share public schedule button — admin only */}
+      {isAuthenticated && (
+        <div style={{ padding:'6px 16px', background:'#f8fafc', borderBottom:'1px solid #e8ecf2', display:'flex', alignItems:'center', gap:10 }}>
+          <span style={{ fontSize:'.75rem', color:'#94a3b8', fontWeight:600 }}>🔗 Public link:</span>
+          <span style={{ fontSize:'.75rem', color:'#6366f1', fontFamily:'monospace' }}>
+            /schedule{selectedGroup ? `/${selectedGroup}` : ''}
+          </span>
+          <button
+            onClick={handleShare}
+            style={{
+              padding:'4px 12px', background:'#6366f1', color:'#fff',
+              border:'none', borderRadius:7, fontSize:'.72rem', fontWeight:700,
+              cursor:'pointer', fontFamily:'inherit',
+            }}
+          >
+            Copy Link
+          </button>
+        </div>
+      )}
 
       {/* Guest booking */}
       {!isAuthenticated && (
