@@ -19,7 +19,6 @@ import * as XLSX from 'xlsx';
 import TeacherTelegramManagement from './components/TeacherTelegramManagement';
 import EmptyRoomPanel from './components/EmptyRoomPanel';
 import GuestBookingStatus from './components/GuestBookingStatus';
-import AutoScheduler from './components/AutoScheduler';
 import ExamSchedule from './components/ExamSchedule';
 import './App.css';
 
@@ -359,7 +358,6 @@ const AppContent = () => {
         {activeTab === 'dashboard' && <TeacherDashboard />}
         {activeTab === 'conflicts' && <ConflictPage onJumpToCell={handleJumpToCell} />}
         {activeTab === 'bookings'  && <BookingManagement />}
-        {activeTab === 'autosched' && <AutoScheduler />}
         {activeTab === 'exams'     && <ExamSchedule />}
         {activeTab === 'telegram'  && <TeacherTelegramManagement />}
       </div>
