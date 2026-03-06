@@ -31,7 +31,7 @@ const ScheduleTable = ({
   // Booking groups (entity/name from pending+approved bookings) float to the top
   const bookingGroups = [...new Set(
     bookings
-      .filter(b => b.status === 'pending' || b.status === 'approved')
+      .filter(b => b.status === 'pending' || b.status === 'approved' || b.status === 'rejected')
       .map(b => (b.entity && b.entity.trim()) ? b.entity.trim() : b.name)
       .filter(Boolean)
   )];
@@ -240,14 +240,15 @@ const ScheduleTable = ({
                   let bookingStyle = {};
                   let bookingLabel = null;
                   if (booking) {
-                    bookingStyle = booking.status === 'approved'
-                      ? { background: '#dcfce7', borderLeft: '3px solid #22c55e' }
-                      : { background: '#fef9c3', borderLeft: '3px solid #eab308' };
+                    bookingStyle =
+                      booking.status === 'approved' ? { background: '#dcfce7', borderLeft: '3px solid #22c55e' } :
+                      booking.status === 'rejected' ? { background: '#fee2e2', borderLeft: '3px solid #ef4444' } :
+                      { background: '#fef9c3', borderLeft: '3px solid #eab308' };
                     bookingLabel = (
                       <div style={{fontSize:'0.68rem',marginTop:3,fontWeight:600,
-                        color: booking.status === 'approved' ? '#166534' : '#854d0e',
+                        color: booking.status === 'approved' ? '#166534' : booking.status === 'rejected' ? '#991b1b' : '#854d0e',
                         display:'flex',alignItems:'center',gap:3}}>
-                        {booking.status === 'approved' ? '✅' : '⏳'}
+                        {booking.status === 'approved' ? '✅' : booking.status === 'rejected' ? '❌' : '⏳'}
                         <span>{booking.name || ''}</span>
                         {booking.room && <span style={{opacity:0.7}}>· {booking.room}</span>}
                       </div>
