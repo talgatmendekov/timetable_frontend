@@ -19,6 +19,7 @@ import TeacherTelegramManagement from './components/TeacherTelegramManagement';
 import EmptyRoomPanel            from './components/EmptyRoomPanel';
 import AutoScheduler             from './components/AutoScheduler';
 import ExamSchedule              from './components/ExamSchedule';
+import FeedbackDashboard         from './components/FeedbackDashboard';
 
 // ── Utils ───────────────────────────────────────────────────────────────────
 import { exportToExcel, importFromExcel } from './utils/excelUtils';
@@ -78,6 +79,21 @@ const AppContent = () => {
     Object.values(schedule).forEach(e => { if (e.room) rooms.add(e.room); });
     return [...rooms].sort();
   }, [schedule]);
+
+  // ── Fetch unread feedback badge count ─────────────────────────────────────
+  const fetchFeedbackCount = React.useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token') || localStorage.getItem('scheduleToken') || '';
+      if (!token) return;
+      const r = await fetch(`${API_URL}/feedback/stats`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const d = await r.json();
+      if (d.success) setFeedbackCount(d.unread || 0);
+    } catch { /* ignore */ }
+  }, []);
+
+  React.useEffect(() => { fetchFeedbackCount(); }, [fetchFeedbackCount]);
 
   // ── Fetch exam-guest setting ──────────────────────────────────────────────
   const fetchExamSetting = React.useCallback(async () => {
@@ -242,6 +258,7 @@ const AppContent = () => {
       { id: 'bookings',  icon: '🏫', label: t('tabBookings')  || 'Lab Bookings' },
       { id: 'autosched', icon: '🤖', label: 'Auto Schedule'                      },
       { id: 'exams',     icon: '🗓', label: 'Exam Schedule'                      },
+      { id: 'feedback',  icon: '💬', label: 'Feedback', badge: feedbackCount  },
       { id: 'telegram',  icon: '📱', label: t('tabTelegram')  || 'Telegram'      },
     ] : []),
   ];
@@ -371,6 +388,9 @@ const AppContent = () => {
             setShowExamsToGuests={setShowExamsToGuests}
           />
         )}
+
+        {/* 💬 Feedback */}
+        {activeTab === 'feedback'  && <FeedbackDashboard />}
 
         {/* 📱 Telegram */}
         {activeTab === 'telegram'  && <TeacherTelegramManagement />}
