@@ -1,5 +1,6 @@
 // src/components/FeedbackDashboard.js
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useLanguage } from '../context/LanguageContext';
 import './FeedbackDashboard.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://timetablebackend-production.up.railway.app/api';
@@ -9,10 +10,10 @@ const STATUS_LABELS = { new: 'New', read: 'Read', resolved: 'Resolved' };
 const STATUS_COLORS = { new: '#ef4444', read: '#f59e0b', resolved: '#22c55e' };
 const CAT_ICONS     = { room: '🏛', teacher: '👨‍🏫', group: '👥', general: '📝' };
 const CATEGORIES    = [
-  { value: 'room',    label: '🏛 Room',    hint: 'e.g. B201, A105' },
-  { value: 'teacher', label: '👨‍🏫 Teacher', hint: 'e.g. Prof. Asanov' },
-  { value: 'group',   label: '👥 Group',   hint: 'e.g. CS-22' },
-  { value: 'general', label: '📝 General', hint: '' },
+  { value: 'room',    label: `🏛 ${t('feedbackCatRoom')||'Room'}`,    hint: 'e.g. B201, A105' },
+  { value: 'teacher', label: `👨‍🏫 ${t('feedbackCatTeacher')||'Teacher'}`, hint: 'e.g. Prof. Asanov' },
+  { value: 'group',   label: `👥 ${t('feedbackCatGroup')||'Group'}`,   hint: 'e.g. CS-22' },
+  { value: 'general', label: `📝 ${t('feedbackCatGeneral')||'General'}`, hint: '' },
 ];
 
 const fmt = (d) => d
@@ -23,6 +24,7 @@ const fmt = (d) => d
 // GUEST: Submit Feedback Form
 // ─────────────────────────────────────────────────────────────────────────────
 function GuestFeedbackForm({ schedule, groups }) {
+  const { t } = useLanguage();
   const [step,      setStep]     = useState(0); // 0=category 1=subject 2=message 3=identity 4=done
   const [category,  setCategory] = useState('');
   const [subject,   setSubject]  = useState('');
@@ -39,9 +41,9 @@ function GuestFeedbackForm({ schedule, groups }) {
   const reset = () => { setStep(0); setCategory(''); setSubject(''); setMessage(''); setName(''); setEmail(''); setError(''); };
 
   const handleSubmit = async () => {
-    if (!message.trim() || message.trim().length < 5) return setError('Please write at least 5 characters.');
-    if (!name.trim()) return setError('Please enter your name.');
-    if (!email.trim() || !email.trim().toLowerCase().endsWith('@alatoo.edu.kg')) return setError('Email must end with @alatoo.edu.kg');
+    if (!message.trim() || message.trim().length < 5) return setError(t('feedbackErrMessage') || 'Please write at least 5 characters.');
+    if (!name.trim()) return setError(t('feedbackErrName') || 'Please enter your name.');
+    if (!email.trim() || !email.trim().toLowerCase().endsWith('@alatoo.edu.kg')) return setError(t('feedbackErrEmail') || 'Email must end with @alatoo.edu.kg');
     setSubmitting(true);
     setError('');
     try {
@@ -98,7 +100,7 @@ function GuestFeedbackForm({ schedule, groups }) {
 
       {/* Progress steps */}
       <div className="fb-steps">
-        {['Category','About','Message & Name'].map((s, i) => (
+        {[t('feedbackStepCategory')||t('feedbackCategory') || 'Category', t('feedbackStepAbout')||'About', t('feedbackStepMessage')||'Message & Name'].map((s, i) => (
           <div key={i} className={`fb-step ${step === i ? 'active' : step > i ? 'done' : ''}`}>
             <div className="fb-step-dot">{step > i ? '✓' : i + 1}</div>
             <div className="fb-step-label">{s}</div>
@@ -143,9 +145,9 @@ function GuestFeedbackForm({ schedule, groups }) {
         {step === 1 && (
           <div className="fb-step-content">
             <div className="fb-step-title">
-              {category === 'room'    && 'Which room?'}
-              {category === 'teacher' && 'Which teacher?'}
-              {category === 'group'   && 'Which group?'}
+              {category === 'room'    && t('feedbackWhichRoom') || 'Which room?'}
+              {category === 'teacher' && t('feedbackWhichTeacher') || 'Which teacher?'}
+              {category === 'group'   && t('feedbackWhichGroup') || 'Which group?'}
             </div>
             <div className="fb-step-hint">{selectedCat?.hint}</div>
             <input
@@ -191,7 +193,7 @@ function GuestFeedbackForm({ schedule, groups }) {
             </div>
             <textarea
               className="fb-textarea"
-              placeholder="Write your feedback here..."
+              {...(true && {placeholder: t('feedbackMessagePlaceholder')||'Write your feedback here...'})}
               value={message}
               onChange={e => setMessage(e.target.value)}
               rows={4}
@@ -201,14 +203,14 @@ function GuestFeedbackForm({ schedule, groups }) {
             <div className="fb-identity-row">
               <input
                 className="fb-input"
-                placeholder="Your full name (e.g. Aizat Mamytova)"
+                {...(true && {placeholder: t('feedbackNamePlaceholder')||'Your full name'})}
                 value={name}
                 onChange={e => setName(e.target.value)}
               />
               <input
                 className="fb-input"
                 type="email"
-                placeholder="Your university email (e.g. aizat@alatoo.edu.kg)"
+                {...(true && {placeholder: t('feedbackEmailPlaceholder')||'Your university email'})}
                 value={email}
                 onChange={e => setEmail(e.target.value)}
               />
@@ -216,7 +218,7 @@ function GuestFeedbackForm({ schedule, groups }) {
             <div className="fb-step-actions">
               <button className="fb-btn-back" onClick={() => { setStep(category === 'general' ? 0 : 1); setError(''); }}>← Back</button>
               <button className="fb-btn-submit" disabled={message.trim().length < 5 || !name.trim() || !email.trim() || submitting} onClick={handleSubmit}>
-                {submitting ? 'Submitting...' : '✓ Submit Feedback'}
+                {submitting ? t('feedbackSubmitting') || 'Submitting...' : t('feedbackSubmit') || '✓ Submit Feedback'}
               </button>
             </div>
           </div>
@@ -232,6 +234,7 @@ function GuestFeedbackForm({ schedule, groups }) {
 // ADMIN: Feedback Dashboard
 // ─────────────────────────────────────────────────────────────────────────────
 function AdminFeedbackDashboard() {
+  const { t } = useLanguage();
   const [items,      setItems]      = useState([]);
   const [stats,      setStats]      = useState(null);
   const [loading,    setLoading]    = useState(true);
@@ -346,7 +349,7 @@ function AdminFeedbackDashboard() {
 
       {/* Filters */}
       <div className="fb-filters">
-        <input className="fb-search" placeholder="🔍 Search..." value={search} onChange={e => setSearch(e.target.value)} />
+        <input className="fb-search" placeholder={t('feedbackSearchSubject')||'🔍 Search...'} value={search} onChange={e => setSearch(e.target.value)} />
         <select className="fb-select" value={filterCat} onChange={e => setFilterCat(e.target.value)}>
           <option value="">All Categories</option>
           <option value="room">🏛 Room</option>
@@ -376,7 +379,7 @@ function AdminFeedbackDashboard() {
       ) : filtered.length === 0 ? (
         <div className="fb-empty">
           <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>💬</div>
-          <div>{items.length === 0 ? 'No feedback received yet.' : 'No feedback matches your filters.'}</div>
+          <div>{items.length === 0 ? t('feedbackNoData') || 'No feedback received yet.' : t('search') ? 'No results' : 'No feedback matches your filters.'}</div>
           {items.length === 0 && (
             <div className="fb-empty-hint">Students submit feedback via the <strong>💬 Feedback</strong> tab in guest mode.</div>
           )}
@@ -406,7 +409,7 @@ function AdminFeedbackDashboard() {
                   <div className="fb-detail-message">"{item.message}"</div>
                   <div className="fb-detail-meta">
                     <div className="fb-meta-row"><span className="fb-meta-key">Category</span><span className="fb-meta-val">{CAT_ICONS[item.category]} {item.category}</span></div>
-                    <div className="fb-meta-row"><span className="fb-meta-key">Sender</span><span className="fb-meta-val">{item.anonymous ? '🔒 Anonymous' : `👤 ${item.sender_name || 'Unknown'}`}</span></div>
+                    <div className="fb-meta-row"><span className="fb-meta-key">Sender</span><span className="fb-meta-val">{item.anonymous ? `🔒 ${t('feedbackAnonymous')||'Anonymous'}` : `👤 ${item.sender_name || 'Unknown'}`}</span></div>
                     {item.sender_email && <div className="fb-meta-row"><span className="fb-meta-key">Email</span><span className="fb-meta-val"><a href={`mailto:${item.sender_email}`} style={{color:'#6366f1'}}>{item.sender_email}</a></span></div>}
                     <div className="fb-meta-row"><span className="fb-meta-key">Submitted</span><span className="fb-meta-val">{fmt(item.created_at)}</span></div>
                     <div className="fb-meta-row"><span className="fb-meta-key">Status</span><span className="fb-meta-val" style={{ color: STATUS_COLORS[item.status] }}>● {STATUS_LABELS[item.status]}</span></div>

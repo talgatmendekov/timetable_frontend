@@ -265,9 +265,9 @@ const AppContent = () => {
 
     // Guest-only
     ...(!isAuthenticated ? [
-      { id: 'mybookings', icon: '📋', label: 'My Bookings' },
-      ...(showExamsToGuests ? [{ id: 'exams', icon: '🗓', label: 'Exam Schedule' }] : []),
-      { id: 'feedback',   icon: '💬', label: 'Feedback' },
+      { id: 'mybookings', icon: '📋', label: t('tabMyBookings') || 'My Bookings' },
+      ...(showExamsToGuests ? [{ id: 'exams', icon: '🗓', label: t('tabExams') || 'Exam Schedule' }] : []),
+      { id: 'feedback',   icon: '💬', label: t('tabFeedback') || 'Feedback' },
     ] : []),
 
     // Admin-only
@@ -276,9 +276,9 @@ const AppContent = () => {
       { id: 'dashboard', icon: '📊', label: t('tabDashboard') || 'Teacher Stats' },
       { id: 'conflicts', icon: '⚠️',  label: t('tabConflicts') || 'Conflicts',    badge: conflictCount },
       { id: 'bookings',  icon: '🏫', label: t('tabBookings')  || 'Lab Bookings' },
-      { id: 'autosched', icon: '🤖', label: 'Auto Schedule'                      },
-      { id: 'exams',     icon: '🗓', label: 'Exam Schedule'                      },
-      { id: 'feedback',  icon: '💬', label: 'Feedback', badge: feedbackCount  },
+      { id: 'autosched', icon: '🤖', label: t('tabAutoSched')  || 'Auto Schedule' },
+      { id: 'exams',     icon: '🗓', label: t('tabExams')      || 'Exam Schedule' },
+      { id: 'feedback',  icon: '💬', label: t('tabFeedback')   || 'Feedback', badge: feedbackCount },
       { id: 'telegram',  icon: '📱', label: t('tabTelegram')  || 'Telegram'      },
     ] : []),
   ];
