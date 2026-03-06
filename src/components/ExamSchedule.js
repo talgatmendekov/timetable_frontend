@@ -32,7 +32,7 @@ const emptyForm = () => ({
   exam_date:'', start_time:'9:00', duration:90, notes:''
 });
 
-export default function ExamSchedule() {
+export default function ExamSchedule({ readOnly = false, showExamsToGuests = false, setShowExamsToGuests = null }) {
   const { groups, schedule } = useSchedule();
   const { t } = useLanguage();
 
@@ -63,6 +63,18 @@ export default function ExamSchedule() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // ── Admin toggle: show/hide exams to guests ───────────────────────────
+  const handleToggleGuestExams = async (val) => {
+    try {
+      await fetch(`${API_URL}/settings/show_exams_to_guests`, {
+        method: 'PUT',
+        headers: { 'Content-Type':'application/json', Authorization:`Bearer ${getToken()}` },
+        body: JSON.stringify({ value: String(val) }),
+      });
+      if (setShowExamsToGuests) setShowExamsToGuests(val);
+    } catch(e) { console.error('Toggle failed:', e); }
+  };
 
   const handleSave = async () => {
     setError('');
@@ -266,10 +278,23 @@ export default function ExamSchedule() {
           </div>
         </div>
         <div className="es-header-actions">
+          {!readOnly && (
+            <label className="es-guest-toggle" title="Show exam schedule to guests">
+              <div className={`es-toggle-track ${showExamsToGuests ? 'on' : ''}`}
+                onClick={() => handleToggleGuestExams(!showExamsToGuests)}>
+                <div className="es-toggle-thumb" />
+              </div>
+              <span className="es-toggle-label">
+                {showExamsToGuests ? '👁 Visible to guests' : '🔒 Hidden from guests'}
+              </span>
+            </label>
+          )}
           <button className="es-btn-print" onClick={handlePrint}>🖨 Print / PDF</button>
-          <button className="es-btn-add" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm()); setError(''); }}>
-            + Add Exam
-          </button>
+          {!readOnly && (
+            <button className="es-btn-add" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm()); setError(''); }}>
+              + Add Exam
+            </button>
+          )}
         </div>
       </div>
 
@@ -296,8 +321,8 @@ export default function ExamSchedule() {
         </div>
       )}
 
-      {/* Add/Edit Form */}
-      {showForm && (
+      {/* Add/Edit Form — admin only */}
+      {showForm && !readOnly && (
         <div className="es-form-wrap">
           <div className="es-form-title">{editId ? '✏️ Edit Exam' : '+ New Exam'}</div>
           {error && <div className="es-error">⚠️ {error}</div>}
@@ -410,16 +435,18 @@ export default function ExamSchedule() {
                       </div>
                       {exam.notes && <div className="es-card-notes">📝 {exam.notes}</div>}
                     </div>
-                    <div className="es-card-actions">
-                      <button className="es-action-btn tg"
-                        onClick={() => handleBroadcast(exam)}
-                        disabled={sending}
-                        title="Send to group Telegram">
-                        {sending ? '...' : '📨'}
-                      </button>
-                      <button className="es-action-btn edit" onClick={() => handleEdit(exam)} title="Edit">✏️</button>
-                      <button className="es-action-btn del" onClick={() => handleDelete(exam.id)} title="Delete">🗑</button>
-                    </div>
+                    {!readOnly && (
+                      <div className="es-card-actions">
+                        <button className="es-action-btn tg"
+                          onClick={() => handleBroadcast(exam)}
+                          disabled={sending}
+                          title="Send to group Telegram">
+                          {sending ? '...' : '📨'}
+                        </button>
+                        <button className="es-action-btn edit" onClick={() => handleEdit(exam)} title="Edit">✏️</button>
+                        <button className="es-action-btn del" onClick={() => handleDelete(exam.id)} title="Delete">🗑</button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

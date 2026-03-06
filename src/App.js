@@ -38,6 +38,7 @@ const AppContent = () => {
   const { t } = useLanguage();
 
   const [guestMode, setGuestMode] = useState(false);
+  const [showExamsToGuests, setShowExamsToGuests] = useState(false);
   const [activeTab, setActiveTab] = useState('schedule');
   const [selectedDay, setSelectedDay] = useState(getTodayScheduleDay);
 
@@ -70,6 +71,17 @@ const AppContent = () => {
 
   // Fetch bookings for ALL users - admins see highlights too
   const API_URL = process.env.REACT_APP_API_URL || 'https://timetablebackend-production.up.railway.app/api';
+  // Fetch show_exams_to_guests setting
+  const fetchExamSetting = React.useCallback(async () => {
+    try {
+      const r = await fetch(`${API_URL}/settings/show_exams_to_guests`);
+      const d = await r.json();
+      setShowExamsToGuests(d.value === 'true');
+    } catch(e) { /* ignore */ }
+  }, [API_URL]);
+
+  React.useEffect(() => { fetchExamSetting(); }, [fetchExamSetting]);
+
   const fetchActiveBookings = React.useCallback(() => {
     const token = localStorage.getItem('scheduleToken') || '';
     fetch(`${API_URL}/booking-requests`, {
@@ -244,6 +256,7 @@ const AppContent = () => {
     { id: 'schedule',  icon: '📅', label: t('tabSchedule')  || 'Schedule' },
     ...(!isAuthenticated ? [
       { id: 'mybookings', icon: '📋', label: 'My Bookings' },
+      ...(showExamsToGuests ? [{ id: 'exams', icon: '📋', label: 'Exam Schedule' }] : []),
     ] : []),
     ...( isAuthenticated ? [
       { id: 'print',     icon: '🖨️', label: t('tabPrint')     || 'Print / PDF' },
@@ -358,7 +371,7 @@ const AppContent = () => {
         {activeTab === 'dashboard' && <TeacherDashboard />}
         {activeTab === 'conflicts' && <ConflictPage onJumpToCell={handleJumpToCell} />}
         {activeTab === 'bookings'  && <BookingManagement />}
-        {activeTab === 'exams'     && <ExamSchedule />}
+        {activeTab === 'exams'     && <ExamSchedule readOnly={!isAuthenticated} showExamsToGuests={showExamsToGuests} setShowExamsToGuests={setShowExamsToGuests} />}
         {activeTab === 'telegram'  && <TeacherTelegramManagement />}
       </div>
 
