@@ -225,18 +225,15 @@ Each entry must have: group, day, time, course, teacher, room, subjectType, dura
 Respect all constraints: no teacher double-booking, no room double-booking, no group double-booking, teacher max hours per day, labs in lab rooms only.
 Return ONLY a valid JSON array of entries, no explanation, no markdown.`;
 
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const token = localStorage.getItem('token') || localStorage.getItem('scheduleToken') || '';
+      const res = await fetch(`${API_URL}/claude/fix-schedule`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          messages: [{ role: 'user', content: prompt }],
-        }),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ prompt }),
       });
-
       const data = await res.json();
-      const raw  = (data.content || []).map(b => b.text || '').join('');
+      if (!data.success) throw new Error(data.error || 'Claude API failed');
+      const raw   = data.text || '';
       const clean = raw.replace(/```json|```/g, '').trim();
       const fixes = JSON.parse(clean);
 
