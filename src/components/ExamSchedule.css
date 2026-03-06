@@ -148,7 +148,7 @@
 
 /* Day groups */
 .es-list { display: flex; flex-direction: column; gap: 20px; }
-.es-day-group { background: #fff; border: 1.5px solid #e8ecf2; border-radius: 12px; padding: 16px; }
+.es-day-group {}
 .es-day-header {
   display: flex; align-items: center; gap: 12px;
   margin-bottom: 10px;
@@ -258,3 +258,89 @@
   font-size: 0.75rem; font-weight: 700;
   color: rgba(255,255,255,.85); white-space: nowrap;
 }
+
+/* ── Group pills on cards ── */
+.es-card-groups {
+  display: flex; flex-wrap: wrap; gap: 5px;
+  margin-bottom: 6px;
+}
+.es-group-pill {
+  background: #eef2ff; color: #4f46e5;
+  border: 1px solid #c7d2fe;
+  padding: 2px 9px; border-radius: 99px;
+  font-size: 0.72rem; font-weight: 700;
+}
+.es-group-joint {
+  background: #fef3c7; color: #92400e;
+  border: 1px solid #fde68a;
+  padding: 2px 9px; border-radius: 99px;
+  font-size: 0.68rem; font-weight: 700;
+  font-style: italic;
+}
+
+/* ── GroupPicker ── */
+.es-group-picker {
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+.es-gp-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e8ecf2;
+}
+.es-gp-count { font-size: 0.78rem; font-weight: 700; color: #4f46e5; }
+.es-gp-actions { display: flex; gap: 6px; }
+.es-gp-btn {
+  padding: 3px 10px;
+  background: #fff; color: #64748b;
+  border: 1px solid #e2e8f0; border-radius: 6px;
+  font-size: 0.72rem; font-weight: 700; cursor: pointer;
+  font-family: inherit; transition: all .12s;
+}
+.es-gp-btn:hover { background: #f1f5f9; color: #0f172a; }
+.es-gp-search {
+  margin: 8px 10px;
+  width: calc(100% - 20px);
+  box-sizing: border-box;
+}
+.es-gp-grid {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 4px 10px 10px;
+  max-height: 180px; overflow-y: auto;
+}
+.es-gp-chip {
+  padding: 4px 11px;
+  background: #f8fafc; color: #475569;
+  border: 1.5px solid #e2e8f0; border-radius: 8px;
+  font-size: 0.78rem; font-weight: 600; cursor: pointer;
+  font-family: inherit; transition: all .12s;
+  display: flex; align-items: center; gap: 4px;
+}
+.es-gp-chip:hover { border-color: #6366f1; color: #4f46e5; }
+.es-gp-chip.on {
+  background: #4f46e5; color: #fff;
+  border-color: #4f46e5;
+}
+.es-gp-check { font-size: 0.7rem; }
+.es-gp-selected {
+  display: flex; flex-wrap: wrap; gap: 5px;
+  padding: 8px 10px;
+  background: #f8fafc;
+  border-top: 1px solid #e8ecf2;
+}
+.es-gp-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: #eef2ff; color: #4f46e5;
+  border: 1px solid #c7d2fe;
+  padding: 3px 8px; border-radius: 99px;
+  font-size: 0.72rem; font-weight: 700;
+}
+.es-gp-pill button {
+  background: none; border: none; color: #6366f1;
+  cursor: pointer; font-size: 0.8rem; padding: 0;
+  line-height: 1;
+}
+.es-gp-pill button:hover { color: #be123c; }
