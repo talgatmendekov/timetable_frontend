@@ -28,6 +28,7 @@ function GuestFeedbackForm({ schedule, groups }) {
   const [subject,   setSubject]  = useState('');
   const [message,   setMessage]  = useState('');
   const [name,      setName]     = useState('');
+  const [email,     setEmail]    = useState('');
   const [submitting,setSubmitting]= useState(false);
   const [error,     setError]    = useState('');
 
@@ -35,11 +36,12 @@ function GuestFeedbackForm({ schedule, groups }) {
   const allRooms    = useMemo(() => [...new Set(Object.values(schedule || {}).map(e => e.room).filter(Boolean))].sort(), [schedule]);
   const allTeachers = useMemo(() => [...new Set(Object.values(schedule || {}).map(e => e.teacher).filter(Boolean))].sort(), [schedule]);
 
-  const reset = () => { setStep(0); setCategory(''); setSubject(''); setMessage(''); setName(''); setError(''); };
+  const reset = () => { setStep(0); setCategory(''); setSubject(''); setMessage(''); setName(''); setEmail(''); setError(''); };
 
   const handleSubmit = async () => {
     if (!message.trim() || message.trim().length < 5) return setError('Please write at least 5 characters.');
     if (!name.trim()) return setError('Please enter your name.');
+    if (!email.trim() || !email.trim().toLowerCase().endsWith('@alatoo.edu.kg')) return setError('Email must end with @alatoo.edu.kg');
     setSubmitting(true);
     setError('');
     try {
@@ -52,6 +54,7 @@ function GuestFeedbackForm({ schedule, groups }) {
           message:     message.trim(),
           anonymous:   false,
           sender_name: name.trim(),
+          sender_email: email.trim(),
         }),
       });
       const d = await r.json();
@@ -89,7 +92,7 @@ function GuestFeedbackForm({ schedule, groups }) {
         <div className="fb-guest-icon">💬</div>
         <div>
           <div className="fb-guest-title">Student Feedback</div>
-          <div className="fb-guest-sub">Help improve your university — your name is required</div>
+          <div className="fb-guest-sub">Help improve your university — name and email required</div>
         </div>
       </div>
 
@@ -195,16 +198,24 @@ function GuestFeedbackForm({ schedule, groups }) {
               autoFocus
             />
             <div className="fb-char-count">{message.length} characters</div>
-            <input
-              className="fb-input"
-              placeholder="Your full name (e.g. Aizat Mamytova)"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              style={{ marginTop: 4 }}
-            />
+            <div className="fb-identity-row">
+              <input
+                className="fb-input"
+                placeholder="Your full name (e.g. Aizat Mamytova)"
+                value={name}
+                onChange={e => setName(e.target.value)}
+              />
+              <input
+                className="fb-input"
+                type="email"
+                placeholder="Your university email (e.g. aizat@alatoo.edu.kg)"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+              />
+            </div>
             <div className="fb-step-actions">
               <button className="fb-btn-back" onClick={() => { setStep(category === 'general' ? 0 : 1); setError(''); }}>← Back</button>
-              <button className="fb-btn-submit" disabled={message.trim().length < 5 || !name.trim() || submitting} onClick={handleSubmit}>
+              <button className="fb-btn-submit" disabled={message.trim().length < 5 || !name.trim() || !email.trim() || submitting} onClick={handleSubmit}>
                 {submitting ? 'Submitting...' : '✓ Submit Feedback'}
               </button>
             </div>
@@ -396,6 +407,7 @@ function AdminFeedbackDashboard() {
                   <div className="fb-detail-meta">
                     <div className="fb-meta-row"><span className="fb-meta-key">Category</span><span className="fb-meta-val">{CAT_ICONS[item.category]} {item.category}</span></div>
                     <div className="fb-meta-row"><span className="fb-meta-key">Sender</span><span className="fb-meta-val">{item.anonymous ? '🔒 Anonymous' : `👤 ${item.sender_name || 'Unknown'}`}</span></div>
+                    {item.sender_email && <div className="fb-meta-row"><span className="fb-meta-key">Email</span><span className="fb-meta-val"><a href={`mailto:${item.sender_email}`} style={{color:'#6366f1'}}>{item.sender_email}</a></span></div>}
                     <div className="fb-meta-row"><span className="fb-meta-key">Submitted</span><span className="fb-meta-val">{fmt(item.created_at)}</span></div>
                     <div className="fb-meta-row"><span className="fb-meta-key">Status</span><span className="fb-meta-val" style={{ color: STATUS_COLORS[item.status] }}>● {STATUS_LABELS[item.status]}</span></div>
                   </div>
