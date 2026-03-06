@@ -251,6 +251,7 @@ const AppContent = () => {
     ...(!isAuthenticated ? [
       { id: 'mybookings', icon: '📋', label: 'My Bookings' },
       ...(showExamsToGuests ? [{ id: 'exams', icon: '🗓', label: 'Exam Schedule' }] : []),
+      { id: 'feedback',   icon: '💬', label: 'Feedback' },
     ] : []),
 
     // Admin-only
@@ -392,8 +393,12 @@ const AppContent = () => {
           />
         )}
 
-        {/* 💬 Feedback */}
-        {activeTab === 'feedback'  && <FeedbackDashboard />}
+        {/* 💬 Feedback — admin sees dashboard, guest sees submit form */}
+        {activeTab === 'feedback'  && (
+          isAuthenticated
+            ? <FeedbackDashboard />
+            : <FeedbackDashboard guestMode={true} schedule={schedule} groups={groups} />
+        )}
 
         {/* 📱 Telegram */}
         {activeTab === 'telegram'  && <TeacherTelegramManagement />}
