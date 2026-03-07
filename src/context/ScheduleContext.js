@@ -41,6 +41,7 @@ const TEACHER_CANONICAL = {
 export function normalizeTeacherName(raw) {
   if (!raw) return '';
   let s = raw.trim();
+
   s = s.replace(/([a-z])(LAB\d*|BIGLAB|B\d+)/g, '$1 $2');
   s = s.replace(/^\/+/, '').trim();
   s = s.replace(/\/.*$/, '').trim();
@@ -48,22 +49,27 @@ export function normalizeTeacherName(raw) {
   s = s.replace(/\s+until+\b.*/i, '').trim();
   s = s.replace(/\s+(?:with\s+)?own\b.*/i, '').trim();
   s = s.replace(/\s+make\s+up\b.*/i, '').trim();
-  s = s.replace(/\s+at\s+\d+[:.]\d+.*/i, '').trim();
+  s = s.replace(/\s+at\s+\d+[:.]?\d+.*/i, '').trim();
   s = s.replace(/\s*\/.*$/, '').trim();
   s = s.replace(/\s*\+.*$/, '').trim();
+
   const TRAILING_ROOM = /\s+([Bb]\s?\d*\w*|[Aa]\d+|LAB\d*(\(\d+\))?|BIGLAB|BigLab|Lab\d*(\(\d+\))?|LINK|WEB|web|link|WeB|и\d+)$/i;
   let prev;
   do { prev = s; s = s.replace(TRAILING_ROOM, '').trim(); } while (s !== prev);
+
   s = s.replace(/,\s*[Bb]\d+.*/g, '').trim();
   s = s.replace(/[,]+$/, '').trim();
   s = s.replace(/\b(Dr|Mr|Ms|Mrs|Prof)\.(\w)/g, '$1. $2');
   s = s.replace(/\b(Dr|Mr|Ms|Mrs|Prof)\s+(?=[A-Z])/g, '$1. ');
   s = s.replace(/\s{2,}/g, ' ').trim();
+
   if (!s) return '';
   if (/^[Bb]\d+(\(\w+\))?$/.test(s)) return '';
   if (/^(ALATOO|German\s|DevOps\s|Time\s+club|Programs\s|COURSE|COM\b|\(COM\)|B201)/i.test(s)) return '';
+
   const canonical = TEACHER_CANONICAL[s.toLowerCase()];
   if (canonical) s = canonical;
+
   return s;
 }
 
@@ -81,12 +87,17 @@ function buildTeacherList(scheduleMap) {
 }
 
 export const ScheduleProvider = ({ children }) => {
+  // ⚠️ Wait for AuthContext to finish verifying the token before fetching.
+  // Without this, loadAll() fires before the token is in localStorage,
+  // producing "API attempt N failed, retrying in Nms..." spam on the login page.
   const { loading: authLoading } = useAuth();
+
   const [groups,   setGroups]   = useState(UNIVERSITY_GROUPS);
   const [schedule, setSchedule] = useState({});
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState(null);
 
+  // ── loadAll with silent retry — fixes Railway cold-start error on first load ─
   const loadAll = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -99,32 +110,34 @@ export const ScheduleProvider = ({ children }) => {
           groupsAPI.getAll(),
         ]);
         setSchedule(scheduleData || {});
-        // groupsData = { success, data: [{group_name, chat_id}] }
-        // Extract group names from the response, dedupe with schedule keys
-        const fromAPI = (groupsData?.data || []).map(g => g.group_name).filter(Boolean);
-        // Also extract any groups directly present in schedule data (covers booking-created groups)
-        const fromSchedule = [...new Set(Object.values(scheduleData || {}).map(e => e.group).filter(Boolean))];
-        const merged = [...new Set([...fromAPI, ...fromSchedule])].sort();
-        if (merged.length > 0) setGroups(merged);
+        if (groupsData?.length > 0) setGroups(groupsData);
         setError(null);
         setLoading(false);
-        return;
+        return; // ✅ success — stop retrying
       } catch (err) {
-        if (attempt < MAX_ATTEMPTS) {
-          const delay = attempt * 800;
-          console.warn(`API attempt ${attempt} failed, retrying in ${delay}ms...`);
+        // ⚠️ Never retry auth failures (401/403) — retrying with the same
+        // missing token just spams the console on the login page.
+        const isAuthError = err.message?.includes('Auth failed') ||
+                            err.message?.includes('401') ||
+                            err.message?.includes('403') ||
+                            err.message?.includes('Access denied');
+
+        if (!isAuthError && attempt < MAX_ATTEMPTS) {
+          const delay = attempt * 800; // 800ms, 1600ms, 2400ms
+          console.warn(`⚠️ Load attempt ${attempt} failed, retrying in ${delay}ms...`);
           await new Promise(r => setTimeout(r, delay));
         } else {
-          console.error('Failed to load data from backend:', err);
-          setError(err.message);
+          if (!isAuthError) {
+            console.error('Failed to load data from backend:', err);
+            setError(err.message);
+          }
           setLoading(false);
+          return;
         }
       }
     }
   }, []);
 
-  // Wait for AuthContext to finish verifying token before loading schedule
-  // This prevents "No token" errors on first visit
   useEffect(() => {
     if (!authLoading) {
       loadAll();
@@ -216,10 +229,7 @@ export const ScheduleProvider = ({ children }) => {
   const clearSchedule = async () => {
     try {
       await Promise.all(Object.values(schedule).map(e => scheduleAPI.delete(e.group, e.day, e.time)));
-      // Also delete all booking-created groups (entity groups not in the university list)
-      await Promise.all(groups.map(g => groupsAPI.delete(g))).catch(() => {});
       setSchedule({});
-      setGroups([]);
     } catch (err) {
       alert(`Failed to clear schedule: ${err.message}`);
       loadAll();

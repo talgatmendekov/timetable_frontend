@@ -7,15 +7,18 @@ const getToken = () =>
   localStorage.getItem('scheduleToken') ||
   localStorage.getItem('authToken') || '';
 
-// ── Retry helper ───────────────────────────────────────────────────────────
-// Retries up to `retries` times with exponential backoff (500ms, 1000ms, 2000ms)
-// This fixes the "first load fails" race condition where Railway cold-starts
-const apiCall = async (endpoint, options = {}, retries = 5) => {
+// ── Retry helper ──────────────────────────────────────────────────────────────
+// Retries up to `retries` times with exponential backoff on NETWORK errors only.
+// 401/403 are auth failures — never retried (retrying with the same empty token
+// just spams the console and delays UX on the login page).
+const apiCall = async (endpoint, options = {}, retries = 3) => {
   const url = `${BASE_URL}${endpoint}`;
 
   for (let attempt = 1; attempt <= retries; attempt++) {
-    // Re-read token on every attempt — auth may have completed since last try
+    // ⚠️  Token is read INSIDE the loop so each retry picks up a freshly-set
+    //     token (e.g. after AuthContext finishes writing it to localStorage).
     const token = getToken();
+
     let response;
     try {
       response = await fetch(url, {
@@ -27,7 +30,7 @@ const apiCall = async (endpoint, options = {}, retries = 5) => {
         ...options,
       });
     } catch (networkErr) {
-      // Network failure — retry if attempts remain
+      // Pure network failure — retry if attempts remain
       if (attempt < retries) {
         const delay = attempt * 500; // 500ms, 1000ms, 1500ms
         console.warn(`⚠️ API attempt ${attempt} failed, retrying in ${delay}ms...`);
@@ -51,12 +54,15 @@ const apiCall = async (endpoint, options = {}, retries = 5) => {
     }
 
     if (!response.ok) {
-      // Retry 401 on first attempts — token may not be set yet on first load
-      const isAuthError = response.status === 401;
-      const isServerError = response.status >= 500;
-      if ((isAuthError || isServerError) && attempt < retries) {
-        const delay = attempt * 600;
-        console.warn(`⚠️ API ${response.status} on attempt ${attempt}, retrying in ${delay}ms...`);
+      // 401 / 403 — auth problem, NEVER retry. Retrying just floods the console
+      // and delays the login page while the token is still empty.
+      if (response.status === 401 || response.status === 403) {
+        throw new Error(data.error || data.message || `Auth failed: ${response.status}`);
+      }
+      // 5xx server errors — retry
+      if (response.status >= 500 && attempt < retries) {
+        const delay = attempt * 500;
+        console.warn(`⚠️ Server error ${response.status}, retrying in ${delay}ms...`);
         await new Promise(r => setTimeout(r, delay));
         continue;
       }
@@ -67,13 +73,13 @@ const apiCall = async (endpoint, options = {}, retries = 5) => {
   }
 };
 
-// ── Auth ───────────────────────────────────────────────────────────────────
+// ── Auth ─────────────────────────────────────────────────────────────────────
 export const authAPI = {
   login:  (username, password) => apiCall('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
   verify: () => apiCall('/auth/verify'),
 };
 
-// ── Schedule ───────────────────────────────────────────────────────────────
+// ── Schedule ─────────────────────────────────────────────────────────────────
 export const scheduleAPI = {
   getAll: () => apiCall('/schedules'),
   save: (group, day, time, course, teacher, room, subjectType, duration = 1) =>
@@ -95,7 +101,7 @@ export const scheduleAPI = {
     apiCall('/schedules', { method: 'DELETE', body: JSON.stringify({ group, day, time }) }),
 };
 
-// ── Groups ─────────────────────────────────────────────────────────────────
+// ── Groups ───────────────────────────────────────────────────────────────────
 export const groupsAPI = {
   getAll: () => apiCall('/groups'),
   add:    (name) => apiCall('/groups', { method: 'POST', body: JSON.stringify({ name }) }),
