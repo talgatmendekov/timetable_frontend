@@ -1,84 +1,130 @@
 // src/components/Login.js
-
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { LANGUAGE_OPTIONS } from '../data/i18n';
-import './Login.css';
 
 const Login = ({ onViewAsGuest }) => {
+  const { login } = useAuth();
+  const { t, language, setLanguage } = useLanguage();
+
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const { login } = useAuth();
-  const { lang, changeLang, t } = useLanguage();
+  const [error,    setError]    = useState('');
+  const [loading,  setLoading]  = useState(false);
+
+  // ⚠️  NO useEffect here — nothing fires on mount.
+  //     Login only POSTs to /api/auth/login when the user clicks Submit.
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!username.trim() || !password.trim()) {
+      setError(t('loginFillBoth') || 'Please enter your username and password.');
+      return;
+    }
     setError('');
-    const result = await login(username, password);
-    if (!result.success) {
-      setError(t('invalidCredentials'));
+    setLoading(true);
+    try {
+      const result = await login(username.trim(), password);
+      if (!result.success) {
+        setError(result.error || t('loginInvalid') || 'Invalid username or password.');
+      }
+      // On success AuthContext sets isAuthenticated = true → App re-renders
+    } catch (err) {
+      setError(err.message || t('loginError') || 'Login failed. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
+  const LANGS = [
+    { code: 'en', label: 'EN' },
+    { code: 'ru', label: 'RU' },
+    { code: 'ky', label: 'KY' },
+  ];
+
   return (
     <div className="login-container">
-      <div className="login-box">
-        {/* Language selector on login page */}
-        <div className="login-lang">
-          {LANGUAGE_OPTIONS.map(opt => (
+      <div className="login-card">
+        {/* Language switcher */}
+        <div className="login-lang-row">
+          {LANGS.map(l => (
             <button
-              key={opt.code}
-              className={`lang-btn ${lang === opt.code ? 'active' : ''}`}
-              onClick={() => changeLang(opt.code)}
+              key={l.code}
+              className={`lang-btn${language === l.code ? ' active' : ''}`}
+              onClick={() => setLanguage(l.code)}
+              type="button"
             >
-              {opt.flag} {opt.code.toUpperCase()}
+              {l.label}
             </button>
           ))}
         </div>
 
-        <div className="login-header">
-          <h1>{t('loginTitle')}</h1>
-          <p>{t('loginSubtitle')}</p>
-        </div>
+        <h1 className="login-title">
+          {t('appTitle') || 'International Ala-Too University'}
+        </h1>
+        <p className="login-subtitle">
+          {t('appSubtitle') || 'Timetable Management System'}
+        </p>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label>{t('username')}</label>
+        <form onSubmit={handleSubmit} className="login-form" autoComplete="off">
+          <div className="login-field">
+            <label htmlFor="login-username">
+              {t('loginUsername') || 'Username'}
+            </label>
             <input
+              id="login-username"
               type="text"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder={t('username')}
-              required
+              onChange={e => setUsername(e.target.value)}
+              placeholder={t('loginUsernamePlaceholder') || 'Enter username'}
+              disabled={loading}
+              autoComplete="username"
             />
           </div>
 
-          <div className="form-group">
-            <label>{t('password')}</label>
+          <div className="login-field">
+            <label htmlFor="login-password">
+              {t('loginPassword') || 'Password'}
+            </label>
             <input
+              id="login-password"
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={t('password')}
-              required
+              onChange={e => setPassword(e.target.value)}
+              placeholder={t('loginPasswordPlaceholder') || 'Enter password'}
+              disabled={loading}
+              autoComplete="current-password"
             />
           </div>
 
-          {error && <div className="error-message">{error}</div>}
+          {error && (
+            <div className="login-error" role="alert">
+              {error}
+            </div>
+          )}
 
-          <button type="submit" className="btn btn-primary login-submit">
-            {t('loginBtn')}
+          <button
+            type="submit"
+            className="login-btn"
+            disabled={loading}
+          >
+            {loading
+              ? (t('loginLoading') || 'Signing in…')
+              : (t('login')       || 'Sign In')
+            }
           </button>
         </form>
 
-        <div className="login-footer">
-          <button onClick={onViewAsGuest} className="btn-link">
-            {t('viewAsGuest')}
+        {onViewAsGuest && (
+          <button
+            type="button"
+            className="login-guest-btn"
+            onClick={onViewAsGuest}
+            disabled={loading}
+          >
+            {t('viewAsGuest') || 'View as Guest (read-only)'}
           </button>
-          
-        </div>
+        )}
       </div>
     </div>
   );
