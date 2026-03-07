@@ -244,8 +244,8 @@ function AdminFeedbackDashboard() {
 
   // Status labels built inside component so t() is available
   const STATUS_LABELS = {
-    new:      t('pending')  || 'New',
-    read:     t('approved') || 'Read',
+    new:      'New',
+    read:     'Read',
     resolved: t('feedbackResolve') || 'Resolved',
   };
 
