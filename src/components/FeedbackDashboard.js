@@ -6,15 +6,9 @@ import './FeedbackDashboard.css';
 const API_URL = process.env.REACT_APP_API_URL || 'https://timetablebackend-production.up.railway.app/api';
 const getToken = () => localStorage.getItem('token') || localStorage.getItem('scheduleToken') || '';
 
-const STATUS_LABELS = { new: 'New', read: 'Read', resolved: 'Resolved' };
+// Static — no t() needed here
 const STATUS_COLORS = { new: '#ef4444', read: '#f59e0b', resolved: '#22c55e' };
 const CAT_ICONS     = { room: '🏛', teacher: '👨‍🏫', group: '👥', general: '📝' };
-const CATEGORIES    = [
-  { value: 'room',    label: `🏛 ${t('feedbackCatRoom')||'Room'}`,    hint: 'e.g. B201, A105' },
-  { value: 'teacher', label: `👨‍🏫 ${t('feedbackCatTeacher')||'Teacher'}`, hint: 'e.g. Prof. Asanov' },
-  { value: 'group',   label: `👥 ${t('feedbackCatGroup')||'Group'}`,   hint: 'e.g. CS-22' },
-  { value: 'general', label: `📝 ${t('feedbackCatGeneral')||'General'}`, hint: '' },
-];
 
 const fmt = (d) => d
   ? new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -25,16 +19,24 @@ const fmt = (d) => d
 // ─────────────────────────────────────────────────────────────────────────────
 function GuestFeedbackForm({ schedule, groups }) {
   const { t } = useLanguage();
-  const [step,      setStep]     = useState(0); // 0=category 1=subject 2=message 3=identity 4=done
-  const [category,  setCategory] = useState('');
-  const [subject,   setSubject]  = useState('');
-  const [message,   setMessage]  = useState('');
-  const [name,      setName]     = useState('');
-  const [email,     setEmail]    = useState('');
-  const [submitting,setSubmitting]= useState(false);
-  const [error,     setError]    = useState('');
 
-  // Derive rooms from schedule for suggestions
+  // Built inside component so t() is available
+  const CATEGORIES = [
+    { value: 'room',    label: t('feedbackCatRoom')    || 'Room',    hint: 'e.g. B201, A105' },
+    { value: 'teacher', label: t('feedbackCatTeacher') || 'Teacher', hint: 'e.g. Prof. Asanov' },
+    { value: 'group',   label: t('feedbackCatGroup')   || 'Group',   hint: 'e.g. CS-22' },
+    { value: 'general', label: t('feedbackCatGeneral') || 'General', hint: '' },
+  ];
+
+  const [step,       setStep]      = useState(0);
+  const [category,   setCategory]  = useState('');
+  const [subject,    setSubject]   = useState('');
+  const [message,    setMessage]   = useState('');
+  const [name,       setName]      = useState('');
+  const [email,      setEmail]     = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error,      setError]     = useState('');
+
   const allRooms    = useMemo(() => [...new Set(Object.values(schedule || {}).map(e => e.room).filter(Boolean))].sort(), [schedule]);
   const allTeachers = useMemo(() => [...new Set(Object.values(schedule || {}).map(e => e.teacher).filter(Boolean))].sort(), [schedule]);
 
@@ -52,10 +54,10 @@ function GuestFeedbackForm({ schedule, groups }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           category,
-          subject:     subject || 'General',
-          message:     message.trim(),
-          anonymous:   false,
-          sender_name: name.trim(),
+          subject:      subject || 'General',
+          message:      message.trim(),
+          anonymous:    false,
+          sender_name:  name.trim(),
           sender_email: email.trim(),
         }),
       });
@@ -69,17 +71,15 @@ function GuestFeedbackForm({ schedule, groups }) {
     }
   };
 
-  // ── Step 4: Success ──────────────────────────────────────────────────────
+  // Step 4: Success
   if (step === 4) {
     return (
       <div className="fb-guest-wrap">
         <div className="fb-guest-success">
           <div className="fb-success-icon">✅</div>
-          <div className="fb-success-title">Feedback Submitted!</div>
-          <div className="fb-success-msg">
-            Thank you — your feedback has been sent to the administration.
-          </div>
-          <button className="fb-btn-primary" onClick={reset}>Submit Another</button>
+          <div className="fb-success-title">{t('feedbackSuccessTitle') || 'Feedback Submitted!'}</div>
+          <div className="fb-success-msg">{t('feedbackSuccessMsg') || 'Thank you — your feedback has been sent to the administration.'}</div>
+          <button className="fb-btn-primary" onClick={reset}>{t('feedbackSubmitAnother') || 'Submit Another'}</button>
         </div>
       </div>
     );
@@ -93,14 +93,18 @@ function GuestFeedbackForm({ schedule, groups }) {
       <div className="fb-guest-header">
         <div className="fb-guest-icon">💬</div>
         <div>
-          <div className="fb-guest-title">Student Feedback</div>
-          <div className="fb-guest-sub">Help improve your university — name and email required</div>
+          <div className="fb-guest-title">{t('feedbackTitle') || 'Student Feedback'}</div>
+          <div className="fb-guest-sub">{t('feedbackSubtitle') || 'Help improve your university — name and email required'}</div>
         </div>
       </div>
 
       {/* Progress steps */}
       <div className="fb-steps">
-        {[t('feedbackStepCategory')||t('feedbackCategory') || 'Category', t('feedbackStepAbout')||'About', t('feedbackStepMessage')||'Message & Name'].map((s, i) => (
+        {[
+          t('feedbackStepCategory') || 'Category',
+          t('feedbackStepAbout')    || 'About',
+          t('feedbackStepMessage')  || 'Message & Name',
+        ].map((s, i) => (
           <div key={i} className={`fb-step ${step === i ? 'active' : step > i ? 'done' : ''}`}>
             <div className="fb-step-dot">{step > i ? '✓' : i + 1}</div>
             <div className="fb-step-label">{s}</div>
@@ -114,7 +118,7 @@ function GuestFeedbackForm({ schedule, groups }) {
         {/* Step 0 — Category */}
         {step === 0 && (
           <div className="fb-step-content">
-            <div className="fb-step-title">What is your feedback about?</div>
+            <div className="fb-step-title">{t('feedbackCategoryTitle') || 'What is your feedback about?'}</div>
             <div className="fb-cat-grid">
               {CATEGORIES.map(c => (
                 <button
@@ -123,7 +127,7 @@ function GuestFeedbackForm({ schedule, groups }) {
                   onClick={() => setCategory(c.value)}
                 >
                   <span className="fb-cat-emoji">{CAT_ICONS[c.value]}</span>
-                  <span>{c.label.replace(/^.\s/, '')}</span>
+                  <span>{c.label}</span>
                 </button>
               ))}
             </div>
@@ -136,7 +140,7 @@ function GuestFeedbackForm({ schedule, groups }) {
                 else setStep(1);
               }}
             >
-              Next →
+              {t('next') || 'Next'} →
             </button>
           </div>
         )}
@@ -145,9 +149,9 @@ function GuestFeedbackForm({ schedule, groups }) {
         {step === 1 && (
           <div className="fb-step-content">
             <div className="fb-step-title">
-              {category === 'room'    && t('feedbackWhichRoom') || 'Which room?'}
-              {category === 'teacher' && t('feedbackWhichTeacher') || 'Which teacher?'}
-              {category === 'group'   && t('feedbackWhichGroup') || 'Which group?'}
+              {category === 'room'    && (t('feedbackWhichRoom')    || 'Which room?')}
+              {category === 'teacher' && (t('feedbackWhichTeacher') || 'Which teacher?')}
+              {category === 'group'   && (t('feedbackWhichGroup')   || 'Which group?')}
             </div>
             <div className="fb-step-hint">{selectedCat?.hint}</div>
             <input
@@ -160,20 +164,20 @@ function GuestFeedbackForm({ schedule, groups }) {
             />
             <datalist id="fb-subject-list">
               {category === 'room'    && allRooms.map(r => <option key={r} value={r} />)}
-              {category === 'teacher' && allTeachers.map(t => <option key={t} value={t} />)}
+              {category === 'teacher' && allTeachers.map(tc => <option key={tc} value={tc} />)}
               {category === 'group'   && (groups || []).map(g => <option key={g} value={g} />)}
             </datalist>
             <div className="fb-step-actions">
-              <button className="fb-btn-back" onClick={() => { setStep(0); setSubject(''); setError(''); }}>← Back</button>
-              <button className="fb-btn-primary" disabled={!subject.trim()} onClick={() => { setError(''); setStep(2); }}>Next →</button>
+              <button className="fb-btn-back" onClick={() => { setStep(0); setSubject(''); setError(''); }}>← {t('back') || 'Back'}</button>
+              <button className="fb-btn-primary" disabled={!subject.trim()} onClick={() => { setError(''); setStep(2); }}>{t('next') || 'Next'} →</button>
             </div>
           </div>
         )}
 
-        {/* Step 2 — Message */}
+        {/* Step 2 — Message + Name + Email */}
         {step === 2 && (
           <div className="fb-step-content">
-            <div className="fb-step-title">Describe the issue or feedback</div>
+            <div className="fb-step-title">{t('feedbackMessageTitle') || 'Describe the issue or feedback'}</div>
             <div className="fb-step-hint">
               {category !== 'general' ? `About: ${CAT_ICONS[category]} ${subject}` : ''}
             </div>
@@ -193,7 +197,7 @@ function GuestFeedbackForm({ schedule, groups }) {
             </div>
             <textarea
               className="fb-textarea"
-              {...(true && {placeholder: t('feedbackMessagePlaceholder')||'Write your feedback here...'})}
+              placeholder={t('feedbackMessagePlaceholder') || 'Write your feedback here...'}
               value={message}
               onChange={e => setMessage(e.target.value)}
               rows={4}
@@ -203,28 +207,30 @@ function GuestFeedbackForm({ schedule, groups }) {
             <div className="fb-identity-row">
               <input
                 className="fb-input"
-                {...(true && {placeholder: t('feedbackNamePlaceholder')||'Your full name'})}
+                placeholder={t('feedbackNamePlaceholder') || 'Your full name (e.g. Aizat Mamytova)'}
                 value={name}
                 onChange={e => setName(e.target.value)}
               />
               <input
                 className="fb-input"
                 type="email"
-                {...(true && {placeholder: t('feedbackEmailPlaceholder')||'Your university email'})}
+                placeholder={t('feedbackEmailPlaceholder') || 'Your university email (e.g. aizat@alatoo.edu.kg)'}
                 value={email}
                 onChange={e => setEmail(e.target.value)}
               />
             </div>
             <div className="fb-step-actions">
-              <button className="fb-btn-back" onClick={() => { setStep(category === 'general' ? 0 : 1); setError(''); }}>← Back</button>
-              <button className="fb-btn-submit" disabled={message.trim().length < 5 || !name.trim() || !email.trim() || submitting} onClick={handleSubmit}>
-                {submitting ? t('feedbackSubmitting') || 'Submitting...' : t('feedbackSubmit') || '✓ Submit Feedback'}
+              <button className="fb-btn-back" onClick={() => { setStep(category === 'general' ? 0 : 1); setError(''); }}>← {t('back') || 'Back'}</button>
+              <button
+                className="fb-btn-submit"
+                disabled={message.trim().length < 5 || !name.trim() || !email.trim() || submitting}
+                onClick={handleSubmit}
+              >
+                {submitting ? (t('feedbackSubmitting') || 'Submitting...') : (t('feedbackSubmit') || '✓ Submit Feedback')}
               </button>
             </div>
           </div>
         )}
-
-
       </div>
     </div>
   );
@@ -235,6 +241,14 @@ function GuestFeedbackForm({ schedule, groups }) {
 // ─────────────────────────────────────────────────────────────────────────────
 function AdminFeedbackDashboard() {
   const { t } = useLanguage();
+
+  // Status labels built inside component so t() is available
+  const STATUS_LABELS = {
+    new:      t('pending')  || 'New',
+    read:     t('approved') || 'Read',
+    resolved: t('feedbackResolve') || 'Resolved',
+  };
+
   const [items,      setItems]      = useState([]);
   const [stats,      setStats]      = useState(null);
   const [loading,    setLoading]    = useState(true);
@@ -273,7 +287,7 @@ function AdminFeedbackDashboard() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this feedback?')) return;
+    if (!window.confirm(t('confirmDeleteBooking') || 'Delete this feedback?')) return;
     await fetch(`${API_URL}/feedback/${id}`, {
       method: 'DELETE', headers: { Authorization: `Bearer ${getToken()}` },
     });
@@ -305,20 +319,27 @@ function AdminFeedbackDashboard() {
         <div className="fb-header-left">
           <div className="fb-header-icon">💬</div>
           <div>
-            <div className="fb-title">Student Feedback</div>
+            <div className="fb-title">{t('feedbackTitle') || 'Student Feedback'}</div>
             <div className="fb-sub">
-              {stats?.total || 0} total · {newCount > 0 ? `🔴 ${newCount} unread` : '✅ All read'}
+              {stats?.total || 0} {t('feedbackTotal') || 'total'} ·{' '}
+              {newCount > 0 ? `🔴 ${newCount} ${t('feedbackUnread') || 'unread'}` : `✅ ${t('feedbackAllRead') || 'All read'}`}
             </div>
           </div>
         </div>
-        <button className="fb-refresh" onClick={load}>↻ Refresh</button>
+        <button className="fb-refresh" onClick={load}>↻ {t('refresh') || 'Refresh'}</button>
       </div>
 
       {/* Stats */}
       {stats && (
         <div className="fb-stats">
-          <div className="fb-stat-card"><div className="fb-stat-val">{stats.total}</div><div className="fb-stat-lbl">Total</div></div>
-          <div className="fb-stat-card red"><div className="fb-stat-val">{stats.unread}</div><div className="fb-stat-lbl">Unread</div></div>
+          <div className="fb-stat-card">
+            <div className="fb-stat-val">{stats.total}</div>
+            <div className="fb-stat-lbl">{t('feedbackTotal') || 'Total'}</div>
+          </div>
+          <div className="fb-stat-card red">
+            <div className="fb-stat-val">{stats.unread}</div>
+            <div className="fb-stat-lbl">{t('feedbackUnread') || 'Unread'}</div>
+          </div>
           {stats.byCategory?.map(c => (
             <div key={c.category} className="fb-stat-card">
               <div className="fb-stat-val">{CAT_ICONS[c.category]} {c.count}</div>
@@ -331,7 +352,7 @@ function AdminFeedbackDashboard() {
       {/* Top reported */}
       {stats?.bySubject?.length > 0 && (
         <div className="fb-top-subjects">
-          <div className="fb-section-title">🔥 Most Reported</div>
+          <div className="fb-section-title">🔥 {t('feedbackMostReported') || 'Most Reported'}</div>
           <div className="fb-subject-pills">
             {stats.bySubject.slice(0, 8).map((s, i) => (
               <button
@@ -349,39 +370,46 @@ function AdminFeedbackDashboard() {
 
       {/* Filters */}
       <div className="fb-filters">
-        <input className="fb-search" placeholder={t('feedbackSearchSubject')||'🔍 Search...'} value={search} onChange={e => setSearch(e.target.value)} />
+        <input
+          className="fb-search"
+          placeholder={`🔍 ${t('feedbackSearchSubject') || 'Search...'}`}
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+        />
         <select className="fb-select" value={filterCat} onChange={e => setFilterCat(e.target.value)}>
-          <option value="">All Categories</option>
-          <option value="room">🏛 Room</option>
-          <option value="teacher">👨‍🏫 Teacher</option>
-          <option value="group">👥 Group</option>
-          <option value="general">📝 General</option>
+          <option value="">{t('feedbackAllCategories') || 'All Categories'}</option>
+          <option value="room">🏛 {t('feedbackCatRoom') || 'Room'}</option>
+          <option value="teacher">👨‍🏫 {t('feedbackCatTeacher') || 'Teacher'}</option>
+          <option value="group">👥 {t('feedbackCatGroup') || 'Group'}</option>
+          <option value="general">📝 {t('feedbackCatGeneral') || 'General'}</option>
         </select>
         <select className="fb-select" value={filterStat} onChange={e => setFilterStat(e.target.value)}>
-          <option value="">All Status</option>
+          <option value="">{t('feedbackAllStatus') || 'All Status'}</option>
           <option value="new">🔴 New</option>
           <option value="read">🟡 Read</option>
           <option value="resolved">🟢 Resolved</option>
         </select>
         <select className="fb-select" value={filterSub} onChange={e => setFilterSub(e.target.value)}>
-          <option value="">All Subjects</option>
+          <option value="">{t('feedbackAllSubjects') || 'All Subjects'}</option>
           {allSubjects.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
         {(filterCat || filterStat || filterSub || search) && (
-          <button className="fb-clear" onClick={() => { setFilterCat(''); setFilterStat(''); setFilterSub(''); setSearch(''); }}>✕ Clear</button>
+          <button className="fb-clear" onClick={() => { setFilterCat(''); setFilterStat(''); setFilterSub(''); setSearch(''); }}>
+            ✕ {t('clearAll') || 'Clear'}
+          </button>
         )}
         <div className="fb-count">{filtered.length} item{filtered.length !== 1 ? 's' : ''}</div>
       </div>
 
       {/* List */}
       {loading ? (
-        <div className="fb-loading">Loading feedback...</div>
+        <div className="fb-loading">{t('loadingData') || 'Loading...'}</div>
       ) : filtered.length === 0 ? (
         <div className="fb-empty">
           <div style={{ fontSize: '2.5rem', marginBottom: 8 }}>💬</div>
-          <div>{items.length === 0 ? t('feedbackNoData') || 'No feedback received yet.' : t('search') ? 'No results' : 'No feedback matches your filters.'}</div>
+          <div>{items.length === 0 ? (t('feedbackNoData') || 'No feedback received yet.') : 'No feedback matches your filters.'}</div>
           {items.length === 0 && (
-            <div className="fb-empty-hint">Students submit feedback via the <strong>💬 Feedback</strong> tab in guest mode.</div>
+            <div className="fb-empty-hint">{t('feedbackEmptyHint') || 'Students submit feedback via the Feedback tab in guest mode.'}</div>
           )}
         </div>
       ) : (
@@ -408,17 +436,40 @@ function AdminFeedbackDashboard() {
                 <div className="fb-item-detail">
                   <div className="fb-detail-message">"{item.message}"</div>
                   <div className="fb-detail-meta">
-                    <div className="fb-meta-row"><span className="fb-meta-key">Category</span><span className="fb-meta-val">{CAT_ICONS[item.category]} {item.category}</span></div>
-                    <div className="fb-meta-row"><span className="fb-meta-key">Sender</span><span className="fb-meta-val">{item.anonymous ? `🔒 ${t('feedbackAnonymous')||'Anonymous'}` : `👤 ${item.sender_name || 'Unknown'}`}</span></div>
-                    {item.sender_email && <div className="fb-meta-row"><span className="fb-meta-key">Email</span><span className="fb-meta-val"><a href={`mailto:${item.sender_email}`} style={{color:'#6366f1'}}>{item.sender_email}</a></span></div>}
-                    <div className="fb-meta-row"><span className="fb-meta-key">Submitted</span><span className="fb-meta-val">{fmt(item.created_at)}</span></div>
-                    <div className="fb-meta-row"><span className="fb-meta-key">Status</span><span className="fb-meta-val" style={{ color: STATUS_COLORS[item.status] }}>● {STATUS_LABELS[item.status]}</span></div>
+                    <div className="fb-meta-row">
+                      <span className="fb-meta-key">{t('feedbackCategory') || 'Category'}</span>
+                      <span className="fb-meta-val">{CAT_ICONS[item.category]} {item.category}</span>
+                    </div>
+                    <div className="fb-meta-row">
+                      <span className="fb-meta-key">{t('feedbackSender') || 'Sender'}</span>
+                      <span className="fb-meta-val">
+                        {item.anonymous ? `🔒 ${t('feedbackAnonymous') || 'Anonymous'}` : `👤 ${item.sender_name || 'Unknown'}`}
+                      </span>
+                    </div>
+                    {item.sender_email && (
+                      <div className="fb-meta-row">
+                        <span className="fb-meta-key">{t('feedbackEmail') || 'Email'}</span>
+                        <span className="fb-meta-val">
+                          <a href={`mailto:${item.sender_email}`} style={{ color: '#6366f1' }}>{item.sender_email}</a>
+                        </span>
+                      </div>
+                    )}
+                    <div className="fb-meta-row">
+                      <span className="fb-meta-key">{t('feedbackSubmittedAt') || 'Submitted'}</span>
+                      <span className="fb-meta-val">{fmt(item.created_at)}</span>
+                    </div>
+                    <div className="fb-meta-row">
+                      <span className="fb-meta-key">{t('status') || 'Status'}</span>
+                      <span className="fb-meta-val" style={{ color: STATUS_COLORS[item.status] }}>
+                        ● {STATUS_LABELS[item.status]}
+                      </span>
+                    </div>
                   </div>
                   <div className="fb-detail-actions">
-                    {item.status !== 'new'      && <button className="fb-action new"      onClick={() => updateStatus(item.id, 'new')}>Mark New</button>}
-                    {item.status !== 'read'     && <button className="fb-action read"     onClick={() => updateStatus(item.id, 'read')}>Mark Read</button>}
-                    {item.status !== 'resolved' && <button className="fb-action resolved" onClick={() => updateStatus(item.id, 'resolved')}>✓ Resolve</button>}
-                    <button className="fb-action delete" onClick={() => handleDelete(item.id)}>🗑 Delete</button>
+                    {item.status !== 'new'      && <button className="fb-action new"      onClick={() => updateStatus(item.id, 'new')}>{t('feedbackMarkNew') || 'Mark New'}</button>}
+                    {item.status !== 'read'     && <button className="fb-action read"     onClick={() => updateStatus(item.id, 'read')}>{t('feedbackMarkRead') || 'Mark Read'}</button>}
+                    {item.status !== 'resolved' && <button className="fb-action resolved" onClick={() => updateStatus(item.id, 'resolved')}>✓ {t('feedbackResolve') || 'Resolve'}</button>}
+                    <button className="fb-action delete" onClick={() => handleDelete(item.id)}>🗑 {t('delete') || 'Delete'}</button>
                   </div>
                 </div>
               )}
@@ -431,7 +482,7 @@ function AdminFeedbackDashboard() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Root export — switches between guest form and admin dashboard
+// Root export
 // ─────────────────────────────────────────────────────────────────────────────
 export default function FeedbackDashboard({ guestMode = false, schedule = {}, groups = [] }) {
   if (guestMode) return <GuestFeedbackForm schedule={schedule} groups={groups} />;
