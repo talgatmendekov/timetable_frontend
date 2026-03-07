@@ -22,9 +22,16 @@ const fmt = (dateStr) => {
 };
 
 const endTime = (start, dur) => {
-  const [h, m] = start.split(':').map(Number);
-  const total  = h * 60 + m + parseInt(dur);
-  return `${String(Math.floor(total/60)).padStart(2,'0')}:${String(total%60).padStart(2,'0')}`;
+  try {
+    const parts = (start || '').split(':');
+    const h = Math.min(23, Math.max(0, parseInt(parts[0]) || 0));
+    const m = Math.min(59, Math.max(0, parseInt(parts[1]) || 0));
+    const d = Math.min(300, Math.max(0, parseInt(dur) || 0));
+    const total = h * 60 + m + d;
+    const endH  = Math.floor(total / 60) % 24;
+    const endM  = total % 60;
+    return `${String(endH).padStart(2,'0')}:${String(endM).padStart(2,'0')}`;
+  } catch { return '??:??'; }
 };
 
 const emptyForm = () => ({
