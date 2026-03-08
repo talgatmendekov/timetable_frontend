@@ -58,12 +58,12 @@
   --accent1:      #1d4ed8;
   --accent2:      #0d9488;
   --accent-glow:  rgba(29,78,216,0.15);
-  --input-bg:     #f5f8ff;
-  --input-bdr:    #ccd6ec;
+  --input-bg:     #ffffff;
+  --input-bdr:    #a8b8d0;
   --input-focus:  rgba(29,78,216,0.06);
   --input-ring:   rgba(29,78,216,0.15);
-  --input-text:   #0f1e3a;
-  --input-ph:     #a0b0cc;
+  --input-text:   #0a1628;
+  --input-ph:     #6b7fa3;
   --err-bg:       #fff5f5;
   --err-bdr:      #fcc;
   --err-text:     #c0392b;
