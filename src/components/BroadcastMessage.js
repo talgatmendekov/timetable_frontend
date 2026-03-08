@@ -67,11 +67,24 @@ const BroadcastMessage = () => {
   const handleSend = async () => {
     if (!message.trim()) { alert(t('broadcastMessagePlaceholder') || 'Please enter a message.'); return; }
 
+    // Confirmation dialog — prevents accidental sends (e.g. autofill)
+    const preview = message.trim().length > 60 ? message.trim().slice(0, 60) + '…' : message.trim();
+    const confirmed = window.confirm(
+      `Send this message to ${recipientSummary()}?
+
+"${preview}"
+
+Click OK to confirm.`
+    );
+    if (!confirmed) return;
+
     let teacherIds = [], groupNames = [];
-    if (recipientType === 'all')      { teacherIds = teachers.map(t => t.id); groupNames = groups.map(g => g.group_name); }
-    else if (recipientType === 'teachers') { teacherIds = teachers.map(t => t.id); }
-    else if (recipientType === 'groups')   { groupNames = groups.map(g => g.group_name); }
-    else { teacherIds = [...selectedTeachers]; groupNames = [...selectedGroups]; }
+    // Filter out null ids — teachers not yet in DB can't receive messages
+    const validTeacherIds = teachers.map(t => t.id).filter(Boolean);
+    if (recipientType === 'all')           { teacherIds = validTeacherIds; groupNames = groups.map(g => g.group_name).filter(Boolean); }
+    else if (recipientType === 'teachers') { teacherIds = validTeacherIds; }
+    else if (recipientType === 'groups')   { groupNames = groups.map(g => g.group_name).filter(Boolean); }
+    else { teacherIds = [...selectedTeachers].filter(Boolean); groupNames = [...selectedGroups].filter(Boolean); }
 
     if (!teacherIds.length && !groupNames.length) {
       alert(t('broadcastNoRecipientsConfigured') || 'No recipients selected.');
@@ -220,6 +233,8 @@ const BroadcastMessage = () => {
           value={subject}
           onChange={e => setSubject(e.target.value)}
           maxLength={120}
+          autoComplete="off"
+          name="bc-subject-field"
         />
 
         <textarea
@@ -229,6 +244,8 @@ const BroadcastMessage = () => {
           onChange={e => setMessage(e.target.value)}
           rows={6}
           maxLength={3000}
+          autoComplete="off"
+          name="bc-message-field"
         />
         <div className="bc-char-count">{message.length} / 3000</div>
 
