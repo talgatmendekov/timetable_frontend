@@ -1,5 +1,5 @@
 // src/utils/api.js — connects to Railway backend
-const BASE_URL = process.env.REACT_APP_API_URL || 'https://timetablebackend-production.up.railway.app/api';
+const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
 console.log('🔗 API connecting to:', BASE_URL);
 
 const getToken = () =>
@@ -75,7 +75,11 @@ const apiCall = async (endpoint, options = {}, retries = 3) => {
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 export const authAPI = {
-  login:  (username, password) => apiCall('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
+  login: (username, password) => {
+    // 🔍 DEBUG: remove after fix — shows exactly which component is calling login()
+    console.trace('🔍 authAPI.login called, username:', username);
+    return apiCall('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) });
+  },
   verify: () => apiCall('/auth/verify'),
 };
 
