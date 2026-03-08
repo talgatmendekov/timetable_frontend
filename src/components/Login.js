@@ -6,15 +6,15 @@ import './Login.css';
 
 const Login = ({ onViewAsGuest }) => {
   const { login } = useAuth();
-  const { t, language, setLanguage } = useLanguage();
+  const { t, lang, changeLang } = useLanguage(); // ← correct names from LanguageContext
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error,    setError]    = useState('');
   const [loading,  setLoading]  = useState(false);
   const [showPass, setShowPass] = useState(false);
-  const [theme,    setTheme]    = useState(() =>
-    localStorage.getItem('loginTheme') || 'dark'
+  const [theme,    setTheme]    = useState(
+    () => localStorage.getItem('loginTheme') || 'dark'
   );
 
   const usernameRef = useRef(null);
@@ -29,7 +29,7 @@ const Login = ({ onViewAsGuest }) => {
     const u = (usernameRef.current?.value || username).trim();
     const p =  passwordRef.current?.value || password;
     if (!u || !p) {
-      setError(t('loginFillBoth') || 'Please fill in all fields.');
+      setError(t('invalidCredentials') || 'Please fill in all fields.');
       return;
     }
     setError('');
@@ -54,7 +54,7 @@ const Login = ({ onViewAsGuest }) => {
 
   return (
     <div className={`lp lp--${theme}`}>
-      {/* Background layers */}
+      {/* Background */}
       <div className="lp__bg">
         <div className="lp__orb lp__orb--1" />
         <div className="lp__orb lp__orb--2" />
@@ -64,86 +64,78 @@ const Login = ({ onViewAsGuest }) => {
 
       <div className="lp__body">
 
-        {/* ── Left: Branding ── */}
+        {/* ── Left branding ── */}
         <aside className="lp__aside">
           <div className="lp__aside-inner">
-            {/* Emblem */}
             <div className="lp__emblem">
-              <svg width="56" height="56" viewBox="0 0 56 56" fill="none">
-                <rect width="56" height="56" rx="16" fill="url(#emblemGrad)" fillOpacity="0.15"/>
-                <path d="M28 10L44 20V36L28 46L12 36V20L28 10Z" stroke="url(#emblemGrad)" strokeWidth="1.5" fill="none"/>
-                <path d="M28 18L38 24V34L28 40L18 34V24L28 18Z" fill="url(#emblemGrad)" fillOpacity="0.18"/>
-                <circle cx="28" cy="28" r="5" fill="url(#emblemGrad)"/>
+              <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
+                <rect width="60" height="60" rx="18" fill="rgba(255,255,255,0.1)"/>
+                <path d="M30 12L46 22V38L30 48L14 38V22L30 12Z"
+                  stroke="url(#eg)" strokeWidth="1.8" fill="none"/>
+                <path d="M30 20L40 26V34L30 40L20 34V26L30 20Z"
+                  fill="url(#eg)" fillOpacity="0.2"/>
+                <circle cx="30" cy="30" r="5.5" fill="url(#eg)"/>
                 <defs>
-                  <linearGradient id="emblemGrad" x1="12" y1="10" x2="44" y2="46" gradientUnits="userSpaceOnUse">
-                    <stop stopColor="#60a5fa"/>
-                    <stop offset="1" stopColor="#2dd4bf"/>
+                  <linearGradient id="eg" x1="14" y1="12" x2="46" y2="48" gradientUnits="userSpaceOnUse">
+                    <stop stopColor="#93c5fd"/>
+                    <stop offset="1" stopColor="#5eead4"/>
                   </linearGradient>
                 </defs>
               </svg>
             </div>
-
             <h1 className="lp__uni-name">
               {t('appTitle') || 'International Ala-Too University'}
             </h1>
-            <div className="lp__rule"/>
+            <div className="lp__rule" />
             <p className="lp__uni-sub">
               {t('appSubtitle') || 'Timetable Management System'}
             </p>
-
-            {/* Decorative stats */}
-            <div className="lp__stats">
-              <div className="lp__stat">
-                <span className="lp__stat-num">12k+</span>
-                <span className="lp__stat-lbl">Students</span>
-              </div>
-              <div className="lp__stat-divider"/>
-              <div className="lp__stat">
-                <span className="lp__stat-num">400+</span>
-                <span className="lp__stat-lbl">Courses</span>
-              </div>
-              <div className="lp__stat-divider"/>
-              <div className="lp__stat">
-                <span className="lp__stat-num">6</span>
-                <span className="lp__stat-lbl">Faculties</span>
-              </div>
-            </div>
           </div>
         </aside>
 
-        {/* ── Right: Form ── */}
+        {/* ── Right form ── */}
         <main className="lp__card">
-          {/* Top bar: lang + theme toggle */}
+
+          {/* Top bar */}
           <div className="lp__topbar">
             <div className="lp__langs">
               {LANGS.map(l => (
                 <button key={l.code} type="button"
-                  className={`lp__lang${language === l.code ? ' lp__lang--on' : ''}`}
-                  onClick={() => setLanguage(l.code)}>
+                  className={`lp__lang${lang === l.code ? ' lp__lang--on' : ''}`}
+                  onClick={() => changeLang(l.code)}>
                   {l.label}
                 </button>
               ))}
             </div>
+
+            {/* Dark/Light toggle — clear sun and moon SVGs */}
             <button
               type="button"
               className="lp__theme-toggle"
-              onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}
-              title="Toggle theme"
+              onClick={() => setTheme(v => v === 'dark' ? 'light' : 'dark')}
+              title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
             >
               {theme === 'dark' ? (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="5"/>
-                  <line x1="12" y1="1" x2="12" y2="3"/>
-                  <line x1="12" y1="21" x2="12" y2="23"/>
-                  <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-                  <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                  <line x1="1" y1="12" x2="3" y2="12"/>
-                  <line x1="21" y1="12" x2="23" y2="12"/>
-                  <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-                  <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                /* Sun icon */
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="4" fill="currentColor" fillOpacity="0.2"/>
+                  <circle cx="12" cy="12" r="4"/>
+                  <line x1="12" y1="2"  x2="12" y2="5"/>
+                  <line x1="12" y1="19" x2="12" y2="22"/>
+                  <line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/>
+                  <line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/>
+                  <line x1="2"  y1="12" x2="5"  y2="12"/>
+                  <line x1="19" y1="12" x2="22" y2="12"/>
+                  <line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/>
+                  <line x1="17.66" y1="6.34"  x2="19.78" y2="4.22"/>
                 </svg>
               ) : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                /* Moon icon */
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"
+                    fill="currentColor" fillOpacity="0.15"/>
                   <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
                 </svg>
               )}
@@ -158,38 +150,35 @@ const Login = ({ onViewAsGuest }) => {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="lp__form" autoComplete="off">
-            {/* Username */}
+
+            {/* Username field — NO icon inside input */}
             <div className="lp__field">
-              <label className="lp__label">{t('username') || 'Username'}</label>
-              <div className="lp__input-row">
-                <svg className="lp__input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
-                <input
-                  ref={usernameRef}
-                  type="text"
-                  className="lp__input"
-                  value={username}
-                  onChange={e => setUsername(e.target.value)}
-                  placeholder={t('username') || 'Username'}
-                  disabled={loading}
-                  autoComplete="off"
-                  name="lp-u"
-                />
-              </div>
+              <label className="lp__label" htmlFor="lp-username">
+                {t('username') || 'Username'}
+              </label>
+              <input
+                ref={usernameRef}
+                id="lp-username"
+                type="text"
+                className="lp__input"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+                placeholder={t('username') || 'Username'}
+                disabled={loading}
+                autoComplete="off"
+                name="lp-u"
+              />
             </div>
 
-            {/* Password */}
+            {/* Password field — only eye toggle, no lock icon */}
             <div className="lp__field">
-              <label className="lp__label">{t('password') || 'Password'}</label>
-              <div className="lp__input-row">
-                <svg className="lp__input-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="11" width="18" height="11" rx="2"/>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                </svg>
+              <label className="lp__label" htmlFor="lp-password">
+                {t('password') || 'Password'}
+              </label>
+              <div className="lp__pass-wrap">
                 <input
                   ref={passwordRef}
+                  id="lp-password"
                   type={showPass ? 'text' : 'password'}
                   className="lp__input lp__input--pass"
                   value={password}
@@ -199,14 +188,22 @@ const Login = ({ onViewAsGuest }) => {
                   autoComplete="new-password"
                   name="lp-p"
                 />
-                <button type="button" className="lp__eye" onClick={() => setShowPass(v => !v)} tabIndex={-1}>
+                <button
+                  type="button"
+                  className="lp__eye"
+                  onClick={() => setShowPass(v => !v)}
+                  tabIndex={-1}
+                  aria-label={showPass ? 'Hide password' : 'Show password'}
+                >
                   {showPass ? (
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <line x1="1" y1="1" x2="23" y2="23"/>
+                      <path d="M10.58 10.58A3 3 0 0 0 14 13.42M6.7 6.7C4.6 8.07 3 10 3 12s3 7 9 7a12.6 12.6 0 0 0 5.3-1.1M9.9 4.24A9.12 9.12 0 0 1 12 4c6 0 9 5 9 8a13 13 0 0 1-1.67 3.33"/>
                     </svg>
                   ) : (
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+                      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                       <circle cx="12" cy="12" r="3"/>
                     </svg>
@@ -216,8 +213,9 @@ const Login = ({ onViewAsGuest }) => {
             </div>
 
             {error && (
-              <div className="lp__error">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <div className="lp__error" role="alert">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
                   <circle cx="12" cy="12" r="10"/>
                   <line x1="12" y1="8" x2="12" y2="12"/>
                   <line x1="12" y1="16" x2="12.01" y2="16"/>
@@ -228,12 +226,14 @@ const Login = ({ onViewAsGuest }) => {
 
             <button type="submit" className="lp__submit" disabled={loading}>
               {loading ? (
-                <span className="lp__spinner"/>
+                <span className="lp__spinner" />
               ) : (
                 <>
-                  {t('loginBtn') || 'Sign In'}
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  <span>{t('loginBtn') || 'Sign In'}</span>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                    <polyline points="12 5 19 12 12 19"/>
                   </svg>
                 </>
               )}
@@ -241,7 +241,8 @@ const Login = ({ onViewAsGuest }) => {
           </form>
 
           {onViewAsGuest && (
-            <button type="button" className="lp__guest" onClick={onViewAsGuest} disabled={loading}>
+            <button type="button" className="lp__guest"
+              onClick={onViewAsGuest} disabled={loading}>
               {t('viewAsGuest') || 'Guest Mode'}
             </button>
           )}
