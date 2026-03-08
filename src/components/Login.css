@@ -19,8 +19,8 @@
   --input-bdr:    rgba(255,255,255,0.1);
   --input-focus:  rgba(79,142,247,0.1);
   --input-ring:   rgba(79,142,247,0.2);
-  --input-text:   #d8e4f8;
-  --input-ph:     rgba(122,144,184,0.4);
+  --input-text:   #ffffff;
+  --input-ph:     rgba(148,165,200,0.55);
   --err-bg:       rgba(239,68,68,0.09);
   --err-bdr:      rgba(239,68,68,0.28);
   --err-text:     #f87171;
@@ -342,11 +342,6 @@
 
 /* ── Form ── */
 .lp__form { display: flex; flex-direction: column; gap: 18px; }
-
-.lp__logo{
-  width: 64px; height: 64px;
-}
-
 
 /* ── Field ── */
 .lp__field { display: flex; flex-direction: column; gap: 7px; }
