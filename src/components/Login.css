@@ -59,12 +59,12 @@
   --accent1:      #1d4ed8;
   --accent2:      #0d9488;
   --accent-glow:  rgba(29,78,216,0.15);
-  --input-bg:     #f5f8ff;
-  --input-bdr:    #a8b8d0;
-  --input-focus:  #eef3ff;
+  --input-bg:     #ffffff;
+  --input-bdr:    #b8c8e0;
+  --input-focus:  #ffffff;
   --input-ring:   rgba(29,78,216,0.15);
   --input-text:   #0a1628;
-  --input-ph:     #7a8faa;
+  --input-ph:     #8899b0;
   --err-bg:       #fff5f5;
   --err-bdr:      #fcc;
   --err-text:     #c0392b;
@@ -106,6 +106,9 @@
   transition: background 0.35s ease;
 }
 
+/* ── Background orbs ── */
+.lp__bg { position: absolute; inset: 0; pointer-events: none; }
+
 
 .lp__logo {
   width: 72px;
@@ -113,9 +116,6 @@
   object-fit: contain;
   animation: logoFloat 3s ease-in-out infinite;
 }
-
-/* ── Background orbs ── */
-.lp__bg { position: absolute; inset: 0; pointer-events: none; }
 
 .lp__orb {
   position: absolute;
