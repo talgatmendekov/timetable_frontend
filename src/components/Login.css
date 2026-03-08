@@ -1,3 +1,4 @@
+
 /* src/components/Login.css */
 @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap');
 
@@ -58,12 +59,12 @@
   --accent1:      #1d4ed8;
   --accent2:      #0d9488;
   --accent-glow:  rgba(29,78,216,0.15);
-  --input-bg:     #ffffff;
+  --input-bg:     #f5f8ff;
   --input-bdr:    #a8b8d0;
-  --input-focus:  rgba(29,78,216,0.06);
+  --input-focus:  #eef3ff;
   --input-ring:   rgba(29,78,216,0.15);
   --input-text:   #0a1628;
-  --input-ph:     #6b7fa3;
+  --input-ph:     #7a8faa;
   --err-bg:       #fff5f5;
   --err-bdr:      #fcc;
   --err-text:     #c0392b;
@@ -103,6 +104,14 @@
   position: relative;
   overflow: hidden;
   transition: background 0.35s ease;
+}
+
+
+.lp__logo {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  animation: logoFloat 3s ease-in-out infinite;
 }
 
 /* ── Background orbs ── */
@@ -340,13 +349,6 @@
   font-weight: 300;
 }
 
-.lp__logo {
-  width: 72px;
-  height: 72px;
-  object-fit: contain;
-  animation: logoFloat 3s ease-in-out infinite;
-}
-
 /* ── Form ── */
 .lp__form { display: flex; flex-direction: column; gap: 18px; }
 
@@ -373,16 +375,48 @@
   font-family: 'Outfit', sans-serif;
   font-size: 0.92rem;
   font-weight: 400;
-  color: var(--input-text);
+  color: var(--input-text) !important;
+  -webkit-text-fill-color: var(--input-text) !important;
   outline: none;
   transition: border-color 0.22s, background 0.22s, box-shadow 0.22s;
   box-sizing: border-box;
 }
-.lp__input::placeholder { color: var(--input-ph); font-weight: 300; }
+.lp__input::placeholder {
+  color: var(--input-ph) !important;
+  -webkit-text-fill-color: var(--input-ph) !important;
+  font-weight: 300;
+  opacity: 1;
+}
 .lp__input:focus {
   border-color: var(--accent1);
   background: var(--input-focus);
   box-shadow: 0 0 0 3px var(--input-ring);
+  color: var(--input-text) !important;
+  -webkit-text-fill-color: var(--input-text) !important;
+}
+.lp__input:hover {
+  color: var(--input-text) !important;
+  -webkit-text-fill-color: var(--input-text) !important;
+}
+/* Fix browser autofill background overriding our colors */
+.lp__input:-webkit-autofill,
+.lp__input:-webkit-autofill:hover,
+.lp__input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--input-text) !important;
+  caret-color: var(--input-text) !important;
+  transition: background-color 9999s ease-in-out 0s;
+}
+.lp--dark .lp__input:-webkit-autofill,
+.lp--dark .lp__input:-webkit-autofill:hover,
+.lp--dark .lp__input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #ffffff !important;
+  caret-color: #ffffff !important;
+}
+.lp--light .lp__input:-webkit-autofill,
+.lp--light .lp__input:-webkit-autofill:hover,
+.lp--light .lp__input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #0a1628 !important;
+  caret-color: #0a1628 !important;
 }
 .lp__input:disabled { opacity: 0.45; cursor: not-allowed; }
 
