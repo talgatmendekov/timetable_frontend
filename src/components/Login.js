@@ -2,6 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import './Login.css';
 
 const Login = ({ onViewAsGuest }) => {
   const { login } = useAuth();
