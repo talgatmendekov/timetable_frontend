@@ -1,0 +1,766 @@
+/* ============================================================
+   mobile-fixes.css
+   ADD THIS FILE to your project and import it in App.css or index.css:
+   @import './mobile-fixes.css';
+   
+   Covers all components: AutoScheduler, ExamSchedule,
+   FeedbackDashboard, EmptyRoomPanel, GuestBookingStatus,
+   TeacherDashboard, TeacherTelegramManagement, BroadcastMessage
+   ============================================================ */
+
+/* ─────────────────────────────────────────────────────────────
+   SHARED UTILITIES
+───────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  /* All dark gradient headers stack their icon + text */
+  .as-header,
+  .es-header,
+  .fb-header,
+  .fb-guest-header,
+  .gbs-header,
+  .erp-modal-header {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 16px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   AUTO SCHEDULER
+───────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+
+  /* Step bar: hide labels, shrink dots + lines */
+  .as-steps {
+    gap: 2px;
+    padding: 0 4px;
+  }
+  .as-step-label {
+    display: none;            /* too cramped with 6 steps */
+  }
+  .as-step-dot {
+    width: 24px;
+    height: 24px;
+    font-size: 0.65rem;
+  }
+  .as-step-line {
+    width: 12px;
+  }
+
+  /* Panel: tighter padding */
+  .as-panel {
+    padding: 16px;
+  }
+
+  /* Card rows: stack vertically */
+  .as-card-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .as-field-sm {
+    max-width: 100%;
+  }
+
+  /* Subject rows: wrap into 2-line layout */
+  .as-subject-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .as-subject-row .as-input {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+  .as-subject-row .as-select {
+    min-width: 0;
+    flex: 1 1 calc(50% - 4px);
+  }
+  .as-hrs-field {
+    flex: 0 0 auto;
+  }
+
+  /* Pin rows: stack */
+  .as-pin-row {
+    flex-wrap: wrap;
+  }
+  .as-pin-row .as-select {
+    max-width: 100%;
+    flex: 1 1 calc(50% - 20px);
+  }
+
+  /* Nav buttons: stack */
+  .as-nav-row {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+  .as-nav-row button {
+    width: 100%;
+  }
+
+  /* Apply row */
+  .as-apply-row {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+  .as-apply-row button {
+    width: 100%;
+  }
+
+  /* Summary grid: 2 columns */
+  .as-summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Import button hint: smaller */
+  .as-import-hint {
+    font-size: 0.65rem;
+  }
+
+  /* Generate button: smaller font */
+  .as-btn-generate {
+    font-size: 0.9rem;
+    padding: 13px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   EXAM SCHEDULE
+───────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+
+  /* Header: stack title row and actions */
+  .es-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .es-header-left {
+    flex-wrap: wrap;
+  }
+  .es-header-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .es-header-actions button {
+    flex: 1;
+  }
+
+  /* Filters: wrap and full-width selects */
+  .es-filters {
+    gap: 8px;
+  }
+  .es-select {
+    flex: 1 1 calc(50% - 4px);
+    min-width: 0;
+  }
+  .es-count {
+    margin-left: 0;
+    width: 100%;
+    text-align: right;
+  }
+
+  /* Form grid: single column */
+  .es-form-grid {
+    grid-template-columns: 1fr;
+  }
+  .es-form-actions {
+    flex-direction: column-reverse;
+    gap: 8px;
+  }
+  .es-form-actions button {
+    width: 100%;
+  }
+
+  /* Exam cards: stack time + body + actions vertically */
+  .es-card {
+    flex-direction: column;
+  }
+  .es-card-time {
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    min-width: unset;
+  }
+  .es-time-line {
+    width: 16px;
+    height: 1px;
+    margin: 0;
+  }
+  .es-card-actions {
+    flex-direction: row;
+    border-left: none;
+    border-top: 1px solid #f1f5f9;
+    padding: 8px 12px;
+    justify-content: flex-end;
+  }
+
+  /* Day header */
+  .es-day-header {
+    flex-wrap: wrap;
+  }
+
+  /* GroupPicker: smaller max-height */
+  .es-gp-grid {
+    max-height: 140px;
+  }
+  .es-gp-header {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   FEEDBACK DASHBOARD
+───────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+
+  /* Admin header */
+  .fb-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+  .fb-header-left {
+    flex-wrap: wrap;
+  }
+  .fb-refresh {
+    width: 100%;
+  }
+
+  /* Stats: 3 per row minimum */
+  .fb-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .fb-stat-card {
+    min-width: 0;
+  }
+
+  /* Filters: wrap into 2-col grid */
+  .fb-filters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .fb-search {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+  .fb-count {
+    grid-column: 1 / -1;
+    margin-left: 0;
+  }
+  .fb-clear {
+    grid-column: 1 / -1;
+  }
+
+  /* Item header: prevent subject from being cut */
+  .fb-item-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .fb-item-right {
+    margin-left: auto;
+  }
+
+  /* Detail meta: 1 column on small phones */
+  .fb-detail-meta {
+    grid-template-columns: 1fr;
+  }
+
+  /* Detail actions: wrap */
+  .fb-detail-actions {
+    flex-direction: column;
+  }
+  .fb-action {
+    width: 100%;
+    text-align: center;
+  }
+  .fb-action.delete {
+    margin-left: 0;
+  }
+
+  /* Guest form header */
+  .fb-guest-header {
+    flex-direction: row;   /* keep icon + title side by side */
+    padding: 14px 16px;
+  }
+
+  /* Guest card: tighter padding */
+  .fb-guest-card {
+    padding: 16px;
+  }
+
+  /* Category grid: 2 columns already — keep but reduce padding */
+  .fb-cat-btn {
+    padding: 10px 8px;
+    font-size: 0.8rem;
+  }
+  .fb-cat-emoji {
+    font-size: 1.3rem;
+  }
+
+  /* Step actions */
+  .fb-step-actions {
+    gap: 8px;
+  }
+
+  /* Identity row: already 1-col at 500px — extend to 640px */
+  .fb-identity-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   EMPTY ROOM PANEL
+───────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+
+  /* Trigger bar: stack stats and button */
+  .erp-trigger-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .erp-trigger-stats {
+    flex-wrap: wrap;
+  }
+  .erp-trigger-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .erp-open-btn {
+    flex: 1;
+    text-align: center;
+  }
+
+  /* Modal: full screen on mobile */
+  .erp-overlay {
+    padding: 0;
+    align-items: flex-end;  /* sheet from bottom */
+  }
+  .erp-modal {
+    border-radius: 18px 18px 0 0;
+    max-height: 92vh;
+    max-width: 100%;
+  }
+
+  /* Modal controls: wrap */
+  .erp-modal-controls {
+    padding: 10px 14px 8px;
+    gap: 8px;
+  }
+  .erp-search {
+    width: 100%;
+  }
+  .erp-day-tabs {
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 2px;
+  }
+  .erp-day-tab {
+    flex-shrink: 0;
+  }
+  .erp-sort-row {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  /* Two-panel: stack vertically */
+  .erp-panels {
+    grid-template-columns: 1fr;
+  }
+  .erp-room-list {
+    max-height: 160px;    /* compact on phone */
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px;
+    overflow-y: visible;
+    overflow-x: auto;
+  }
+  .erp-room-row {
+    flex: 0 0 auto;
+    min-width: 80px;
+    border-left: none;
+    border-bottom: 3px solid transparent;
+    padding: 5px 8px;
+  }
+  .erp-room-bar-wrap,
+  .erp-room-nums {
+    display: none;         /* hide bar on phone, just show name */
+  }
+  .erp-room-name {
+    width: auto;
+  }
+  .erp-modal-body {
+    padding: 14px;
+    gap: 12px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   GUEST BOOKING STATUS
+───────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+
+  /* Header: keep icon + text side by side (compact enough) */
+  .gbs-header {
+    padding: 14px 16px;
+  }
+
+  /* Lookup row: stack input + button */
+  .gbs-lookup-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .gbs-btn {
+    width: 100%;
+  }
+
+  /* Detail grid: 2 columns → 1 */
+  .gbs-detail-grid {
+    grid-template-columns: 1fr 1fr;  /* 2 is fine, just ensure wrap */
+  }
+
+  /* List: tighter */
+  .gbs-list {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   TEACHER DASHBOARD
+───────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+
+  .teacher-dashboard {
+    padding: 12px 10px 40px;
+  }
+
+  .dashboard-title {
+    font-size: 1.3rem;
+    margin-bottom: 16px;
+  }
+
+  /* Overview cards: 2 per row */
+  .overview-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .teacher-card {
+    padding: 12px;
+  }
+  .card-num {
+    font-size: 1.6rem;
+  }
+
+  /* Detail header */
+  .detail-header {
+    padding: 14px;
+  }
+  .detail-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  .summary-chip {
+    min-width: 0;
+    padding: 8px 6px;
+  }
+  .chip-num {
+    font-size: 1.2rem;
+  }
+
+  /* Type bar: label truncates */
+  .type-bar-row {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .type-bar-label {
+    min-width: 80px;
+    font-size: 0.78rem;
+  }
+
+  /* Heatmap: allow horizontal scroll, reduce cell size */
+  .heatmap-table {
+    min-width: 400px;
+  }
+  .hm-cell {
+    width: 24px;
+    height: 22px;
+  }
+
+  /* Class list */
+  .class-list-item {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px 10px;
+  }
+  .cli-time {
+    min-width: auto;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   TEACHER TELEGRAM MANAGEMENT
+───────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+
+  .ttm {
+    padding: 16px 12px 40px;
+    border-radius: 0;
+  }
+
+  /* Header */
+  .ttm-head {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .ttm-title {
+    font-size: 1.4rem;
+  }
+
+  /* Stats: scroll horizontally */
+  .ttm-stats {
+    padding: 12px;
+    gap: 0;
+  }
+  .stat-item {
+    padding: 0 12px;
+    min-width: 70px;
+  }
+  .stat-val {
+    font-size: 1.5rem;
+  }
+
+  /* Tabs: scroll */
+  .ttm-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    gap: 0;
+  }
+  .ttm-tab {
+    flex-shrink: 0;
+    padding: 10px 14px;
+    font-size: 0.85rem;
+  }
+
+  /* Toolbar */
+  .ttm-toolbar {
+    flex-wrap: wrap;
+  }
+  .ttm-search-box {
+    max-width: 100%;
+    width: 100%;
+    flex: 1 1 100%;
+  }
+
+  /* Table → card layout on mobile */
+  .ttm-scroll {
+    border: none;
+    border-radius: 0;
+    overflow-x: visible;
+  }
+  .ttm-tbl thead {
+    display: none;           /* hide column headers */
+  }
+  .ttm-tbl,
+  .ttm-tbl tbody,
+  .ttm-tbl tr,
+  .ttm-tbl td {
+    display: block;
+    width: 100%;
+  }
+  .ttm-tbl tr {
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+    background: var(--bg-subtle);
+    position: relative;
+  }
+  .ttm-tbl tr.tr-linked {
+    background: var(--linked-bg);
+  }
+  .ttm-tbl td {
+    padding: 4px 0;
+    border-top: none;
+    font-size: 0.88rem;
+  }
+  .ttm-tbl td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+  }
+
+  /* Action buttons: allow wrap on mobile */
+  .act-row {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .td-actions {
+    min-width: 0;
+    width: 100%;
+  }
+  .act {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   BROADCAST MESSAGE
+───────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+
+  .broadcast-wrap {
+    padding: 12px;
+  }
+
+  /* Type grid: 2 columns */
+  .bc-type-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .bc-type-btn {
+    padding: 12px 8px;
+  }
+
+  /* Pick header: stack label and actions */
+  .bc-pick-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .bc-pick-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  /* Summary: smaller text */
+  .bc-summary {
+    font-size: 0.82rem;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   PRINT VIEW — hide controls on very small screens
+───────────────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+
+  .pv-wrap {
+    padding: 12px 8px 40px;
+  }
+
+  .pv-bar {
+    padding: 14px 16px;
+    gap: 14px;
+  }
+
+  /* Control rows: wrap tightly */
+  .pv-row {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .pv-btn,
+  .pv-mode {
+    padding: 6px 10px;
+    font-size: 0.75rem;
+  }
+
+  .pv-sel {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .pv-print {
+    width: 100%;
+    text-align: center;
+  }
+
+  /* Preview header: stack */
+  .pv-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 18px 20px;
+    gap: 12px;
+  }
+  .pv-header-meta {
+    text-align: left;
+  }
+
+  /* Sections: tighter padding */
+  .pv-sections {
+    padding: 16px 14px 24px;
+    gap: 20px;
+  }
+
+  /* Table: allow horizontal scroll */
+  .pv-table {
+    font-size: 0.7rem;
+  }
+  .pv-table th {
+    font-size: 0.58rem;
+    padding: 6px 4px;
+  }
+  .pv-table td {
+    padding: 5px 4px;
+  }
+  .pv-cell-course  { font-size: 0.68rem; }
+  .pv-cell-teacher { font-size: 0.6rem; }
+  .pv-cell-room    { font-size: 0.56rem; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   GLOBAL SMALL-PHONE POLISH (≤ 380px)
+───────────────────────────────────────────────────────────── */
+@media (max-width: 380px) {
+
+  /* Step dots only — no labels, no lines between */
+  .as-step-line,
+  .fb-step:not(:last-child)::after {
+    display: none;
+  }
+
+  /* Exam card time: ultra compact */
+  .es-card-time {
+    padding: 8px 10px;
+    gap: 6px;
+  }
+  .es-time-start { font-size: 0.8rem; }
+  .es-time-end   { font-size: 0.7rem; }
+
+  /* Feedback category buttons: tighter */
+  .fb-cat-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .fb-cat-btn {
+    padding: 8px 6px;
+    font-size: 0.75rem;
+  }
+
+  /* Overview cards: always 2 col */
+  .overview-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* TTM stats: 2 per row */
+  .ttm-stats {
+    flex-wrap: wrap;
+  }
+  .stat-item {
+    flex: 1 1 40%;
+    border-right: none;
+    border-bottom: 1px solid var(--stat-border);
+    padding: 8px;
+  }
+  .stat-item:last-child { border-bottom: none; }
+}
