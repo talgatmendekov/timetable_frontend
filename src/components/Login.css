@@ -343,6 +343,11 @@
 /* ── Form ── */
 .lp__form { display: flex; flex-direction: column; gap: 18px; }
 
+.lp__logo{
+  width: 64px; height: 64px;
+}
+
+
 /* ── Field ── */
 .lp__field { display: flex; flex-direction: column; gap: 7px; }
 
