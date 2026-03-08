@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import logo from '../assets/logo.png';
 import './Login.css';
 
 const Login = ({ onViewAsGuest }) => {
@@ -68,7 +69,7 @@ const Login = ({ onViewAsGuest }) => {
         <aside className="lp__aside">
           <div className="lp__aside-inner">
             <div className="lp__emblem">
-              <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
+              {/* <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
                 <rect width="60" height="60" rx="18" fill="rgba(255,255,255,0.1)"/>
                 <path d="M30 12L46 22V38L30 48L14 38V22L30 12Z"
                   stroke="url(#eg)" strokeWidth="1.8" fill="none"/>
@@ -81,7 +82,8 @@ const Login = ({ onViewAsGuest }) => {
                     <stop offset="1" stopColor="#5eead4"/>
                   </linearGradient>
                 </defs>
-              </svg>
+              </svg> */}
+              <img src={logo} alt="University Logo" className="lp__logo" />
             </div>
             <h1 className="lp__uni-name">
               {t('appTitle') || 'International Ala-Too University'}
