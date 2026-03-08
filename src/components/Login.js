@@ -1,5 +1,5 @@
 // src/components/Login.js
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -12,23 +12,31 @@ const Login = ({ onViewAsGuest }) => {
   const [error,    setError]    = useState('');
   const [loading,  setLoading]  = useState(false);
 
-  // ⚠️  NO useEffect here — nothing fires on mount.
-  //     Login only POSTs to /api/auth/login when the user clicks Submit.
+  // Refs so handleSubmit can read DOM values even if browser autofill
+  // bypassed React's onChange (Safari/Chrome autofill skips onChange)
+  const usernameRef = useRef(null);
+  const passwordRef = useRef(null);
+
+  // ⚠️  NO useEffect — nothing fires on mount.
+  //     POST /api/auth/login is only called when the user clicks Sign In.
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!username.trim() || !password.trim()) {
+    // Read from DOM refs in case autofill bypassed React state
+    const u = (usernameRef.current?.value || username).trim();
+    const p =  passwordRef.current?.value || password;
+    if (!u || !p) {
       setError(t('loginFillBoth') || 'Please enter your username and password.');
       return;
     }
     setError('');
     setLoading(true);
     try {
-      const result = await login(username.trim(), password);
+      const result = await login(u, p);
       if (!result.success) {
         setError(result.error || t('loginInvalid') || 'Invalid username or password.');
       }
-      // On success AuthContext sets isAuthenticated = true → App re-renders
+      // On success AuthContext sets isAuthenticated=true → App re-renders to main view
     } catch (err) {
       setError(err.message || t('loginError') || 'Login failed. Please try again.');
     } finally {
@@ -66,19 +74,23 @@ const Login = ({ onViewAsGuest }) => {
           {t('appSubtitle') || 'Timetable Management System'}
         </p>
 
+        {/* autoComplete="off" on both form and inputs prevents browser autofill
+            from auto-submitting the form on page load (Safari/Chrome behaviour) */}
         <form onSubmit={handleSubmit} className="login-form" autoComplete="off">
           <div className="login-field">
             <label htmlFor="login-username">
               {t('loginUsername') || 'Username'}
             </label>
             <input
+              ref={usernameRef}
               id="login-username"
               type="text"
               value={username}
               onChange={e => setUsername(e.target.value)}
               placeholder={t('loginUsernamePlaceholder') || 'Enter username'}
               disabled={loading}
-              autoComplete="username"
+              autoComplete="off"
+              name="login-username-field"
             />
           </div>
 
@@ -87,13 +99,15 @@ const Login = ({ onViewAsGuest }) => {
               {t('loginPassword') || 'Password'}
             </label>
             <input
+              ref={passwordRef}
               id="login-password"
               type="password"
               value={password}
               onChange={e => setPassword(e.target.value)}
               placeholder={t('loginPasswordPlaceholder') || 'Enter password'}
               disabled={loading}
-              autoComplete="current-password"
+              autoComplete="new-password"
+              name="login-password-field"
             />
           </div>
 
@@ -110,7 +124,7 @@ const Login = ({ onViewAsGuest }) => {
           >
             {loading
               ? (t('loginLoading') || 'Signing in…')
-              : (t('login')       || 'Sign In')
+              : (t('login')        || 'Sign In')
             }
           </button>
         </form>
