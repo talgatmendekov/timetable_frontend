@@ -327,87 +327,85 @@ const AppContent = () => {
         )}
       </div>
 
-      {/* ── MAIN: schedule + sidebar ── */}
-      <div style={{ display:'flex', alignItems:'flex-start', gap:16 }}>
+      {/* ── LAYOUT: vertical sidebar nav (left) + main content (right) ── */}
+      <div style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
 
-        {/* Schedule — always at the top, always visible */}
-        <div style={{ flex:1, minWidth:0 }}>
-          <EmptyRoomPanel
-            allRooms={allRooms} schedule={schedule}
-            days={days} timeSlots={timeSlots}
-            selectedRoom={selectedRoom} setSelectedRoom={setSelectedRoom}
-          />
-          <ScheduleTable
-            selectedDay={selectedDay}
-            selectedTeacher={selectedTeacher}
-            selectedGroup={selectedGroup}
-            selectedRoom={selectedRoom}
-            onEditClass={isAuthenticated ? handleEditClass : undefined}
-            onDeleteGroup={isAuthenticated ? handleDeleteGroup : undefined}
-            bookings={activeBookings}
-            onGuestBookCell={(group, day, time) => setGuestBookCell({ group, day, time })}
-          />
+        {/* Vertical icon nav — always visible */}
+        <div style={{ display:'flex', flexDirection:'column', gap:6, flexShrink:0, paddingTop:4 }}>
+          {/* Schedule home button */}
+          <button
+            onClick={() => setSidebarTab(null)}
+            title="Schedule"
+            style={{
+              width:46, height:46, borderRadius:12,
+              border: sidebarTab === null ? '2px solid var(--primary)' : '1px solid var(--border)',
+              background: sidebarTab === null ? 'var(--primary)' : 'var(--bg-card)',
+              color: sidebarTab === null ? '#fff' : 'var(--text-secondary)',
+              fontSize:'1.2rem', cursor:'pointer',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              transition:'all 0.18s', flexShrink:0,
+            }}
+          >📅</button>
+
+          {/* Divider */}
+          <div style={{ height:1, background:'var(--border)', margin:'2px 4px' }} />
+
+          {/* Feature tabs */}
+          {sidebarTabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setSidebarTab(prev => prev === tab.id ? null : tab.id)}
+              title={tab.label}
+              style={{
+                width:46, height:46, borderRadius:12,
+                border: sidebarTab === tab.id ? '2px solid var(--primary)' : '1px solid var(--border)',
+                background: sidebarTab === tab.id ? 'var(--primary)' : 'var(--bg-card)',
+                color: sidebarTab === tab.id ? '#fff' : 'var(--text-secondary)',
+                fontSize:'1.2rem', cursor:'pointer',
+                display:'flex', alignItems:'center', justifyContent:'center',
+                position:'relative', transition:'all 0.18s', flexShrink:0,
+              }}
+            >
+              {tab.icon}
+              {tab.badge > 0 && (
+                <span style={{ position:'absolute', top:2, right:2, background:'#ef4444', color:'#fff', fontSize:'0.55rem', fontWeight:800, borderRadius:10, padding:'1px 4px', minWidth:14, textAlign:'center', lineHeight:1.4 }}>
+                  {tab.badge}
+                </span>
+              )}
+            </button>
+          ))}
         </div>
 
-        {/* Sidebar icon strip + panel */}
-        <div style={{ display:'flex', gap:8, flexShrink:0 }}>
-
-          {/* Icon buttons */}
-          <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-            {sidebarTabs.map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setSidebarTab(prev => prev === tab.id ? null : tab.id)}
-                title={tab.label}
-                style={{
-                  width:46, height:46, borderRadius:12,
-                  border: sidebarTab === tab.id ? '2px solid var(--primary)' : '1px solid var(--border)',
-                  background: sidebarTab === tab.id ? 'var(--primary)' : 'var(--bg-card)',
-                  color: sidebarTab === tab.id ? '#fff' : 'var(--text-secondary)',
-                  fontSize:'1.2rem', cursor:'pointer',
-                  display:'flex', alignItems:'center', justifyContent:'center',
-                  position:'relative', transition:'all 0.18s', flexShrink:0,
-                }}
-              >
-                {tab.icon}
-                {tab.badge > 0 && (
-                  <span style={{ position:'absolute', top:2, right:2, background:'#ef4444', color:'#fff', fontSize:'0.55rem', fontWeight:800, borderRadius:10, padding:'1px 4px', minWidth:14, textAlign:'center', lineHeight:1.4 }}>
-                    {tab.badge}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* Sidebar panel */}
-          {sidebarOpen && (
-            <div style={{
-              width:420, background:'var(--bg-card)', border:'1px solid var(--border)',
-              borderRadius:14, display:'flex', flexDirection:'column',
-              maxHeight:'calc(100vh - 180px)', overflow:'hidden',
-              boxShadow:'0 8px 32px rgba(0,0,0,0.35)',
-              animation:'sbIn 0.22s cubic-bezier(0.22,1,0.36,1)',
-            }}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 16px', borderBottom:'1px solid var(--border)', background:'var(--bg-main)', flexShrink:0 }}>
-                <span style={{ fontWeight:700, fontSize:'0.9rem', color:'var(--text-primary)' }}>
-                  {sidebarTabs.find(x => x.id === sidebarTab)?.icon}{' '}
-                  {sidebarTabs.find(x => x.id === sidebarTab)?.label}
-                </span>
-                <button onClick={() => setSidebarTab(null)} style={{ background:'transparent', border:'none', color:'var(--text-secondary)', fontSize:'1.1rem', cursor:'pointer', padding:'2px 6px', borderRadius:6 }}>✕</button>
-              </div>
-              <div style={{ flex:1, overflowY:'auto', padding:16 }}>
-                {sidebarTab === 'mybookings' && <GuestBookingStatus bookings={activeBookings} onRefresh={setActiveBookings} />}
-                {sidebarTab === 'print'      && <PrintView />}
-                {sidebarTab === 'dashboard'  && <TeacherDashboard />}
-                {sidebarTab === 'conflicts'  && <ConflictPage onJumpToCell={handleJumpToCell} />}
-                {sidebarTab === 'bookings'   && <BookingManagement />}
-                {sidebarTab === 'autosched'  && <AutoScheduler />}
-                {sidebarTab === 'exams'      && <ExamSchedule readOnly={!isAuthenticated} showExamsToGuests={showExamsToGuests} setShowExamsToGuests={setShowExamsToGuests} />}
-                {sidebarTab === 'feedback'   && (isAuthenticated ? <FeedbackDashboard /> : <FeedbackDashboard guestMode={true} schedule={schedule} groups={groups} />)}
-                {sidebarTab === 'telegram'   && <TeacherTelegramManagement />}
-              </div>
-            </div>
+        {/* Main content area — schedule OR selected tab */}
+        <div style={{ flex:1, minWidth:0 }}>
+          {sidebarTab === null && (
+            <>
+              <EmptyRoomPanel
+                allRooms={allRooms} schedule={schedule}
+                days={days} timeSlots={timeSlots}
+                selectedRoom={selectedRoom} setSelectedRoom={setSelectedRoom}
+              />
+              <ScheduleTable
+                selectedDay={selectedDay}
+                selectedTeacher={selectedTeacher}
+                selectedGroup={selectedGroup}
+                selectedRoom={selectedRoom}
+                onEditClass={isAuthenticated ? handleEditClass : undefined}
+                onDeleteGroup={isAuthenticated ? handleDeleteGroup : undefined}
+                bookings={activeBookings}
+                onGuestBookCell={(group, day, time) => setGuestBookCell({ group, day, time })}
+              />
+            </>
           )}
+          {sidebarTab === 'mybookings' && <GuestBookingStatus bookings={activeBookings} onRefresh={setActiveBookings} />}
+          {sidebarTab === 'print'      && <PrintView />}
+          {sidebarTab === 'dashboard'  && <TeacherDashboard />}
+          {sidebarTab === 'conflicts'  && <ConflictPage onJumpToCell={handleJumpToCell} />}
+          {sidebarTab === 'bookings'   && <BookingManagement />}
+          {sidebarTab === 'autosched'  && <AutoScheduler />}
+          {sidebarTab === 'exams'      && <ExamSchedule readOnly={!isAuthenticated} showExamsToGuests={showExamsToGuests} setShowExamsToGuests={setShowExamsToGuests} />}
+          {sidebarTab === 'feedback'   && (isAuthenticated ? <FeedbackDashboard /> : <FeedbackDashboard guestMode={true} schedule={schedule} groups={groups} />)}
+          {sidebarTab === 'telegram'   && <TeacherTelegramManagement />}
         </div>
       </div>
 
