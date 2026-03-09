@@ -36,6 +36,7 @@ const getTodayScheduleDay = () => {
   return scheduleDays.includes(today) ? today : 'Monday';
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
 const AppContent = () => {
   const { isAuthenticated, loading: authLoading, logout } = useAuth();
   const {
@@ -45,27 +46,26 @@ const AppContent = () => {
   } = useSchedule();
   const { t } = useLanguage();
 
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  const [activeView,     setActiveView]     = useState('schedule'); // 'schedule' | tab id
-  const [selectedDay,    setSelectedDay]    = useState(getTodayScheduleDay);
-  const [selectedTeacher,setSelectedTeacher]= useState('');
-  const [selectedGroup,  setSelectedGroup]  = useState('');
-  const [selectedRoom,   setSelectedRoom]   = useState('');
-  const [modalOpen,      setModalOpen]      = useState(false);
-  const [currentCell,    setCurrentCell]    = useState({ group:null, day:null, time:null });
-  const [importing,      setImporting]      = useState(false);
-  const [showBooking,    setShowBooking]    = useState(false);
-  const [guestBookCell,  setGuestBookCell]  = useState(null);
-  const [activeBookings, setActiveBookings] = useState([]);
-  const [showExamsToGuests,setShowExamsToGuests] = useState(false);
-  const [feedbackCount,  setFeedbackCount]  = useState(0);
-  const [shareToast,     setShareToast]     = useState('');
+  const [showLoginModal,    setShowLoginModal]    = useState(false);
+  const [activeView,        setActiveView]        = useState('schedule');
+  const [selectedDay,       setSelectedDay]       = useState(getTodayScheduleDay);
+  const [selectedTeacher,   setSelectedTeacher]   = useState('');
+  const [selectedGroup,     setSelectedGroup]     = useState('');
+  const [selectedRoom,      setSelectedRoom]      = useState('');
+  const [modalOpen,         setModalOpen]         = useState(false);
+  const [currentCell,       setCurrentCell]       = useState({ group:null, day:null, time:null });
+  const [importing,         setImporting]         = useState(false);
+  const [showBooking,       setShowBooking]       = useState(false);
+  const [guestBookCell,     setGuestBookCell]     = useState(null);
+  const [activeBookings,    setActiveBookings]    = useState([]);
+  const [showExamsToGuests, setShowExamsToGuests] = useState(false);
+  const [feedbackCount,     setFeedbackCount]     = useState(0);
+  const [shareToast,        setShareToast]        = useState('');
+  const [headerOpen,        setHeaderOpen]        = useState(false);
 
   const fileInputRef = useRef(null);
 
-  // Close login modal once authenticated
   React.useEffect(() => { if (isAuthenticated) setShowLoginModal(false); }, [isAuthenticated]);
-
   React.useEffect(() => {
     const today = getTodayScheduleDay();
     if (today && days.includes(today)) setSelectedDay(today);
@@ -115,11 +115,11 @@ const AppContent = () => {
         if (slot.length < 2) return;
         const tMap = {}, rMap = {};
         slot.forEach(e => {
-          if (e.teacher) { const k = e.teacher.toLowerCase(); tMap[k] = (tMap[k]||0)+1; }
-          if (e.room)    { const k = e.room.toLowerCase();    rMap[k] = (rMap[k]||0)+1; }
+          if (e.teacher) { const k = e.teacher.toLowerCase(); tMap[k]=(tMap[k]||0)+1; }
+          if (e.room)    { const k = e.room.toLowerCase();    rMap[k]=(rMap[k]||0)+1; }
         });
-        Object.entries(tMap).forEach(([k,v]) => { if (v>1&&!seen.has(`t-${k}-${day}-${time}`)){count++;seen.add(`t-${k}-${day}-${time}`);}});
-        Object.entries(rMap).forEach(([k,v]) => { if (v>1&&!seen.has(`r-${k}-${day}-${time}`)){count++;seen.add(`r-${k}-${day}-${time}`);}});
+        Object.entries(tMap).forEach(([k,v])=>{ if(v>1&&!seen.has(`t-${k}-${day}-${time}`)){count++;seen.add(`t-${k}-${day}-${time}`);}});
+        Object.entries(rMap).forEach(([k,v])=>{ if(v>1&&!seen.has(`r-${k}-${day}-${time}`)){count++;seen.add(`r-${k}-${day}-${time}`);}});
       });
     });
     return count;
@@ -145,35 +145,28 @@ const AppContent = () => {
     catch (err) { alert(`Export failed: ${err.message}`); }
   };
   const handleImportClick = () => fileInputRef.current?.click();
-  const handleFileChange = async (e) => {
+  const handleFileChange  = async (e) => {
     const file = e?.target?.files?.[0]; if (!file) return; setImporting(true);
     try {
       try {
         const parsed = await parseAlatooSchedule(file);
-        if (parsed?.length > 0) {
-          const res = await importSchedule(JSON.stringify(parsed));
-          alert(res?.success ? `✅ Imported ${parsed.length} classes!` : `❌ Import failed: ${res?.error}`);
-          return;
-        }
-        throw new Error('No classes found');
+        if (parsed?.length > 0) { const res = await importSchedule(JSON.stringify(parsed)); alert(res?.success ? `✅ Imported ${parsed.length} classes!` : `❌ ${res?.error}`); return; }
+        throw new Error();
       } catch {
         const result = await importFromExcel(file);
-        if (result.success) {
-          const res = await importSchedule(JSON.stringify({ groups: result.groups, schedule: result.schedule }));
-          alert(res.success ? `✅ Imported ${result.groups.length} groups.` : `❌ Import failed: ${res.error}`);
-        } else {
+        if (result.success) { const res = await importSchedule(JSON.stringify({ groups: result.groups, schedule: result.schedule })); alert(res.success ? `✅ Imported ${result.groups.length} groups.` : `❌ ${res.error}`); }
+        else {
           const reader = new FileReader();
-          reader.onload = ev => { try { const wb = XLSX.read(new Uint8Array(ev.target.result),{type:'array'}); console.log('Excel:',XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1}).slice(0,5)); } catch {} };
+          reader.onload = ev => { try { const wb = XLSX.read(new Uint8Array(ev.target.result),{type:'array'}); console.log('Excel:', XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1}).slice(0,5)); } catch {} };
           reader.readAsArrayBuffer(file);
-          alert('❌ Invalid file format. Check console.');
+          alert('❌ Invalid file format.');
         }
       }
-    } catch (err) { alert(`❌ Import failed: ${err.message}`); }
+    } catch (err) { alert(`❌ ${err.message}`); }
     finally { setImporting(false); if (fileInputRef.current) fileInputRef.current.value = ''; }
   };
   const handleClearAll = () => { if (window.confirm(t('confirmClearAll'))) clearSchedule(); };
 
-  // ── Sidebar nav tabs ──────────────────────────────────────────────────────
   const navTabs = [
     { id:'schedule',   icon:'📅', label: t('tabSchedule')||'Schedule' },
     ...(!isAuthenticated ? [
@@ -182,14 +175,14 @@ const AppContent = () => {
       { id:'feedback',   icon:'💬', label: t('tabFeedback')||'Feedback' },
     ] : []),
     ...(isAuthenticated ? [
-      { id:'print',     icon:'🖨️', label: t('tabPrint')||'Print'           },
-      { id:'dashboard', icon:'📊', label: t('tabDashboard')||'Stats'        },
+      { id:'print',     icon:'🖨️', label: t('tabPrint')||'Print'            },
+      { id:'dashboard', icon:'📊', label: t('tabDashboard')||'Stats'         },
       { id:'conflicts', icon:'⚠️',  label: t('tabConflicts')||'Conflicts', badge: conflictCount },
-      { id:'bookings',  icon:'🏫', label: t('tabBookings')||'Bookings'      },
-      { id:'autosched', icon:'🤖', label: t('tabAutoSched')||'Auto Schedule'},
-      { id:'exams',     icon:'🗓', label: t('tabExams')||'Exams'            },
+      { id:'bookings',  icon:'🏫', label: t('tabBookings')||'Bookings'       },
+      { id:'autosched', icon:'🤖', label: t('tabAutoSched')||'Auto Schedule' },
+      { id:'exams',     icon:'🗓', label: t('tabExams')||'Exams'             },
       { id:'feedback',  icon:'💬', label: t('tabFeedback')||'Feedback', badge: feedbackCount },
-      { id:'telegram',  icon:'📱', label: t('tabTelegram')||'Telegram'      },
+      { id:'telegram',  icon:'📱', label: t('tabTelegram')||'Telegram'       },
     ] : []),
   ];
 
@@ -202,47 +195,32 @@ const AppContent = () => {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="app">
+    <div className="app" style={{ padding:0 }}>
 
       <input type="file" ref={fileInputRef} accept=".xlsx,.xls" onChange={handleFileChange} style={{ display:'none' }} />
 
       {(importing || scheduleLoading) && (
         <div className="import-overlay">
-          <div className="import-spinner">
-            ⏳ {scheduleLoading ? (t('loadingData')||'Loading…') : (t('importing')||'Importing…')}
-          </div>
+          <div className="import-spinner">⏳ {scheduleLoading ? (t('loadingData')||'Loading…') : (t('importing')||'Importing…')}</div>
         </div>
       )}
 
-      {/* ── LOGIN MODAL — wraps the real Login component unchanged ── */}
+      {/* ── LOGIN MODAL — real Login component, completely untouched ── */}
       {showLoginModal && !isAuthenticated && (
         <div
           onClick={e => { if (e.target === e.currentTarget) setShowLoginModal(false); }}
-          style={{
-            position:'fixed', inset:0, zIndex:9998,
-            background:'rgba(0,0,0,0.82)',
-            backdropFilter:'blur(8px)',
-            display:'flex', alignItems:'center', justifyContent:'center',
-          }}
+          style={{ position:'fixed', inset:0, zIndex:9998, background:'rgba(0,0,0,0.82)', backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center' }}
         >
           <div style={{ position:'relative', width:'100%', maxWidth:920, maxHeight:'96vh', overflow:'auto' }}>
             <button
               onClick={() => setShowLoginModal(false)}
-              style={{
-                position:'absolute', top:12, right:12, zIndex:10,
-                width:32, height:32, borderRadius:'50%',
-                background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.25)',
-                color:'#fff', fontSize:'1rem', cursor:'pointer',
-                display:'flex', alignItems:'center', justifyContent:'center',
-              }}
+              style={{ position:'absolute', top:12, right:12, zIndex:10, width:32, height:32, borderRadius:'50%', background:'rgba(0,0,0,0.4)', border:'1px solid rgba(255,255,255,0.25)', color:'#fff', fontSize:'1rem', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center' }}
             >✕</button>
-            {/* Login component — completely untouched */}
             <Login onViewAsGuest={null} />
           </div>
         </div>
       )}
 
-      {/* ── ERROR BANNER ── */}
       {error && (
         <div className="error-banner">
           ⚠️ Could not connect to server: {error}.
@@ -250,118 +228,111 @@ const AppContent = () => {
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════════════════════════
-          LAYOUT: slim left icon-nav + full-width content area
-          The icon nav replaces the tab-bar.
-          The content area starts at the very top — Header is first item
-          only on the schedule view, hidden on all other views to save space.
-      ══════════════════════════════════════════════════════════════════ */}
+      {/* ══════════════════════════════════════════════════════════════
+          LAYOUT: left icon-nav  +  right content
+      ══════════════════════════════════════════════════════════════ */}
       <div style={{ display:'flex', minHeight:'100vh' }}>
 
-        {/* ── LEFT: vertical icon nav ── */}
+        {/* ── LEFT: 58px sticky icon nav ── */}
         <div style={{
-          width:58,
-          flexShrink:0,
-          background:'var(--bg-card)',
-          borderRight:'1px solid var(--border)',
-          display:'flex',
-          flexDirection:'column',
-          alignItems:'center',
-          paddingTop:10,
-          paddingBottom:10,
-          gap:4,
-          position:'sticky',
-          top:0,
-          height:'100vh',
-          overflowY:'auto',
+          width: 58, flexShrink: 0,
+          background: 'var(--bg-card)',
+          borderRight: '1px solid var(--border)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          padding: '10px 0',
+          gap: 4,
+          position: 'sticky', top: 0, height: '100vh', overflowY: 'auto',
         }}>
           {navTabs.map((tab, i) => (
             <React.Fragment key={tab.id}>
-              {/* Divider after schedule icon */}
-              {i === 1 && <div style={{ width:32, height:1, background:'var(--border)', margin:'4px 0' }} />}
+              {i === 1 && <div style={{ width:32, height:1, background:'var(--border)', margin:'3px 0' }} />}
               <button
                 onClick={() => setActiveView(tab.id)}
                 title={tab.label}
                 style={{
-                  width:42, height:42, borderRadius:11,
+                  width:42, height:42, borderRadius:11, flexShrink:0,
                   border: activeView===tab.id ? '2px solid var(--primary)' : '1px solid var(--border)',
                   background: activeView===tab.id ? 'var(--primary)' : 'transparent',
                   color: activeView===tab.id ? '#fff' : 'var(--text-secondary)',
                   fontSize:'1.1rem', cursor:'pointer',
                   display:'flex', alignItems:'center', justifyContent:'center',
                   position:'relative', transition:'all 0.15s',
-                  flexShrink:0,
                 }}
               >
                 {tab.icon}
                 {tab.badge > 0 && (
-                  <span style={{
-                    position:'absolute', top:2, right:2,
-                    background:'#ef4444', color:'#fff',
-                    fontSize:'0.5rem', fontWeight:800,
-                    borderRadius:10, padding:'1px 3px',
-                    minWidth:13, textAlign:'center', lineHeight:1.4,
-                  }}>{tab.badge}</span>
+                  <span style={{ position:'absolute', top:2, right:2, background:'#ef4444', color:'#fff', fontSize:'0.5rem', fontWeight:800, borderRadius:10, padding:'1px 3px', minWidth:13, textAlign:'center', lineHeight:1.4 }}>{tab.badge}</span>
                 )}
               </button>
             </React.Fragment>
           ))}
 
-          {/* Spacer pushes bottom items down */}
           <div style={{ flex:1 }} />
 
           {/* Guest: book lab */}
           {!isAuthenticated && (
-            <button
-              onClick={() => setShowBooking(true)}
-              title={t('bookLab')||'Book a Lab'}
+            <button onClick={() => setShowBooking(true)} title={t('bookLab')||'Book a Lab'}
               style={{ width:42, height:42, borderRadius:11, border:'1px solid var(--border)', background:'transparent', color:'var(--text-secondary)', fontSize:'1.1rem', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.15s', flexShrink:0 }}
             >🏫</button>
           )}
 
-          {/* Admin login / logout */}
+          {/* Admin share */}
+          {isAuthenticated && (
+            <button onClick={handleShare} title="Share public link"
+              style={{ width:42, height:42, borderRadius:11, border:'1px solid var(--border)', background:'transparent', color: shareToast ? '#10b981' : 'var(--text-secondary)', fontSize:'1.1rem', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.15s', flexShrink:0 }}
+            >🔗</button>
+          )}
+
+          {/* Login / Logout */}
           {!isAuthenticated ? (
-            <button
-              onClick={() => setShowLoginModal(true)}
-              title="Admin Login"
+            <button onClick={() => setShowLoginModal(true)} title="Admin Login"
               style={{ width:42, height:42, borderRadius:11, border:'1px solid var(--border)', background:'transparent', color:'var(--text-secondary)', fontSize:'1.1rem', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.15s', flexShrink:0 }}
             >🔐</button>
           ) : (
-            <button
-              onClick={() => { logout(); setActiveView('schedule'); }}
-              title={t('logout')||'Logout'}
+            <button onClick={() => { logout(); setActiveView('schedule'); }} title={t('logout')||'Logout'}
               style={{ width:42, height:42, borderRadius:11, border:'1px solid var(--border)', background:'transparent', color:'#ef4444', fontSize:'1.1rem', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.15s', flexShrink:0 }}
             >↩</button>
           )}
+
+          {/* Filters toggle — opens the Header as a dropdown panel */}
+          <button
+            onClick={() => setHeaderOpen(o => !o)}
+            title="Filters & Settings"
+            style={{
+              width:42, height:42, borderRadius:11, flexShrink:0,
+              border: headerOpen ? '2px solid var(--primary)' : '1px solid var(--border)',
+              background: headerOpen ? 'var(--primary)' : 'transparent',
+              color: headerOpen ? '#fff' : 'var(--text-secondary)',
+              fontSize:'1.1rem', cursor:'pointer',
+              display:'flex', alignItems:'center', justifyContent:'center',
+              transition:'all 0.15s',
+            }}
+          >⚙️</button>
         </div>
 
-        {/* ── RIGHT: content area ── */}
+        {/* ── RIGHT: full content column ── */}
         <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column' }}>
 
-          {/* Header — shown on ALL views so filters always accessible */}
-          <Header
-            selectedDay={selectedDay}           setSelectedDay={setSelectedDay}
-            selectedTeacher={selectedTeacher}   setSelectedTeacher={setSelectedTeacher}
-            selectedGroup={selectedGroup}        setSelectedGroup={setSelectedGroup}
-            onAddGroup={handleAddGroup}
-            onExport={handleExport}
-            onImport={handleImportClick}
-            onClearAll={handleClearAll}
-          />
-
-          {/* Share strip — admin only */}
-          {isAuthenticated && (
-            <div style={{ padding:'5px 16px', background:'var(--bg-main)', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
-              <span style={{ fontSize:'.72rem', color:'#94a3b8', fontFamily:'monospace' }}>
-                🔗 /schedule{selectedGroup ? `/${selectedGroup}` : ''}
-              </span>
-              <button onClick={handleShare} style={{ padding:'2px 10px', background:'#6366f1', color:'#fff', border:'none', borderRadius:6, fontSize:'.7rem', fontWeight:700, cursor:'pointer' }}>Copy link</button>
-              {shareToast && <span style={{ fontSize:'.7rem', color:'#10b981', fontWeight:700 }}>{shareToast}</span>}
+          {/* ── COLLAPSIBLE HEADER PANEL ──
+              Hidden by default. ⚙️ button toggles it open.
+              Uses the real Header component — completely unchanged.
+          ── */}
+          {headerOpen && (
+            <div style={{ padding:'0 20px' }}>
+              <Header
+                selectedDay={selectedDay}            setSelectedDay={setSelectedDay}
+                selectedTeacher={selectedTeacher}    setSelectedTeacher={setSelectedTeacher}
+                selectedGroup={selectedGroup}         setSelectedGroup={setSelectedGroup}
+                onAddGroup={isAuthenticated ? handleAddGroup    : undefined}
+                onExport={isAuthenticated  ? handleExport       : undefined}
+                onImport={isAuthenticated  ? handleImportClick  : undefined}
+                onClearAll={isAuthenticated? handleClearAll     : undefined}
+              />
             </div>
           )}
 
-          {/* ── VIEW CONTENT ── */}
-          <div style={{ flex:1, padding:'12px 16px' }}>
+          {/* ── CONTENT — schedule or any feature tab ── */}
+          <div style={{ flex:1, padding:'12px 20px' }}>
 
             {activeView === 'schedule' && (
               <>
@@ -388,25 +359,14 @@ const AppContent = () => {
             {activeView === 'conflicts'  && <ConflictPage onJumpToCell={handleJumpToCell} />}
             {activeView === 'bookings'   && <BookingManagement />}
             {activeView === 'autosched'  && <AutoScheduler />}
-            {activeView === 'exams'      && (
-              <ExamSchedule
-                readOnly={!isAuthenticated}
-                showExamsToGuests={showExamsToGuests}
-                setShowExamsToGuests={setShowExamsToGuests}
-              />
-            )}
-            {activeView === 'feedback' && (
-              isAuthenticated
-                ? <FeedbackDashboard />
-                : <FeedbackDashboard guestMode={true} schedule={schedule} groups={groups} />
-            )}
-            {activeView === 'telegram' && <TeacherTelegramManagement />}
+            {activeView === 'exams'      && <ExamSchedule readOnly={!isAuthenticated} showExamsToGuests={showExamsToGuests} setShowExamsToGuests={setShowExamsToGuests} />}
+            {activeView === 'feedback'   && (isAuthenticated ? <FeedbackDashboard /> : <FeedbackDashboard guestMode={true} schedule={schedule} groups={groups} />)}
+            {activeView === 'telegram'   && <TeacherTelegramManagement />}
 
           </div>
         </div>
       </div>
 
-      {/* Guest booking modal */}
       {!isAuthenticated && (
         <GuestBooking
           isOpen={showBooking || !!guestBookCell}
@@ -416,10 +376,7 @@ const AppContent = () => {
         />
       )}
 
-      <ClassModal
-        isOpen={modalOpen} onClose={handleCloseModal}
-        group={currentCell.group} day={currentCell.day} time={currentCell.time}
-      />
+      <ClassModal isOpen={modalOpen} onClose={handleCloseModal} group={currentCell.group} day={currentCell.day} time={currentCell.time} />
 
       <footer className="app-author-credit">
         <span className="app-author-logo">🏛</span>
