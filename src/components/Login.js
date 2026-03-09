@@ -2,10 +2,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import logo from '../assets/logo.png';
 import './Login.css';
 
-const Login = ({ onViewAsGuest }) => {
+const Login = ({ onViewAsGuest, isModal = false, onSuccess }) => {
   const { login } = useAuth();
   const { t, lang, changeLang } = useLanguage(); // ← correct names from LanguageContext
 
@@ -39,6 +38,8 @@ const Login = ({ onViewAsGuest }) => {
       const result = await login(u, p);
       if (!result.success) {
         setError(result.error || t('invalidCredentials') || 'Invalid credentials.');
+      } else if (onSuccess) {
+        onSuccess();
       }
     } catch (err) {
       setError(err.message || t('invalidCredentials') || 'Login failed.');
@@ -52,6 +53,63 @@ const Login = ({ onViewAsGuest }) => {
     { code: 'ru', label: 'RU' },
     { code: 'ky', label: 'KY' },
   ];
+
+  // In modal mode — show only the compact form card, no split-screen
+  if (isModal) {
+    return (
+      <div className={`lp-modal lp--${theme}`}>
+        <div className="lp__topbar">
+          <div className="lp__langs">
+            {LANGS.map(l => (
+              <button key={l.code} type="button"
+                className={`lp__lang${lang === l.code ? ' lp__lang--on' : ''}`}
+                onClick={() => changeLang(l.code)}>
+                {l.label}
+              </button>
+            ))}
+          </div>
+          <button type="button" className="lp__theme-toggle"
+            onClick={() => setTheme(v => v === 'dark' ? 'light' : 'dark')}>
+            <span className="lp__theme-emoji">{theme === 'dark' ? '☀️' : '🌙'}</span>
+            <span className="lp__theme-label">{theme === 'dark' ? 'Light' : 'Dark'}</span>
+          </button>
+        </div>
+        <div className="lp__heading">
+          <h2 className="lp__title">{t('loginSubtitle') || 'Admin Panel'}</h2>
+          <p className="lp__desc">{t('loginTitle') || 'University Schedule'}</p>
+        </div>
+        <form onSubmit={handleSubmit} className="lp__form" autoComplete="off">
+          <div className="lp__field">
+            <label className="lp__label" htmlFor="lpm-username">{t('username') || 'Username'}</label>
+            <input ref={usernameRef} id="lpm-username" type="text"
+              className="lp__input" value={username}
+              onChange={e => setUsername(e.target.value)}
+              placeholder={t('username') || 'Username'}
+              disabled={loading} autoComplete="off" name="lpm-u" />
+          </div>
+          <div className="lp__field">
+            <label className="lp__label" htmlFor="lpm-password">{t('password') || 'Password'}</label>
+            <div className="lp__pass-wrap">
+              <input ref={passwordRef} id="lpm-password"
+                type={showPass ? 'text' : 'password'}
+                className="lp__input lp__input--pass" value={password}
+                onChange={e => setPassword(e.target.value)}
+                placeholder={t('password') || 'Password'}
+                disabled={loading} autoComplete="new-password" name="lpm-p" />
+              <button type="button" className="lp__eye"
+                onClick={() => setShowPass(v => !v)} tabIndex={-1}>
+                {showPass ? '🙈' : '👁'}
+              </button>
+            </div>
+          </div>
+          {error && <div className="lp__error">{error}</div>}
+          <button type="submit" className="lp__btn" disabled={loading}>
+            {loading ? '⏳' : (t('loginBtn') || 'Login')}
+          </button>
+        </form>
+      </div>
+    );
+  }
 
   return (
     <div className={`lp lp--${theme}`}>
@@ -69,7 +127,7 @@ const Login = ({ onViewAsGuest }) => {
         <aside className="lp__aside">
           <div className="lp__aside-inner">
             <div className="lp__emblem">
-              {/* <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
+              <svg width="60" height="60" viewBox="0 0 60 60" fill="none">
                 <rect width="60" height="60" rx="18" fill="rgba(255,255,255,0.1)"/>
                 <path d="M30 12L46 22V38L30 48L14 38V22L30 12Z"
                   stroke="url(#eg)" strokeWidth="1.8" fill="none"/>
@@ -82,8 +140,7 @@ const Login = ({ onViewAsGuest }) => {
                     <stop offset="1" stopColor="#5eead4"/>
                   </linearGradient>
                 </defs>
-              </svg> */}
-              <img src={logo} alt="University Logo" className="lp__logo" />
+              </svg>
             </div>
             <h1 className="lp__uni-name">
               {t('appTitle') || 'International Ala-Too University'}

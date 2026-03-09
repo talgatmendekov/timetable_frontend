@@ -66,9 +66,10 @@ const AppContent = () => {
   const [feedbackCount,     setFeedbackCount]      = useState(0);
   const [shareToast,        setShareToast]         = useState('');
 
-  // ── NEW: sidebar & login overlay state ────────────────────────────────────
+  // ── NEW: sidebar, login overlay, filters state ──────────────────────────────
   const [sidebarOpen,    setSidebarOpen]    = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [filtersOpen,    setFiltersOpen]    = useState(false);
 
   const fileInputRef = useRef(null);
 
@@ -375,7 +376,9 @@ const AppContent = () => {
 
         {/* ── SCHEDULE (always visible, always on left/main) ── */}
         <div className="app-main">
-          <Header
+          {/* Collapsible filter bar — hidden by default, toggle with Filters button */}
+          <FilterBar
+            open={filtersOpen} onToggle={() => setFiltersOpen(v => !v)}
             selectedDay={selectedDay}           setSelectedDay={setSelectedDay}
             selectedTeacher={selectedTeacher}   setSelectedTeacher={setSelectedTeacher}
             selectedGroup={selectedGroup}       setSelectedGroup={setSelectedGroup}
@@ -383,28 +386,14 @@ const AppContent = () => {
             onExport={isAuthenticated ? handleExport : undefined}
             onImport={isAuthenticated ? handleImportClick : undefined}
             onClearAll={isAuthenticated ? handleClearAll : undefined}
-          />
-
-          {/* Share link strip — admin only */}
-          {isAuthenticated && (
-            <div className="share-strip">
-              <span className="share-strip__label">🔗</span>
-              <span className="share-strip__url">
-                /schedule{selectedGroup ? `/${selectedGroup}` : ''}
-              </span>
-              <button className="share-strip__btn" onClick={handleShare}>
-                Copy Link
-              </button>
-              {shareToast && <span className="share-toast">{shareToast}</span>}
-            </div>
-          )}
-
-          <EmptyRoomPanel
-            allRooms={allRooms}   schedule={schedule}
-            days={days}           timeSlots={timeSlots}
+            allRooms={allRooms} schedule={schedule}
+            days={days} timeSlots={timeSlots}
             selectedRoom={selectedRoom} setSelectedRoom={setSelectedRoom}
+            isAuthenticated={isAuthenticated}
+            handleShare={handleShare} shareToast={shareToast}
           />
 
+          {/* Schedule table — always at top, no scrolling needed */}
           <ScheduleTable
             selectedDay={selectedDay}
             selectedTeacher={selectedTeacher}
@@ -502,6 +491,124 @@ const AppContent = () => {
         <span className="app-author-sep">·</span>
         <span>{new Date().getFullYear()}</span>
       </footer>
+    </div>
+  );
+};
+
+// ── FilterBar — collapsible strip above schedule ────────────────────────────
+const FilterBar = ({
+  open, onToggle,
+  selectedDay, setSelectedDay, selectedTeacher, setSelectedTeacher,
+  selectedGroup, setSelectedGroup, onAddGroup, onExport, onImport, onClearAll,
+  allRooms, schedule, days, timeSlots, selectedRoom, setSelectedRoom,
+  isAuthenticated, handleShare, shareToast,
+}) => {
+  const { t } = useLanguage();
+  const { groups } = useSchedule();
+
+  const hasFilter = selectedDay || selectedTeacher || selectedGroup || selectedRoom;
+
+  return (
+    <div className="filter-bar">
+      {/* Always-visible compact strip */}
+      <div className="filter-bar__strip">
+        <button
+          className={`filter-bar__toggle${open ? ' active' : ''}${hasFilter ? ' has-filter' : ''}`}
+          onClick={onToggle}
+          type="button"
+        >
+          🔍 {t('filters') || 'Filters'}
+          {hasFilter && <span className="filter-bar__dot" />}
+          <span className="filter-bar__arrow">{open ? '▲' : '▼'}</span>
+        </button>
+
+        {/* Quick day pills — always visible */}
+        <div className="filter-bar__days">
+          {days.map(day => (
+            <button
+              key={day}
+              className={`filter-bar__day${selectedDay === day ? ' active' : ''}`}
+              onClick={() => setSelectedDay(selectedDay === day ? '' : day)}
+              type="button"
+            >
+              {day.slice(0, 3)}
+            </button>
+          ))}
+          {selectedDay && (
+            <button className="filter-bar__clear-day" onClick={() => setSelectedDay('')} type="button">✕</button>
+          )}
+        </div>
+
+        {/* Quick group select */}
+        {groups.length > 0 && (
+          <select
+            className="filter-bar__group-select"
+            value={selectedGroup}
+            onChange={e => setSelectedGroup(e.target.value)}
+          >
+            <option value="">{t('allGroups') || 'All groups'}</option>
+            {groups.map(g => <option key={g} value={g}>{g}</option>)}
+          </select>
+        )}
+
+        {/* Admin quick actions */}
+        {isAuthenticated && (
+          <div className="filter-bar__actions">
+            {onAddGroup  && <button className="filter-bar__action" onClick={onAddGroup}  type="button">+ {t('addGroup') || 'Group'}</button>}
+            {onExport    && <button className="filter-bar__action" onClick={onExport}    type="button">⬇ {t('export') || 'Export'}</button>}
+            {onImport    && <button className="filter-bar__action" onClick={onImport}    type="button">⬆ {t('import') || 'Import'}</button>}
+            {onClearAll  && <button className="filter-bar__action filter-bar__action--danger" onClick={onClearAll} type="button">🗑 {t('clearAll') || 'Clear'}</button>}
+            <button className="filter-bar__action" onClick={handleShare} type="button">🔗 {t('share') || 'Share'}</button>
+            {shareToast && <span className="share-toast">{shareToast}</span>}
+          </div>
+        )}
+      </div>
+
+      {/* Expandable advanced filters */}
+      {open && (
+        <div className="filter-bar__expanded">
+          <div className="filter-bar__row">
+            <div className="filter-bar__field">
+              <label className="filter-bar__label">{t('filterTeacher') || 'Teacher'}</label>
+              <input
+                className="filter-bar__input"
+                type="text"
+                placeholder={t('filterTeacher') || 'Filter by teacher…'}
+                value={selectedTeacher}
+                onChange={e => setSelectedTeacher(e.target.value)}
+                autoComplete="off"
+              />
+            </div>
+            {allRooms.length > 0 && (
+              <div className="filter-bar__field">
+                <label className="filter-bar__label">{t('filterRoom') || 'Room'}</label>
+                <select
+                  className="filter-bar__input"
+                  value={selectedRoom}
+                  onChange={e => setSelectedRoom(e.target.value)}
+                >
+                  <option value="">{t('allRooms') || 'All rooms'}</option>
+                  {allRooms.map(r => <option key={r} value={r}>{r}</option>)}
+                </select>
+              </div>
+            )}
+            {(selectedTeacher || selectedRoom) && (
+              <button
+                className="filter-bar__clear"
+                onClick={() => { setSelectedTeacher(''); setSelectedRoom(''); }}
+                type="button"
+              >
+                ✕ {t('clearFilters') || 'Clear filters'}
+              </button>
+            )}
+          </div>
+          <EmptyRoomPanel
+            allRooms={allRooms} schedule={schedule}
+            days={days} timeSlots={timeSlots}
+            selectedRoom={selectedRoom} setSelectedRoom={setSelectedRoom}
+          />
+        </div>
+      )}
     </div>
   );
 };
