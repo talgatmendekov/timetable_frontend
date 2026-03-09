@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ScheduleProvider, useSchedule } from './context/ScheduleContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 
-// ── Components ──────────────────────────────────────────────────────────────
+// ── Components ────────────────────────────────────────────────────────────────
 import Login                     from './components/Login';
 import Header                    from './components/Header';
 import ScheduleTable             from './components/ScheduleTable';
@@ -21,14 +21,13 @@ import AutoScheduler             from './components/AutoScheduler';
 import ExamSchedule              from './components/ExamSchedule';
 import FeedbackDashboard         from './components/FeedbackDashboard';
 
-// ── Utils ───────────────────────────────────────────────────────────────────
+// ── Utils ─────────────────────────────────────────────────────────────────────
 import { exportToExcel, importFromExcel } from './utils/excelUtils';
 import { parseAlatooSchedule }            from './utils/alatooimport';
 import * as XLSX from 'xlsx';
 
 import './App.css';
 
-// ── Constants ────────────────────────────────────────────────────────────────
 const API_URL    = process.env.REACT_APP_API_URL    || 'https://timetablebackend-production.up.railway.app/api';
 const PUBLIC_URL = process.env.REACT_APP_BACKEND_URL || 'https://timetablebackend-production.up.railway.app';
 
@@ -39,11 +38,11 @@ const getTodayScheduleDay = () => {
   return scheduleDays.includes(today) ? today : 'Monday';
 };
 
-// ────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 // AppContent
-// ────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 const AppContent = () => {
-  const { isAuthenticated, loading: authLoading } = useAuth();
+  const { isAuthenticated, loading: authLoading, logout } = useAuth();
   const {
     addGroup, clearSchedule, importSchedule, deleteGroup,
     schedule, groups, timeSlots, days,
@@ -51,9 +50,8 @@ const AppContent = () => {
   } = useSchedule();
   const { t } = useLanguage();
 
-  // ── State ─────────────────────────────────────────────────────────────────
-  const [guestMode,         setGuestMode]         = useState(false);
-  const [activeTab,         setActiveTab]          = useState('schedule');
+  // ── State ──────────────────────────────────────────────────────────────────
+  const [activeTab,         setActiveTab]         = useState('schedule');
   const [selectedDay,       setSelectedDay]        = useState(getTodayScheduleDay);
   const [selectedTeacher,   setSelectedTeacher]    = useState('');
   const [selectedGroup,     setSelectedGroup]      = useState('');
@@ -65,28 +63,32 @@ const AppContent = () => {
   const [guestBookCell,     setGuestBookCell]      = useState(null);
   const [activeBookings,    setActiveBookings]     = useState([]);
   const [showExamsToGuests, setShowExamsToGuests]  = useState(false);
-  const [feedbackCount,      setFeedbackCount]       = useState(0);
-  const [shareToast,         setShareToast]          = useState('');
+  const [feedbackCount,     setFeedbackCount]      = useState(0);
+  const [shareToast,        setShareToast]         = useState('');
+
+  // ── NEW: sidebar & login overlay state ────────────────────────────────────
+  const [sidebarOpen,    setSidebarOpen]    = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
 
   const fileInputRef = useRef(null);
 
-  // ── Auto-select today ─────────────────────────────────────────────────────
+  // ── Auto-select today ──────────────────────────────────────────────────────
   React.useEffect(() => {
     const today = getTodayScheduleDay();
     if (today && days.includes(today)) setSelectedDay(today);
   }, [days]);
 
-  // ── All rooms from schedule ───────────────────────────────────────────────
+  // ── All rooms ──────────────────────────────────────────────────────────────
   const allRooms = React.useMemo(() => {
     const rooms = new Set();
     Object.values(schedule).forEach(e => { if (e.room) rooms.add(e.room); });
     return [...rooms].sort();
   }, [schedule]);
 
-  // ── Fetch unread feedback badge count ─────────────────────────────────────
+  // ── Feedback badge ─────────────────────────────────────────────────────────
   const fetchFeedbackCount = React.useCallback(async () => {
     try {
-      const token = localStorage.getItem('token') || localStorage.getItem('scheduleToken') || '';
+      const token = localStorage.getItem('scheduleToken') || '';
       if (!token || !isAuthenticated) return;
       const r = await fetch(`${API_URL}/feedback/stats`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -94,13 +96,13 @@ const AppContent = () => {
       const d = await r.json();
       if (d.success) setFeedbackCount(d.unread || 0);
     } catch { /* ignore */ }
-  }, []);
+  }, [isAuthenticated]);
 
   React.useEffect(() => {
     if (isAuthenticated) fetchFeedbackCount();
   }, [fetchFeedbackCount, isAuthenticated]);
 
-  // ── Fetch exam-guest setting ──────────────────────────────────────────────
+  // ── Exam setting ───────────────────────────────────────────────────────────
   const fetchExamSetting = React.useCallback(async () => {
     try {
       const r = await fetch(`${API_URL}/settings/show_exams_to_guests`);
@@ -111,7 +113,7 @@ const AppContent = () => {
 
   React.useEffect(() => { fetchExamSetting(); }, [fetchExamSetting]);
 
-  // ── Fetch bookings ────────────────────────────────────────────────────────
+  // ── Bookings ───────────────────────────────────────────────────────────────
   const fetchActiveBookings = React.useCallback(() => {
     const token = localStorage.getItem('scheduleToken') || '';
     fetch(`${API_URL}/booking-requests`, {
@@ -124,7 +126,7 @@ const AppContent = () => {
 
   React.useEffect(() => { fetchActiveBookings(); }, [fetchActiveBookings]);
 
-  // ── Conflict count for badge ──────────────────────────────────────────────
+  // ── Conflict count ─────────────────────────────────────────────────────────
   const conflictCount = React.useMemo(() => {
     const entries = Object.values(schedule);
     let count = 0;
@@ -149,7 +151,7 @@ const AppContent = () => {
     return count;
   }, [schedule, days, timeSlots]);
 
-  // ── Modal handlers ────────────────────────────────────────────────────────
+  // ── Modal handlers ─────────────────────────────────────────────────────────
   const handleEditClass  = (group, day, time) => { setCurrentCell({ group, day, time }); setModalOpen(true); };
   const handleCloseModal = () => { setModalOpen(false); setCurrentCell({ group: null, day: null, time: null }); };
   const handleJumpToCell = (group, day, time) => {
@@ -159,7 +161,7 @@ const AppContent = () => {
     setTimeout(() => { setCurrentCell({ group, day, time }); setModalOpen(true); }, 150);
   };
 
-  // ── Group handlers ────────────────────────────────────────────────────────
+  // ── Group handlers ─────────────────────────────────────────────────────────
   const handleAddGroup = () => {
     const name = prompt(t('enterGroupName'));
     if (name?.trim()) addGroup(name.trim());
@@ -170,7 +172,7 @@ const AppContent = () => {
     setActiveBookings(prev => prev.filter(b => b.entity !== groupName && b.name !== groupName));
   };
 
-  // ── Share public link ─────────────────────────────────────────────────────
+  // ── Share ──────────────────────────────────────────────────────────────────
   const handleShare = () => {
     const group = selectedGroup || (groups.length > 0 ? groups[0] : '');
     const url   = group
@@ -179,12 +181,10 @@ const AppContent = () => {
     navigator.clipboard?.writeText(url).then(() => {
       setShareToast(`✓ Copied: /schedule/${group || ''}`);
       setTimeout(() => setShareToast(''), 2500);
-    }).catch(() => {
-      prompt('Copy this link:', url);
-    });
+    }).catch(() => { prompt('Copy this link:', url); });
   };
 
-  // ── Export ────────────────────────────────────────────────────────────────
+  // ── Export / Import ────────────────────────────────────────────────────────
   const handleExport = async () => {
     try {
       await exportToExcel(groups, schedule, timeSlots, days,
@@ -192,7 +192,6 @@ const AppContent = () => {
     } catch (err) { alert(`Export failed: ${err.message}`); }
   };
 
-  // ── Import ────────────────────────────────────────────────────────────────
   const handleImportClick = () => fileInputRef.current?.click();
 
   const handleFileChange = async (e) => {
@@ -200,7 +199,6 @@ const AppContent = () => {
     if (!file) return;
     setImporting(true);
     try {
-      // 1. Try Alatoo format
       try {
         const parsed = await parseAlatooSchedule(file);
         if (parsed?.length > 0) {
@@ -212,7 +210,6 @@ const AppContent = () => {
         }
         throw new Error('No classes found');
       } catch {
-        // 2. Fallback: generic Excel
         const result = await importFromExcel(file);
         if (result.success) {
           const res = await importSchedule(JSON.stringify({ groups: result.groups, schedule: result.schedule }));
@@ -220,7 +217,6 @@ const AppContent = () => {
             ? `✅ Imported ${result.groups.length} groups, ${Object.keys(result.schedule).length} classes.`
             : `❌ Import failed: ${res.error}`);
         } else {
-          // Debug: log file structure to console
           const reader = new FileReader();
           reader.onload = ev => {
             try {
@@ -240,12 +236,29 @@ const AppContent = () => {
     }
   };
 
-  // ── Clear all ─────────────────────────────────────────────────────────────
   const handleClearAll = () => {
     if (window.confirm(t('confirmClearAll'))) clearSchedule();
   };
 
-  // ── Auth gates ────────────────────────────────────────────────────────────
+  // ── Admin sidebar tabs ─────────────────────────────────────────────────────
+  const adminTabs = [
+    { id: 'print',     icon: '🖨️', label: t('tabPrint')     || 'Print / PDF'   },
+    { id: 'dashboard', icon: '📊', label: t('tabDashboard') || 'Teacher Stats'  },
+    { id: 'conflicts', icon: '⚠️',  label: t('tabConflicts') || 'Conflicts', badge: conflictCount },
+    { id: 'bookings',  icon: '🏫', label: t('tabBookings')  || 'Lab Bookings'   },
+    { id: 'autosched', icon: '🤖', label: t('tabAutoSched') || 'Auto Schedule'  },
+    { id: 'exams',     icon: '🗓', label: t('tabExams')     || 'Exam Schedule'  },
+    { id: 'feedback',  icon: '💬', label: t('tabFeedback')  || 'Feedback', badge: feedbackCount },
+    { id: 'telegram',  icon: '📱', label: t('tabTelegram')  || 'Telegram'       },
+  ];
+
+  const guestTabs = [
+    { id: 'mybookings', icon: '📋', label: t('tabMyBookings') || 'My Bookings' },
+    ...(showExamsToGuests ? [{ id: 'exams', icon: '🗓', label: t('tabExams') || 'Exam Schedule' }] : []),
+    { id: 'feedback',   icon: '💬', label: t('tabFeedback')   || 'Feedback'    },
+  ];
+
+  // ── Auth loading ───────────────────────────────────────────────────────────
   if (authLoading) {
     return (
       <div className="app-loading">
@@ -255,35 +268,23 @@ const AppContent = () => {
     );
   }
 
-  if (!isAuthenticated && !guestMode) {
-    return <Login onViewAsGuest={() => setGuestMode(true)} />;
-  }
+  // ── LOGIN MODAL (shown over schedule, not instead of it) ───────────────────
+  const LoginModal = () => (
+    <div className="login-modal-overlay" onClick={(e) => {
+      if (e.target.classList.contains('login-modal-overlay')) setShowLoginModal(false);
+    }}>
+      <div className="login-modal-box">
+        <button className="login-modal-close" onClick={() => setShowLoginModal(false)}>✕</button>
+        <Login onViewAsGuest={null} isModal={true} onSuccess={() => setShowLoginModal(false)} />
+      </div>
+    </div>
+  );
 
-  // ── Tabs ──────────────────────────────────────────────────────────────────
-  const tabs = [
-    { id: 'schedule',  icon: '📅', label: t('tabSchedule')  || 'Schedule' },
+  // ── Main render — schedule always visible ──────────────────────────────────
+  const showSidebar  = sidebarOpen && (isAuthenticated || !isAuthenticated);
+  const sidebarTabs  = isAuthenticated ? adminTabs : guestTabs;
+  const isInSidebar  = activeTab !== 'schedule';
 
-    // Guest-only
-    ...(!isAuthenticated ? [
-      { id: 'mybookings', icon: '📋', label: t('tabMyBookings') || 'My Bookings' },
-      ...(showExamsToGuests ? [{ id: 'exams', icon: '🗓', label: t('tabExams') || 'Exam Schedule' }] : []),
-      { id: 'feedback',   icon: '💬', label: t('tabFeedback') || 'Feedback' },
-    ] : []),
-
-    // Admin-only
-    ...(isAuthenticated ? [
-      { id: 'print',     icon: '🖨️', label: t('tabPrint')     || 'Print / PDF'  },
-      { id: 'dashboard', icon: '📊', label: t('tabDashboard') || 'Teacher Stats' },
-      { id: 'conflicts', icon: '⚠️',  label: t('tabConflicts') || 'Conflicts',    badge: conflictCount },
-      { id: 'bookings',  icon: '🏫', label: t('tabBookings')  || 'Lab Bookings' },
-      { id: 'autosched', icon: '🤖', label: t('tabAutoSched')  || 'Auto Schedule' },
-      { id: 'exams',     icon: '🗓', label: t('tabExams')      || 'Exam Schedule' },
-      { id: 'feedback',  icon: '💬', label: t('tabFeedback')   || 'Feedback', badge: feedbackCount },
-      { id: 'telegram',  icon: '📱', label: t('tabTelegram')  || 'Telegram'      },
-    ] : []),
-  ];
-
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="app">
 
@@ -313,135 +314,180 @@ const AppContent = () => {
         </div>
       )}
 
-      {/* Header */}
-      <Header
-        selectedDay={selectedDay}           setSelectedDay={setSelectedDay}
-        selectedTeacher={selectedTeacher}   setSelectedTeacher={setSelectedTeacher}
-        selectedGroup={selectedGroup}       setSelectedGroup={setSelectedGroup}
-        onAddGroup={handleAddGroup}
-        onExport={handleExport}
-        onImport={handleImportClick}
-        onClearAll={handleClearAll}
-      />
-
-      {/* Share public schedule button — admin only */}
-      {isAuthenticated && (
-        <div style={{ padding:'6px 16px', background:'#f8fafc', borderBottom:'1px solid #e8ecf2', display:'flex', alignItems:'center', gap:10 }}>
-          <span style={{ fontSize:'.75rem', color:'#94a3b8', fontWeight:600 }}>🔗 Public link:</span>
-          <span style={{ fontSize:'.75rem', color:'#6366f1', fontFamily:'monospace' }}>
-            /schedule{selectedGroup ? `/${selectedGroup}` : ''}
+      {/* ── TOP BAR ── */}
+      <div className="app-topbar">
+        <div className="app-topbar-left">
+          <span className="app-topbar-logo">🏛</span>
+          <span className="app-topbar-title">
+            {t('appTitle') || 'Alatoo University'}
           </span>
-          <button
-            onClick={handleShare}
-            style={{
-              padding:'4px 12px', background:'#6366f1', color:'#fff',
-              border:'none', borderRadius:7, fontSize:'.72rem', fontWeight:700,
-              cursor:'pointer', fontFamily:'inherit',
-            }}
-          >
-            Copy Link
-          </button>
         </div>
-      )}
 
-      {/* Guest booking */}
-      {!isAuthenticated && (
-        <>
-          <button onClick={() => setShowBooking(true)} className="btn btn-primary">
-            🏫 {t('bookLab') || 'Book a Lab'}
-          </button>
-          <GuestBooking
-            isOpen={showBooking || !!guestBookCell}
-            prefilledGroup={guestBookCell?.group || ''}
-            prefilledDay={guestBookCell?.day   || ''}
-            prefilledTime={guestBookCell?.time  || ''}
-            onClose={() => { setShowBooking(false); setGuestBookCell(null); }}
-            onBooked={() => { setGuestBookCell(null); setShowBooking(false); fetchActiveBookings(); }}
-          />
-        </>
-      )}
+        <div className="app-topbar-right">
+          {/* Language switcher */}
+          <LanguageSwitcher />
 
-      {/* Tab bar */}
-      <div className="tab-bar">
-        {tabs.map(tab => (
+          {/* Guest booking button */}
+          {!isAuthenticated && (
+            <button className="topbar-btn topbar-btn--outline"
+              onClick={() => setShowBooking(true)}>
+              🏫 {t('bookLab') || 'Book Lab'}
+            </button>
+          )}
+
+          {/* Sidebar toggle — shows all extra features */}
           <button
-            key={tab.id}
-            className={`tab-btn ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
+            className={`topbar-btn topbar-btn--tools${sidebarOpen ? ' active' : ''}`}
+            onClick={() => setSidebarOpen(v => !v)}
+            title="Tools & Features"
           >
-            <span className="tab-icon">{tab.icon}</span>
-            <span className="tab-label">{tab.label}</span>
-            {tab.badge > 0 && <span className="tab-badge tab-badge-warn">{tab.badge}</span>}
+            ☰ {t('tools') || 'Tools'}
+            {(conflictCount > 0 || feedbackCount > 0) && (
+              <span className="topbar-badge">{conflictCount + feedbackCount}</span>
+            )}
           </button>
-        ))}
+
+          {/* Admin / Login button */}
+          {isAuthenticated ? (
+            <button className="topbar-btn topbar-btn--admin"
+              onClick={() => { setSidebarOpen(true); }}>
+              ⚙️ {t('admin') || 'Admin'}
+            </button>
+          ) : (
+            <button className="topbar-btn topbar-btn--login"
+              onClick={() => setShowLoginModal(true)}>
+              🔐 {t('loginBtn') || 'Admin Login'}
+            </button>
+          )}
+
+          {/* Logout — admin only */}
+          {isAuthenticated && (
+            <button className="topbar-btn topbar-btn--logout"
+              onClick={() => { logout(); setSidebarOpen(false); setActiveTab('schedule'); }}>
+              ↩ {t('logout') || 'Logout'}
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Tab content */}
-      <div className="tab-content">
+      {/* ── MAIN LAYOUT ── */}
+      <div className={`app-layout${showSidebar ? ' app-layout--sidebar' : ''}`}>
 
-        {/* 📅 Schedule */}
-        {activeTab === 'schedule' && (
-          <>
-            <EmptyRoomPanel
-              allRooms={allRooms}   schedule={schedule}
-              days={days}           timeSlots={timeSlots}
-              selectedRoom={selectedRoom} setSelectedRoom={setSelectedRoom}
-            />
-            <ScheduleTable
-              selectedDay={selectedDay}
-              selectedTeacher={selectedTeacher}
-              selectedGroup={selectedGroup}
-              selectedRoom={selectedRoom}
-              onEditClass={handleEditClass}
-              onDeleteGroup={handleDeleteGroup}
-              bookings={activeBookings}
-              onGuestBookCell={(group, day, time) => setGuestBookCell({ group, day, time })}
-            />
-          </>
-        )}
-
-        {/* 📋 Guest: My Bookings */}
-        {activeTab === 'mybookings' && (
-          <GuestBookingStatus bookings={activeBookings} onRefresh={setActiveBookings} />
-        )}
-
-        {/* 🖨️ Print / PDF */}
-        {activeTab === 'print'     && <PrintView />}
-
-        {/* 📊 Teacher Stats */}
-        {activeTab === 'dashboard' && <TeacherDashboard />}
-
-        {/* ⚠️ Conflicts */}
-        {activeTab === 'conflicts' && <ConflictPage onJumpToCell={handleJumpToCell} />}
-
-        {/* 🏫 Lab Bookings */}
-        {activeTab === 'bookings'  && <BookingManagement />}
-
-        {/* 🤖 Auto Schedule Generator */}
-        {activeTab === 'autosched' && <AutoScheduler />}
-
-        {/* 🗓 Exam Schedule (admin full / guest read-only) */}
-        {activeTab === 'exams' && (
-          <ExamSchedule
-            readOnly={!isAuthenticated}
-            showExamsToGuests={showExamsToGuests}
-            setShowExamsToGuests={setShowExamsToGuests}
+        {/* ── SCHEDULE (always visible, always on left/main) ── */}
+        <div className="app-main">
+          <Header
+            selectedDay={selectedDay}           setSelectedDay={setSelectedDay}
+            selectedTeacher={selectedTeacher}   setSelectedTeacher={setSelectedTeacher}
+            selectedGroup={selectedGroup}       setSelectedGroup={setSelectedGroup}
+            onAddGroup={isAuthenticated ? handleAddGroup : undefined}
+            onExport={isAuthenticated ? handleExport : undefined}
+            onImport={isAuthenticated ? handleImportClick : undefined}
+            onClearAll={isAuthenticated ? handleClearAll : undefined}
           />
+
+          {/* Share link strip — admin only */}
+          {isAuthenticated && (
+            <div className="share-strip">
+              <span className="share-strip__label">🔗</span>
+              <span className="share-strip__url">
+                /schedule{selectedGroup ? `/${selectedGroup}` : ''}
+              </span>
+              <button className="share-strip__btn" onClick={handleShare}>
+                Copy Link
+              </button>
+              {shareToast && <span className="share-toast">{shareToast}</span>}
+            </div>
+          )}
+
+          <EmptyRoomPanel
+            allRooms={allRooms}   schedule={schedule}
+            days={days}           timeSlots={timeSlots}
+            selectedRoom={selectedRoom} setSelectedRoom={setSelectedRoom}
+          />
+
+          <ScheduleTable
+            selectedDay={selectedDay}
+            selectedTeacher={selectedTeacher}
+            selectedGroup={selectedGroup}
+            selectedRoom={selectedRoom}
+            onEditClass={isAuthenticated ? handleEditClass : undefined}
+            onDeleteGroup={isAuthenticated ? handleDeleteGroup : undefined}
+            bookings={activeBookings}
+            onGuestBookCell={(group, day, time) => setGuestBookCell({ group, day, time })}
+          />
+        </div>
+
+        {/* ── SIDEBAR (slides in from right) ── */}
+        {showSidebar && (
+          <aside className="app-sidebar">
+            <div className="sidebar-header">
+              <span className="sidebar-title">
+                {isAuthenticated ? `⚙️ ${t('admin') || 'Admin Panel'}` : `📋 ${t('tools') || 'Tools'}`}
+              </span>
+              <button className="sidebar-close" onClick={() => { setSidebarOpen(false); setActiveTab('schedule'); }}>
+                ✕
+              </button>
+            </div>
+
+            {/* Sidebar nav */}
+            <nav className="sidebar-nav">
+              {sidebarTabs.map(tab => (
+                <button
+                  key={tab.id}
+                  className={`sidebar-nav-btn${activeTab === tab.id ? ' active' : ''}`}
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  <span className="sidebar-nav-icon">{tab.icon}</span>
+                  <span className="sidebar-nav-label">{tab.label}</span>
+                  {tab.badge > 0 && <span className="sidebar-badge">{tab.badge}</span>}
+                </button>
+              ))}
+            </nav>
+
+            {/* Sidebar content */}
+            <div className="sidebar-content">
+              {activeTab === 'mybookings' && (
+                <GuestBookingStatus bookings={activeBookings} onRefresh={setActiveBookings} />
+              )}
+              {activeTab === 'print'     && <PrintView />}
+              {activeTab === 'dashboard' && <TeacherDashboard />}
+              {activeTab === 'conflicts' && <ConflictPage onJumpToCell={handleJumpToCell} />}
+              {activeTab === 'bookings'  && <BookingManagement />}
+              {activeTab === 'autosched' && <AutoScheduler />}
+              {activeTab === 'exams' && (
+                <ExamSchedule
+                  readOnly={!isAuthenticated}
+                  showExamsToGuests={showExamsToGuests}
+                  setShowExamsToGuests={setShowExamsToGuests}
+                />
+              )}
+              {activeTab === 'feedback' && (
+                isAuthenticated
+                  ? <FeedbackDashboard />
+                  : <FeedbackDashboard guestMode={true} schedule={schedule} groups={groups} />
+              )}
+              {activeTab === 'telegram' && <TeacherTelegramManagement />}
+            </div>
+          </aside>
         )}
-
-        {/* 💬 Feedback — admin sees dashboard, guest sees submit form */}
-        {activeTab === 'feedback'  && (
-          isAuthenticated
-            ? <FeedbackDashboard />
-            : <FeedbackDashboard guestMode={true} schedule={schedule} groups={groups} />
-        )}
-
-        {/* 📱 Telegram */}
-        {activeTab === 'telegram'  && <TeacherTelegramManagement />}
-
       </div>
 
-      {/* Class modal */}
+      {/* ── GUEST BOOKING MODAL ── */}
+      {!isAuthenticated && (
+        <GuestBooking
+          isOpen={showBooking || !!guestBookCell}
+          prefilledGroup={guestBookCell?.group || ''}
+          prefilledDay={guestBookCell?.day   || ''}
+          prefilledTime={guestBookCell?.time  || ''}
+          onClose={() => { setShowBooking(false); setGuestBookCell(null); }}
+          onBooked={() => { setGuestBookCell(null); setShowBooking(false); fetchActiveBookings(); }}
+        />
+      )}
+
+      {/* ── LOGIN MODAL ── */}
+      {showLoginModal && !isAuthenticated && <LoginModal />}
+
+      {/* ── CLASS MODAL ── */}
       <ClassModal
         isOpen={modalOpen} onClose={handleCloseModal}
         group={currentCell.group} day={currentCell.day} time={currentCell.time}
@@ -456,7 +502,24 @@ const AppContent = () => {
         <span className="app-author-sep">·</span>
         <span>{new Date().getFullYear()}</span>
       </footer>
+    </div>
+  );
+};
 
+// ── Language switcher inline component ────────────────────────────────────────
+const LanguageSwitcher = () => {
+  const { lang, changeLang } = useLanguage();
+  return (
+    <div className="lang-switcher">
+      {['en','ru','ky'].map(l => (
+        <button key={l}
+          className={`lang-switcher__btn${lang === l ? ' active' : ''}`}
+          onClick={() => changeLang(l)}
+          type="button"
+        >
+          {l.toUpperCase()}
+        </button>
+      ))}
     </div>
   );
 };
