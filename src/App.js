@@ -37,6 +37,12 @@ const getTodayScheduleDay = () => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Set light mode as default on first visit
+if (!localStorage.getItem('scheduleTheme')) {
+  localStorage.setItem('scheduleTheme', 'light');
+  document.body.setAttribute('data-theme', 'light');
+}
+
 const AppContent = () => {
   const { isAuthenticated, loading: authLoading, logout } = useAuth();
   const {
@@ -61,7 +67,6 @@ const AppContent = () => {
   const [showExamsToGuests, setShowExamsToGuests] = useState(false);
   const [feedbackCount,     setFeedbackCount]     = useState(0);
   const [shareToast,        setShareToast]        = useState('');
-  const [headerOpen,        setHeaderOpen]        = useState(false);
 
   const fileInputRef = useRef(null);
 
@@ -235,7 +240,7 @@ const AppContent = () => {
 
         {/* ── LEFT: 58px sticky icon nav ── */}
         <div style={{
-          width: 58, flexShrink: 0,
+          width: 66, flexShrink: 0,
           background: 'var(--bg-card)',
           borderRight: '1px solid var(--border)',
           display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -250,16 +255,18 @@ const AppContent = () => {
                 onClick={() => setActiveView(tab.id)}
                 title={tab.label}
                 style={{
-                  width:42, height:42, borderRadius:11, flexShrink:0,
+                  width:52, minHeight:52, borderRadius:11, flexShrink:0,
                   border: activeView===tab.id ? '2px solid var(--primary)' : '1px solid var(--border)',
                   background: activeView===tab.id ? 'var(--primary)' : 'transparent',
                   color: activeView===tab.id ? '#fff' : 'var(--text-secondary)',
-                  fontSize:'1.1rem', cursor:'pointer',
-                  display:'flex', alignItems:'center', justifyContent:'center',
+                  fontSize:'0.95rem', cursor:'pointer',
+                  display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+                  gap:2, padding:'6px 2px',
                   position:'relative', transition:'all 0.15s',
                 }}
               >
-                {tab.icon}
+                <span style={{ fontSize:'1.1rem', lineHeight:1 }}>{tab.icon}</span>
+                <span style={{ fontSize:'0.48rem', fontWeight:700, lineHeight:1, textAlign:'center', letterSpacing:'0.02em', whiteSpace:'nowrap', overflow:'hidden', maxWidth:50, textOverflow:'ellipsis' }}>{tab.label}</span>
                 {tab.badge > 0 && (
                   <span style={{ position:'absolute', top:2, right:2, background:'#ef4444', color:'#fff', fontSize:'0.5rem', fontWeight:800, borderRadius:10, padding:'1px 3px', minWidth:13, textAlign:'center', lineHeight:1.4 }}>{tab.badge}</span>
                 )}
@@ -272,53 +279,35 @@ const AppContent = () => {
           {/* Guest: book lab */}
           {!isAuthenticated && (
             <button onClick={() => setShowBooking(true)} title={t('bookLab')||'Book a Lab'}
-              style={{ width:42, height:42, borderRadius:11, border:'1px solid var(--border)', background:'transparent', color:'var(--text-secondary)', fontSize:'1.1rem', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.15s', flexShrink:0 }}
-            >🏫</button>
+              style={{ width:52, minHeight:52, borderRadius:11, border:'1px solid var(--border)', background:'transparent', color:'var(--text-secondary)', fontSize:'1.1rem', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:2, padding:'6px 2px', transition:'all 0.15s', flexShrink:0 }}
+            ><span style={{fontSize:'1.1rem',lineHeight:1}}>🏫</span><span style={{fontSize:'0.48rem',fontWeight:700,marginTop:2}}>{t('bookLab')||'Book Lab'}</span></button>
           )}
 
           {/* Admin share */}
           {isAuthenticated && (
             <button onClick={handleShare} title="Share public link"
               style={{ width:42, height:42, borderRadius:11, border:'1px solid var(--border)', background:'transparent', color: shareToast ? '#10b981' : 'var(--text-secondary)', fontSize:'1.1rem', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.15s', flexShrink:0 }}
-            >🔗</button>
+            ><span style={{fontSize:'1.1rem',lineHeight:1}}>🔗</span><span style={{fontSize:'0.48rem',fontWeight:700,marginTop:2}}>Share</span></button>
           )}
 
           {/* Login / Logout */}
           {!isAuthenticated ? (
             <button onClick={() => setShowLoginModal(true)} title="Admin Login"
-              style={{ width:42, height:42, borderRadius:11, border:'1px solid var(--border)', background:'transparent', color:'var(--text-secondary)', fontSize:'1.1rem', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.15s', flexShrink:0 }}
-            >🔐</button>
+              style={{ width:52, minHeight:52, borderRadius:11, border:'1px solid var(--border)', background:'transparent', color:'var(--text-secondary)', fontSize:'1.1rem', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:2, padding:'6px 2px', transition:'all 0.15s', flexShrink:0 }}
+            ><span style={{fontSize:'1.1rem',lineHeight:1}}>🔐</span><span style={{fontSize:'0.48rem',fontWeight:700,marginTop:2}}>Login</span></button>
           ) : (
             <button onClick={() => { logout(); setActiveView('schedule'); }} title={t('logout')||'Logout'}
-              style={{ width:42, height:42, borderRadius:11, border:'1px solid var(--border)', background:'transparent', color:'#ef4444', fontSize:'1.1rem', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.15s', flexShrink:0 }}
-            >↩</button>
+              style={{ width:52, minHeight:52, borderRadius:11, border:'1px solid var(--border)', background:'transparent', color:'#ef4444', fontSize:'1.1rem', cursor:'pointer', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:2, padding:'6px 2px', transition:'all 0.15s', flexShrink:0 }}
+            ><span style={{fontSize:'1.1rem',lineHeight:1}}>↩</span><span style={{fontSize:'0.48rem',fontWeight:700,marginTop:2}}>Logout</span></button>
           )}
 
-          {/* Filters toggle — opens the Header as a dropdown panel */}
-          <button
-            onClick={() => setHeaderOpen(o => !o)}
-            title="Filters & Settings"
-            style={{
-              width:42, height:42, borderRadius:11, flexShrink:0,
-              border: headerOpen ? '2px solid var(--primary)' : '1px solid var(--border)',
-              background: headerOpen ? 'var(--primary)' : 'transparent',
-              color: headerOpen ? '#fff' : 'var(--text-secondary)',
-              fontSize:'1.1rem', cursor:'pointer',
-              display:'flex', alignItems:'center', justifyContent:'center',
-              transition:'all 0.15s',
-            }}
-          >⚙️</button>
         </div>
 
         {/* ── RIGHT: full content column ── */}
         <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column' }}>
 
-          {/* ── COLLAPSIBLE HEADER PANEL ──
-              Hidden by default. ⚙️ button toggles it open.
-              Uses the real Header component — completely unchanged.
-          ── */}
-          {headerOpen && (
-            <div style={{ padding:'0 20px' }}>
+          {/* Filters always visible — hides the branding top row, shows only controls */}
+          <div style={{ padding:'0 20px' }} className="app-filters-only">
               <Header
                 selectedDay={selectedDay}            setSelectedDay={setSelectedDay}
                 selectedTeacher={selectedTeacher}    setSelectedTeacher={setSelectedTeacher}
@@ -329,7 +318,6 @@ const AppContent = () => {
                 onClearAll={isAuthenticated? handleClearAll     : undefined}
               />
             </div>
-          )}
 
           {/* ── CONTENT — schedule or any feature tab ── */}
           <div style={{ flex:1, padding:'12px 20px' }}>
@@ -376,6 +364,13 @@ const AppContent = () => {
         />
       )}
 
+      <style>{`
+        @keyframes sbIn { from { opacity:0; transform:translateX(16px); } to { opacity:1; transform:translateX(0); } }
+        @keyframes fadeInOverlay { from { opacity:0; } to { opacity:1; } }
+        .app-filters-only .header-top { display: none !important; }
+        .app-filters-only .header { margin-bottom: 8px; padding: 12px 20px; }
+        .app-filters-only .today-banner { margin-top: 8px; }
+      `}</style>
       <ClassModal isOpen={modalOpen} onClose={handleCloseModal} group={currentCell.group} day={currentCell.day} time={currentCell.time} />
 
       <footer className="app-author-credit">
