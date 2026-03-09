@@ -276,7 +276,7 @@ const AppContent = () => {
     }}>
       <div className="login-modal-box">
         <button className="login-modal-close" onClick={() => setShowLoginModal(false)}>✕</button>
-        <Login onViewAsGuest={null} isModal={true} onSuccess={() => setShowLoginModal(false)} />
+        <Login onViewAsGuest={null} onSuccess={() => setShowLoginModal(false)} />
       </div>
     </div>
   );

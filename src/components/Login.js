@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import './Login.css';
 
-const Login = ({ onViewAsGuest, isModal = false, onSuccess }) => {
+const Login = ({ onViewAsGuest, onSuccess }) => {
   const { login } = useAuth();
   const { t, lang, changeLang } = useLanguage(); // ← correct names from LanguageContext
 
@@ -53,63 +53,6 @@ const Login = ({ onViewAsGuest, isModal = false, onSuccess }) => {
     { code: 'ru', label: 'RU' },
     { code: 'ky', label: 'KY' },
   ];
-
-  // In modal mode — show only the compact form card, no split-screen
-  if (isModal) {
-    return (
-      <div className={`lp-modal lp--${theme}`}>
-        <div className="lp__topbar">
-          <div className="lp__langs">
-            {LANGS.map(l => (
-              <button key={l.code} type="button"
-                className={`lp__lang${lang === l.code ? ' lp__lang--on' : ''}`}
-                onClick={() => changeLang(l.code)}>
-                {l.label}
-              </button>
-            ))}
-          </div>
-          <button type="button" className="lp__theme-toggle"
-            onClick={() => setTheme(v => v === 'dark' ? 'light' : 'dark')}>
-            <span className="lp__theme-emoji">{theme === 'dark' ? '☀️' : '🌙'}</span>
-            <span className="lp__theme-label">{theme === 'dark' ? 'Light' : 'Dark'}</span>
-          </button>
-        </div>
-        <div className="lp__heading">
-          <h2 className="lp__title">{t('loginSubtitle') || 'Admin Panel'}</h2>
-          <p className="lp__desc">{t('loginTitle') || 'University Schedule'}</p>
-        </div>
-        <form onSubmit={handleSubmit} className="lp__form" autoComplete="off">
-          <div className="lp__field">
-            <label className="lp__label" htmlFor="lpm-username">{t('username') || 'Username'}</label>
-            <input ref={usernameRef} id="lpm-username" type="text"
-              className="lp__input" value={username}
-              onChange={e => setUsername(e.target.value)}
-              placeholder={t('username') || 'Username'}
-              disabled={loading} autoComplete="off" name="lpm-u" />
-          </div>
-          <div className="lp__field">
-            <label className="lp__label" htmlFor="lpm-password">{t('password') || 'Password'}</label>
-            <div className="lp__pass-wrap">
-              <input ref={passwordRef} id="lpm-password"
-                type={showPass ? 'text' : 'password'}
-                className="lp__input lp__input--pass" value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder={t('password') || 'Password'}
-                disabled={loading} autoComplete="new-password" name="lpm-p" />
-              <button type="button" className="lp__eye"
-                onClick={() => setShowPass(v => !v)} tabIndex={-1}>
-                {showPass ? '🙈' : '👁'}
-              </button>
-            </div>
-          </div>
-          {error && <div className="lp__error">{error}</div>}
-          <button type="submit" className="lp__btn" disabled={loading}>
-            {loading ? '⏳' : (t('loginBtn') || 'Login')}
-          </button>
-        </form>
-      </div>
-    );
-  }
 
   return (
     <div className={`lp lp--${theme}`}>
