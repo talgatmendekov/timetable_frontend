@@ -4,7 +4,6 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { ScheduleProvider, useSchedule } from './context/ScheduleContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
 
-// ── Components ──────────────────────────────────────────────────────────────
 import Login                     from './components/Login';
 import Header                    from './components/Header';
 import ScheduleTable             from './components/ScheduleTable';
@@ -21,7 +20,6 @@ import AutoScheduler             from './components/AutoScheduler';
 import ExamSchedule              from './components/ExamSchedule';
 import FeedbackDashboard         from './components/FeedbackDashboard';
 
-// ── Utils ───────────────────────────────────────────────────────────────────
 import { exportToExcel, importFromExcel } from './utils/excelUtils';
 import { parseAlatooSchedule }            from './utils/alatooimport';
 import * as XLSX from 'xlsx';
@@ -38,9 +36,6 @@ const getTodayScheduleDay = () => {
   return scheduleDays.includes(today) ? today : 'Monday';
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// AppContent
-// ─────────────────────────────────────────────────────────────────────────────
 const AppContent = () => {
   const { isAuthenticated, loading: authLoading, logout } = useAuth();
   const {
@@ -50,29 +45,26 @@ const AppContent = () => {
   } = useSchedule();
   const { t } = useLanguage();
 
-  // ── State ─────────────────────────────────────────────────────────────────
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [sidebarTab,     setSidebarTab]     = useState(null);
+  const [activeView,     setActiveView]     = useState('schedule'); // 'schedule' | tab id
   const [selectedDay,    setSelectedDay]    = useState(getTodayScheduleDay);
-  const [selectedTeacher, setSelectedTeacher] = useState('');
+  const [selectedTeacher,setSelectedTeacher]= useState('');
   const [selectedGroup,  setSelectedGroup]  = useState('');
   const [selectedRoom,   setSelectedRoom]   = useState('');
   const [modalOpen,      setModalOpen]      = useState(false);
-  const [currentCell,    setCurrentCell]    = useState({ group: null, day: null, time: null });
+  const [currentCell,    setCurrentCell]    = useState({ group:null, day:null, time:null });
   const [importing,      setImporting]      = useState(false);
   const [showBooking,    setShowBooking]    = useState(false);
   const [guestBookCell,  setGuestBookCell]  = useState(null);
   const [activeBookings, setActiveBookings] = useState([]);
-  const [showExamsToGuests, setShowExamsToGuests] = useState(false);
+  const [showExamsToGuests,setShowExamsToGuests] = useState(false);
   const [feedbackCount,  setFeedbackCount]  = useState(0);
   const [shareToast,     setShareToast]     = useState('');
 
   const fileInputRef = useRef(null);
 
-  // close login modal automatically once authenticated
-  React.useEffect(() => {
-    if (isAuthenticated) setShowLoginModal(false);
-  }, [isAuthenticated]);
+  // Close login modal once authenticated
+  React.useEffect(() => { if (isAuthenticated) setShowLoginModal(false); }, [isAuthenticated]);
 
   React.useEffect(() => {
     const today = getTodayScheduleDay();
@@ -80,9 +72,9 @@ const AppContent = () => {
   }, [days]);
 
   const allRooms = React.useMemo(() => {
-    const rooms = new Set();
-    Object.values(schedule).forEach(e => { if (e.room) rooms.add(e.room); });
-    return [...rooms].sort();
+    const r = new Set();
+    Object.values(schedule).forEach(e => { if (e.room) r.add(e.room); });
+    return [...r].sort();
   }, [schedule]);
 
   const fetchFeedbackCount = React.useCallback(async () => {
@@ -92,9 +84,8 @@ const AppContent = () => {
       const r = await fetch(`${API_URL}/feedback/stats`, { headers: { Authorization: `Bearer ${token}` } });
       const d = await r.json();
       if (d.success) setFeedbackCount(d.unread || 0);
-    } catch { /* ignore */ }
+    } catch {}
   }, []);
-
   React.useEffect(() => { if (isAuthenticated) fetchFeedbackCount(); }, [fetchFeedbackCount, isAuthenticated]);
 
   const fetchExamSetting = React.useCallback(async () => {
@@ -102,9 +93,8 @@ const AppContent = () => {
       const r = await fetch(`${API_URL}/settings/show_exams_to_guests`);
       const d = await r.json();
       setShowExamsToGuests(d.value === 'true');
-    } catch { /* ignore */ }
+    } catch {}
   }, []);
-
   React.useEffect(() => { fetchExamSetting(); }, [fetchExamSetting]);
 
   const fetchActiveBookings = React.useCallback(() => {
@@ -114,7 +104,6 @@ const AppContent = () => {
       .then(d => { if (d.success) setActiveBookings(d.data || []); })
       .catch(() => {});
   }, []);
-
   React.useEffect(() => { fetchActiveBookings(); }, [fetchActiveBookings]);
 
   const conflictCount = React.useMemo(() => {
@@ -129,104 +118,131 @@ const AppContent = () => {
           if (e.teacher) { const k = e.teacher.toLowerCase(); tMap[k] = (tMap[k]||0)+1; }
           if (e.room)    { const k = e.room.toLowerCase();    rMap[k] = (rMap[k]||0)+1; }
         });
-        Object.entries(tMap).forEach(([k,v]) => { if (v>1 && !seen.has(`t-${k}-${day}-${time}`)) { count++; seen.add(`t-${k}-${day}-${time}`); }});
-        Object.entries(rMap).forEach(([k,v]) => { if (v>1 && !seen.has(`r-${k}-${day}-${time}`)) { count++; seen.add(`r-${k}-${day}-${time}`); }});
+        Object.entries(tMap).forEach(([k,v]) => { if (v>1&&!seen.has(`t-${k}-${day}-${time}`)){count++;seen.add(`t-${k}-${day}-${time}`);}});
+        Object.entries(rMap).forEach(([k,v]) => { if (v>1&&!seen.has(`r-${k}-${day}-${time}`)){count++;seen.add(`r-${k}-${day}-${time}`);}});
       });
     });
     return count;
   }, [schedule, days, timeSlots]);
 
   const handleEditClass  = (group, day, time) => { setCurrentCell({ group, day, time }); setModalOpen(true); };
-  const handleCloseModal = () => { setModalOpen(false); setCurrentCell({ group: null, day: null, time: null }); };
+  const handleCloseModal = () => { setModalOpen(false); setCurrentCell({ group:null, day:null, time:null }); };
   const handleJumpToCell = (group, day, time) => {
-    setSidebarTab(null);
-    setSelectedDay(day); setSelectedGroup(group);
+    setActiveView('schedule'); setSelectedDay(day); setSelectedGroup(group);
     setTimeout(() => { setCurrentCell({ group, day, time }); setModalOpen(true); }, 150);
   };
-
-  const handleAddGroup = () => { const name = prompt(t('enterGroupName')); if (name?.trim()) addGroup(name.trim()); };
-  const handleDeleteGroup = async (g) => { await deleteGroup(g); setActiveBookings(prev => prev.filter(b => b.entity !== g && b.name !== g)); };
-
+  const handleAddGroup    = () => { const n = prompt(t('enterGroupName')); if (n?.trim()) addGroup(n.trim()); };
+  const handleDeleteGroup = async (g) => { await deleteGroup(g); setActiveBookings(prev => prev.filter(b => b.entity!==g && b.name!==g)); };
   const handleShare = () => {
     const group = selectedGroup || (groups.length > 0 ? groups[0] : '');
     const url = group ? `${PUBLIC_URL}/schedule/${encodeURIComponent(group)}` : `${PUBLIC_URL}/schedule`;
-    navigator.clipboard?.writeText(url).then(() => { setShareToast(`✓ Copied`); setTimeout(() => setShareToast(''), 2500); }).catch(() => prompt('Copy:', url));
+    navigator.clipboard?.writeText(url)
+      .then(() => { setShareToast('✓ Copied'); setTimeout(() => setShareToast(''), 2500); })
+      .catch(() => prompt('Copy:', url));
   };
-
   const handleExport = async () => {
     try { await exportToExcel(groups, schedule, timeSlots, days, `schedule-${new Date().toISOString().split('T')[0]}.xlsx`); }
     catch (err) { alert(`Export failed: ${err.message}`); }
   };
-
   const handleImportClick = () => fileInputRef.current?.click();
-
   const handleFileChange = async (e) => {
-    const file = e?.target?.files?.[0]; if (!file) return;
-    setImporting(true);
+    const file = e?.target?.files?.[0]; if (!file) return; setImporting(true);
     try {
       try {
         const parsed = await parseAlatooSchedule(file);
-        if (parsed?.length > 0) { const res = await importSchedule(JSON.stringify(parsed)); alert(res?.success ? `✅ Imported ${parsed.length} classes!` : `❌ Import failed: ${res?.error}`); return; }
+        if (parsed?.length > 0) {
+          const res = await importSchedule(JSON.stringify(parsed));
+          alert(res?.success ? `✅ Imported ${parsed.length} classes!` : `❌ Import failed: ${res?.error}`);
+          return;
+        }
         throw new Error('No classes found');
       } catch {
         const result = await importFromExcel(file);
-        if (result.success) { const res = await importSchedule(JSON.stringify({ groups: result.groups, schedule: result.schedule })); alert(res.success ? `✅ Imported ${result.groups.length} groups.` : `❌ Import failed: ${res.error}`); }
-        else { const reader = new FileReader(); reader.onload = ev => { try { const wb = XLSX.read(new Uint8Array(ev.target.result),{type:'array'}); console.log('Excel:',XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1}).slice(0,5)); } catch {} }; reader.readAsArrayBuffer(file); alert('❌ Invalid file format.'); }
+        if (result.success) {
+          const res = await importSchedule(JSON.stringify({ groups: result.groups, schedule: result.schedule }));
+          alert(res.success ? `✅ Imported ${result.groups.length} groups.` : `❌ Import failed: ${res.error}`);
+        } else {
+          const reader = new FileReader();
+          reader.onload = ev => { try { const wb = XLSX.read(new Uint8Array(ev.target.result),{type:'array'}); console.log('Excel:',XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1}).slice(0,5)); } catch {} };
+          reader.readAsArrayBuffer(file);
+          alert('❌ Invalid file format. Check console.');
+        }
       }
     } catch (err) { alert(`❌ Import failed: ${err.message}`); }
     finally { setImporting(false); if (fileInputRef.current) fileInputRef.current.value = ''; }
   };
-
   const handleClearAll = () => { if (window.confirm(t('confirmClearAll'))) clearSchedule(); };
 
-  // ── Sidebar tabs ──────────────────────────────────────────────────────────
-  const sidebarTabs = [
+  // ── Sidebar nav tabs ──────────────────────────────────────────────────────
+  const navTabs = [
+    { id:'schedule',   icon:'📅', label: t('tabSchedule')||'Schedule' },
     ...(!isAuthenticated ? [
-      { id: 'mybookings', icon: '📋', label: t('tabMyBookings') || 'My Bookings' },
-      ...(showExamsToGuests ? [{ id: 'exams', icon: '🗓', label: t('tabExams') || 'Exams' }] : []),
-      { id: 'feedback', icon: '💬', label: t('tabFeedback') || 'Feedback' },
+      { id:'mybookings', icon:'📋', label: t('tabMyBookings')||'My Bookings' },
+      ...(showExamsToGuests ? [{ id:'exams', icon:'🗓', label: t('tabExams')||'Exams' }] : []),
+      { id:'feedback',   icon:'💬', label: t('tabFeedback')||'Feedback' },
     ] : []),
     ...(isAuthenticated ? [
-      { id: 'print',     icon: '🖨️', label: t('tabPrint')     || 'Print'        },
-      { id: 'dashboard', icon: '📊', label: t('tabDashboard') || 'Stats'         },
-      { id: 'conflicts', icon: '⚠️',  label: t('tabConflicts') || 'Conflicts', badge: conflictCount },
-      { id: 'bookings',  icon: '🏫', label: t('tabBookings')  || 'Bookings'      },
-      { id: 'autosched', icon: '🤖', label: t('tabAutoSched') || 'Auto Schedule' },
-      { id: 'exams',     icon: '🗓', label: t('tabExams')     || 'Exams'         },
-      { id: 'feedback',  icon: '💬', label: t('tabFeedback')  || 'Feedback', badge: feedbackCount },
-      { id: 'telegram',  icon: '📱', label: t('tabTelegram')  || 'Telegram'      },
+      { id:'print',     icon:'🖨️', label: t('tabPrint')||'Print'           },
+      { id:'dashboard', icon:'📊', label: t('tabDashboard')||'Stats'        },
+      { id:'conflicts', icon:'⚠️',  label: t('tabConflicts')||'Conflicts', badge: conflictCount },
+      { id:'bookings',  icon:'🏫', label: t('tabBookings')||'Bookings'      },
+      { id:'autosched', icon:'🤖', label: t('tabAutoSched')||'Auto Schedule'},
+      { id:'exams',     icon:'🗓', label: t('tabExams')||'Exams'            },
+      { id:'feedback',  icon:'💬', label: t('tabFeedback')||'Feedback', badge: feedbackCount },
+      { id:'telegram',  icon:'📱', label: t('tabTelegram')||'Telegram'      },
     ] : []),
   ];
 
-  // ── Loading screen ────────────────────────────────────────────────────────
-  if (authLoading) {
-    return (
-      <div className="app-loading">
-        <div className="app-loading-spinner">⏳</div>
-        <p>Loading...</p>
-      </div>
-    );
-  }
-
-  const sidebarOpen = sidebarTab !== null;
+  if (authLoading) return (
+    <div className="app-loading">
+      <div className="app-loading-spinner">⏳</div>
+      <p>Loading...</p>
+    </div>
+  );
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <div className="app" style={{ padding: '20px', maxWidth: '100%' }}>
+    <div className="app">
 
-      {/* Hidden file input */}
       <input type="file" ref={fileInputRef} accept=".xlsx,.xls" onChange={handleFileChange} style={{ display:'none' }} />
 
-      {/* Loading overlay */}
       {(importing || scheduleLoading) && (
         <div className="import-overlay">
           <div className="import-spinner">
-            ⏳ {scheduleLoading ? (t('loadingData') || 'Loading data…') : (t('importing') || 'Importing…')}
+            ⏳ {scheduleLoading ? (t('loadingData')||'Loading…') : (t('importing')||'Importing…')}
           </div>
         </div>
       )}
 
-      {/* Error banner */}
+      {/* ── LOGIN MODAL — wraps the real Login component unchanged ── */}
+      {showLoginModal && !isAuthenticated && (
+        <div
+          onClick={e => { if (e.target === e.currentTarget) setShowLoginModal(false); }}
+          style={{
+            position:'fixed', inset:0, zIndex:9998,
+            background:'rgba(0,0,0,0.82)',
+            backdropFilter:'blur(8px)',
+            display:'flex', alignItems:'center', justifyContent:'center',
+          }}
+        >
+          <div style={{ position:'relative', width:'100%', maxWidth:920, maxHeight:'96vh', overflow:'auto' }}>
+            <button
+              onClick={() => setShowLoginModal(false)}
+              style={{
+                position:'absolute', top:12, right:12, zIndex:10,
+                width:32, height:32, borderRadius:'50%',
+                background:'rgba(255,255,255,0.12)', border:'1px solid rgba(255,255,255,0.25)',
+                color:'#fff', fontSize:'1rem', cursor:'pointer',
+                display:'flex', alignItems:'center', justifyContent:'center',
+              }}
+            >✕</button>
+            {/* Login component — completely untouched */}
+            <Login onViewAsGuest={null} />
+          </div>
+        </div>
+      )}
+
+      {/* ── ERROR BANNER ── */}
       {error && (
         <div className="error-banner">
           ⚠️ Could not connect to server: {error}.
@@ -234,178 +250,159 @@ const AppContent = () => {
         </div>
       )}
 
-      {/* ── LOGIN MODAL — renders full Login component in an overlay ── */}
-      {showLoginModal && !isAuthenticated && (
-        <div
-          onClick={e => { if (e.target === e.currentTarget) setShowLoginModal(false); }}
-          style={{
-            position: 'fixed', inset: 0, zIndex: 9998,
-            background: 'rgba(0,0,0,0.75)',
-            backdropFilter: 'blur(6px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            animation: 'fadeInOverlay 0.2s ease',
-          }}
-        >
-          {/* ✕ close button floating above the Login card */}
-          <div style={{ position: 'relative', width: '100%', maxWidth: 900, maxHeight: '95vh', overflow: 'auto' }}>
-            <button
-              onClick={() => setShowLoginModal(false)}
-              style={{
-                position: 'absolute', top: 12, right: 12, zIndex: 1,
-                width: 34, height: 34, borderRadius: '50%',
-                background: 'rgba(255,255,255,0.15)', border: 'none',
-                color: '#fff', fontSize: '1rem', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                backdropFilter: 'blur(4px)',
-              }}
-            >✕</button>
-            {/* The real Login component — completely unchanged */}
-            <Login onViewAsGuest={null} />
-          </div>
-        </div>
-      )}
+      {/* ══════════════════════════════════════════════════════════════════
+          LAYOUT: slim left icon-nav + full-width content area
+          The icon nav replaces the tab-bar.
+          The content area starts at the very top — Header is first item
+          only on the schedule view, hidden on all other views to save space.
+      ══════════════════════════════════════════════════════════════════ */}
+      <div style={{ display:'flex', minHeight:'100vh' }}>
 
-      {/* ── HEADER ── */}
-      <Header
-        selectedDay={selectedDay}           setSelectedDay={setSelectedDay}
-        selectedTeacher={selectedTeacher}   setSelectedTeacher={setSelectedTeacher}
-        selectedGroup={selectedGroup}       setSelectedGroup={setSelectedGroup}
-        onAddGroup={isAuthenticated ? handleAddGroup : undefined}
-        onExport={isAuthenticated ? handleExport : undefined}
-        onImport={isAuthenticated ? handleImportClick : undefined}
-        onClearAll={isAuthenticated ? handleClearAll : undefined}
-      />
-
-      {/* ── TOOLBAR: admin/login controls + guest book ── */}
-      <div style={{ display:'flex', alignItems:'center', gap:10, margin:'10px 0', flexWrap:'wrap' }}>
-
-        {/* Guest: Book Lab button */}
-        {!isAuthenticated && (
-          <button onClick={() => setShowBooking(true)} className="btn btn-primary">
-            🏫 {t('bookLab') || 'Book a Lab'}
-          </button>
-        )}
-
-        {/* Admin: share link */}
-        {isAuthenticated && (
-          <div style={{ display:'flex', alignItems:'center', gap:8, background:'var(--bg-card)', padding:'6px 14px', borderRadius:10, border:'1px solid var(--border)' }}>
-            <span style={{ fontSize:'.75rem', color:'#94a3b8', fontWeight:600 }}>🔗</span>
-            <span style={{ fontSize:'.75rem', color:'#6366f1', fontFamily:'monospace' }}>
-              /schedule{selectedGroup ? `/${selectedGroup}` : ''}
-            </span>
-            <button onClick={handleShare} style={{ padding:'3px 10px', background:'#6366f1', color:'#fff', border:'none', borderRadius:6, fontSize:'.72rem', fontWeight:700, cursor:'pointer' }}>
-              Copy
-            </button>
-            {shareToast && <span style={{ fontSize:'.72rem', color:'#10b981', fontWeight:700 }}>{shareToast}</span>}
-          </div>
-        )}
-
-        {/* Spacer */}
-        <div style={{ flex: 1 }} />
-
-        {/* Admin login button — always visible when not logged in */}
-        {!isAuthenticated && (
-          <button
-            onClick={() => setShowLoginModal(true)}
-            className="btn btn-secondary"
-            style={{ display:'flex', alignItems:'center', gap:6 }}
-          >
-            🔐 {t('loginBtn') || 'Admin Login'}
-          </button>
-        )}
-
-        {/* Logged in: show user badge + logout */}
-        {isAuthenticated && (
-          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-            <span style={{ fontSize:'.78rem', color:'var(--text-secondary)', background:'var(--bg-card)', padding:'6px 12px', borderRadius:8, border:'1px solid var(--border)' }}>
-              ⚙️ Admin
-            </span>
-            <button onClick={() => { logout(); setSidebarTab(null); }} className="btn btn-danger" style={{ padding:'6px 14px', fontSize:'.78rem' }}>
-              ↩ Logout
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* ── LAYOUT: vertical sidebar nav (left) + main content (right) ── */}
-      <div style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
-
-        {/* Vertical icon nav — always visible */}
-        <div style={{ display:'flex', flexDirection:'column', gap:6, flexShrink:0, paddingTop:4 }}>
-          {/* Schedule home button */}
-          <button
-            onClick={() => setSidebarTab(null)}
-            title="Schedule"
-            style={{
-              width:46, height:46, borderRadius:12,
-              border: sidebarTab === null ? '2px solid var(--primary)' : '1px solid var(--border)',
-              background: sidebarTab === null ? 'var(--primary)' : 'var(--bg-card)',
-              color: sidebarTab === null ? '#fff' : 'var(--text-secondary)',
-              fontSize:'1.2rem', cursor:'pointer',
-              display:'flex', alignItems:'center', justifyContent:'center',
-              transition:'all 0.18s', flexShrink:0,
-            }}
-          >📅</button>
-
-          {/* Divider */}
-          <div style={{ height:1, background:'var(--border)', margin:'2px 4px' }} />
-
-          {/* Feature tabs */}
-          {sidebarTabs.map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setSidebarTab(prev => prev === tab.id ? null : tab.id)}
-              title={tab.label}
-              style={{
-                width:46, height:46, borderRadius:12,
-                border: sidebarTab === tab.id ? '2px solid var(--primary)' : '1px solid var(--border)',
-                background: sidebarTab === tab.id ? 'var(--primary)' : 'var(--bg-card)',
-                color: sidebarTab === tab.id ? '#fff' : 'var(--text-secondary)',
-                fontSize:'1.2rem', cursor:'pointer',
-                display:'flex', alignItems:'center', justifyContent:'center',
-                position:'relative', transition:'all 0.18s', flexShrink:0,
-              }}
-            >
-              {tab.icon}
-              {tab.badge > 0 && (
-                <span style={{ position:'absolute', top:2, right:2, background:'#ef4444', color:'#fff', fontSize:'0.55rem', fontWeight:800, borderRadius:10, padding:'1px 4px', minWidth:14, textAlign:'center', lineHeight:1.4 }}>
-                  {tab.badge}
-                </span>
-              )}
-            </button>
+        {/* ── LEFT: vertical icon nav ── */}
+        <div style={{
+          width:58,
+          flexShrink:0,
+          background:'var(--bg-card)',
+          borderRight:'1px solid var(--border)',
+          display:'flex',
+          flexDirection:'column',
+          alignItems:'center',
+          paddingTop:10,
+          paddingBottom:10,
+          gap:4,
+          position:'sticky',
+          top:0,
+          height:'100vh',
+          overflowY:'auto',
+        }}>
+          {navTabs.map((tab, i) => (
+            <React.Fragment key={tab.id}>
+              {/* Divider after schedule icon */}
+              {i === 1 && <div style={{ width:32, height:1, background:'var(--border)', margin:'4px 0' }} />}
+              <button
+                onClick={() => setActiveView(tab.id)}
+                title={tab.label}
+                style={{
+                  width:42, height:42, borderRadius:11,
+                  border: activeView===tab.id ? '2px solid var(--primary)' : '1px solid var(--border)',
+                  background: activeView===tab.id ? 'var(--primary)' : 'transparent',
+                  color: activeView===tab.id ? '#fff' : 'var(--text-secondary)',
+                  fontSize:'1.1rem', cursor:'pointer',
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  position:'relative', transition:'all 0.15s',
+                  flexShrink:0,
+                }}
+              >
+                {tab.icon}
+                {tab.badge > 0 && (
+                  <span style={{
+                    position:'absolute', top:2, right:2,
+                    background:'#ef4444', color:'#fff',
+                    fontSize:'0.5rem', fontWeight:800,
+                    borderRadius:10, padding:'1px 3px',
+                    minWidth:13, textAlign:'center', lineHeight:1.4,
+                  }}>{tab.badge}</span>
+                )}
+              </button>
+            </React.Fragment>
           ))}
+
+          {/* Spacer pushes bottom items down */}
+          <div style={{ flex:1 }} />
+
+          {/* Guest: book lab */}
+          {!isAuthenticated && (
+            <button
+              onClick={() => setShowBooking(true)}
+              title={t('bookLab')||'Book a Lab'}
+              style={{ width:42, height:42, borderRadius:11, border:'1px solid var(--border)', background:'transparent', color:'var(--text-secondary)', fontSize:'1.1rem', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.15s', flexShrink:0 }}
+            >🏫</button>
+          )}
+
+          {/* Admin login / logout */}
+          {!isAuthenticated ? (
+            <button
+              onClick={() => setShowLoginModal(true)}
+              title="Admin Login"
+              style={{ width:42, height:42, borderRadius:11, border:'1px solid var(--border)', background:'transparent', color:'var(--text-secondary)', fontSize:'1.1rem', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.15s', flexShrink:0 }}
+            >🔐</button>
+          ) : (
+            <button
+              onClick={() => { logout(); setActiveView('schedule'); }}
+              title={t('logout')||'Logout'}
+              style={{ width:42, height:42, borderRadius:11, border:'1px solid var(--border)', background:'transparent', color:'#ef4444', fontSize:'1.1rem', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.15s', flexShrink:0 }}
+            >↩</button>
+          )}
         </div>
 
-        {/* Main content area — schedule OR selected tab */}
-        <div style={{ flex:1, minWidth:0 }}>
-          {sidebarTab === null && (
-            <>
-              <EmptyRoomPanel
-                allRooms={allRooms} schedule={schedule}
-                days={days} timeSlots={timeSlots}
-                selectedRoom={selectedRoom} setSelectedRoom={setSelectedRoom}
-              />
-              <ScheduleTable
-                selectedDay={selectedDay}
-                selectedTeacher={selectedTeacher}
-                selectedGroup={selectedGroup}
-                selectedRoom={selectedRoom}
-                onEditClass={isAuthenticated ? handleEditClass : undefined}
-                onDeleteGroup={isAuthenticated ? handleDeleteGroup : undefined}
-                bookings={activeBookings}
-                onGuestBookCell={(group, day, time) => setGuestBookCell({ group, day, time })}
-              />
-            </>
+        {/* ── RIGHT: content area ── */}
+        <div style={{ flex:1, minWidth:0, display:'flex', flexDirection:'column' }}>
+
+          {/* Header — shown on ALL views so filters always accessible */}
+          <Header
+            selectedDay={selectedDay}           setSelectedDay={setSelectedDay}
+            selectedTeacher={selectedTeacher}   setSelectedTeacher={setSelectedTeacher}
+            selectedGroup={selectedGroup}        setSelectedGroup={setSelectedGroup}
+            onAddGroup={handleAddGroup}
+            onExport={handleExport}
+            onImport={handleImportClick}
+            onClearAll={handleClearAll}
+          />
+
+          {/* Share strip — admin only */}
+          {isAuthenticated && (
+            <div style={{ padding:'5px 16px', background:'var(--bg-main)', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+              <span style={{ fontSize:'.72rem', color:'#94a3b8', fontFamily:'monospace' }}>
+                🔗 /schedule{selectedGroup ? `/${selectedGroup}` : ''}
+              </span>
+              <button onClick={handleShare} style={{ padding:'2px 10px', background:'#6366f1', color:'#fff', border:'none', borderRadius:6, fontSize:'.7rem', fontWeight:700, cursor:'pointer' }}>Copy link</button>
+              {shareToast && <span style={{ fontSize:'.7rem', color:'#10b981', fontWeight:700 }}>{shareToast}</span>}
+            </div>
           )}
-          {sidebarTab === 'mybookings' && <GuestBookingStatus bookings={activeBookings} onRefresh={setActiveBookings} />}
-          {sidebarTab === 'print'      && <PrintView />}
-          {sidebarTab === 'dashboard'  && <TeacherDashboard />}
-          {sidebarTab === 'conflicts'  && <ConflictPage onJumpToCell={handleJumpToCell} />}
-          {sidebarTab === 'bookings'   && <BookingManagement />}
-          {sidebarTab === 'autosched'  && <AutoScheduler />}
-          {sidebarTab === 'exams'      && <ExamSchedule readOnly={!isAuthenticated} showExamsToGuests={showExamsToGuests} setShowExamsToGuests={setShowExamsToGuests} />}
-          {sidebarTab === 'feedback'   && (isAuthenticated ? <FeedbackDashboard /> : <FeedbackDashboard guestMode={true} schedule={schedule} groups={groups} />)}
-          {sidebarTab === 'telegram'   && <TeacherTelegramManagement />}
+
+          {/* ── VIEW CONTENT ── */}
+          <div style={{ flex:1, padding:'12px 16px' }}>
+
+            {activeView === 'schedule' && (
+              <>
+                <EmptyRoomPanel
+                  allRooms={allRooms} schedule={schedule} days={days} timeSlots={timeSlots}
+                  selectedRoom={selectedRoom} setSelectedRoom={setSelectedRoom}
+                />
+                <ScheduleTable
+                  selectedDay={selectedDay}
+                  selectedTeacher={selectedTeacher}
+                  selectedGroup={selectedGroup}
+                  selectedRoom={selectedRoom}
+                  onEditClass={isAuthenticated ? handleEditClass : undefined}
+                  onDeleteGroup={isAuthenticated ? handleDeleteGroup : undefined}
+                  bookings={activeBookings}
+                  onGuestBookCell={(group, day, time) => setGuestBookCell({ group, day, time })}
+                />
+              </>
+            )}
+
+            {activeView === 'mybookings' && <GuestBookingStatus bookings={activeBookings} onRefresh={setActiveBookings} />}
+            {activeView === 'print'      && <PrintView />}
+            {activeView === 'dashboard'  && <TeacherDashboard />}
+            {activeView === 'conflicts'  && <ConflictPage onJumpToCell={handleJumpToCell} />}
+            {activeView === 'bookings'   && <BookingManagement />}
+            {activeView === 'autosched'  && <AutoScheduler />}
+            {activeView === 'exams'      && (
+              <ExamSchedule
+                readOnly={!isAuthenticated}
+                showExamsToGuests={showExamsToGuests}
+                setShowExamsToGuests={setShowExamsToGuests}
+              />
+            )}
+            {activeView === 'feedback' && (
+              isAuthenticated
+                ? <FeedbackDashboard />
+                : <FeedbackDashboard guestMode={true} schedule={schedule} groups={groups} />
+            )}
+            {activeView === 'telegram' && <TeacherTelegramManagement />}
+
+          </div>
         </div>
       </div>
 
@@ -413,18 +410,17 @@ const AppContent = () => {
       {!isAuthenticated && (
         <GuestBooking
           isOpen={showBooking || !!guestBookCell}
-          prefilledGroup={guestBookCell?.group || ''}
-          prefilledDay={guestBookCell?.day || ''}
-          prefilledTime={guestBookCell?.time || ''}
+          prefilledGroup={guestBookCell?.group||''} prefilledDay={guestBookCell?.day||''} prefilledTime={guestBookCell?.time||''}
           onClose={() => { setShowBooking(false); setGuestBookCell(null); }}
           onBooked={() => { setGuestBookCell(null); setShowBooking(false); fetchActiveBookings(); }}
         />
       )}
 
-      {/* Class modal */}
-      <ClassModal isOpen={modalOpen} onClose={handleCloseModal} group={currentCell.group} day={currentCell.day} time={currentCell.time} />
+      <ClassModal
+        isOpen={modalOpen} onClose={handleCloseModal}
+        group={currentCell.group} day={currentCell.day} time={currentCell.time}
+      />
 
-      {/* Footer */}
       <footer className="app-author-credit">
         <span className="app-author-logo">🏛</span>
         <span>Developed by <strong>Talgat Mendekov</strong></span>
@@ -433,11 +429,6 @@ const AppContent = () => {
         <span className="app-author-sep">·</span>
         <span>{new Date().getFullYear()}</span>
       </footer>
-
-      <style>{`
-        @keyframes sbIn { from { opacity:0; transform:translateX(16px); } to { opacity:1; transform:translateX(0); } }
-        @keyframes fadeInOverlay { from { opacity:0; } to { opacity:1; } }
-      `}</style>
     </div>
   );
 };
