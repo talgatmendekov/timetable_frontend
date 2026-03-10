@@ -1,5 +1,5 @@
 // src/utils/api.js — connects to Railway backend
-const BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
+const BASE_URL = process.env.REACT_APP_API_URL || 'https://timetablebackend-production.up.railway.app/api';
 console.log('🔗 API connecting to:', BASE_URL);
 
 const getToken = () =>
