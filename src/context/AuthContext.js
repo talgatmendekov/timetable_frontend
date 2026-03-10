@@ -54,14 +54,15 @@ export const AuthProvider = ({ children }) => {
   const login = async (username, password) => {
     try {
       const data = await authAPI.login(username, password);
-      if (data.token) {
-        localStorage.setItem('scheduleToken', data.token);
-        localStorage.setItem('scheduleUser', JSON.stringify(data.user));
-        setUser(data.user);
-        setIsAuthenticated(true);
-        return { success: true };
+      // authAPI.login never throws on 401 — it returns {success:false, error}
+      if (!data || !data.token) {
+        return { success: false, error: data?.error || 'Invalid credentials.' };
       }
-      return { success: false, error: 'No token received from server.' };
+      localStorage.setItem('scheduleToken', data.token);
+      localStorage.setItem('scheduleUser', JSON.stringify(data.user));
+      setUser(data.user);
+      setIsAuthenticated(true);
+      return { success: true };
     } catch (err) {
       return { success: false, error: err.message };
     }

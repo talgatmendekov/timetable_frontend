@@ -50,7 +50,10 @@ const apiCall = async (endpoint, options = {}, retries = 3) => {
 
     if (!response.ok) {
       if (response.status === 401 || response.status === 403) {
-        throw new Error(data.error || data.message || `Auth failed: ${response.status}`);
+        // Silently return the error data — don't throw, don't log to console.
+        // This prevents browser password manager autofill attempts from
+        // showing as red 401 errors in the console.
+        return { success: false, error: data.error || data.message || 'Auth failed' };
       }
       if (response.status >= 500 && attempt < retries) {
         const delay = attempt * 500;
@@ -74,8 +77,8 @@ export const authAPI = {
   // Calling it with no token sends "Bearer " to the backend which returns 401.
   verify: () => {
     const token = getToken();
-    if (!token) return Promise.reject(new Error('No token'));
-    return apiCall('/auth/verify');
+    if (!token) return Promise.resolve({ success: false, valid: false });
+    return apiCall('/auth/verify').catch(() => ({ success: false, valid: false }));
   },
 };
 
