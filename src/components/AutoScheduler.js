@@ -14,7 +14,8 @@ const autoSplit = (total, n) => {
 };
 
 const emptyRow = () => ({
-  id: uid(), teacher: '', subject: '', group: '',
+  id: uid(), teacher: '', subject: '',
+  groups: [''],          // multiple groups for same teacher+subject
   totalHours: 2, slots: [2],
   prefDays: [], prefTimes: [],
   subjectType: 'lecture',
@@ -96,40 +97,44 @@ export default function AutoScheduler() {
     };
 
     rows.forEach(row => {
-      if (!row.teacher || !row.subject || !row.group) return;
-      initT(row.teacher); initG(row.group);
+      if (!row.teacher || !row.subject) return;
+      const activeGroups = (row.groups || []).filter(g => g.trim());
+      if (!activeGroups.length) return;
+      initT(row.teacher);
       const isLab   = row.subjectType === 'lab';
       const pool    = isLab ? getLabs() : getRooms().length ? getRooms() : allRooms();
       const slotList= ordered(row);
 
-      row.slots.forEach((dur, si) => {
-        let placed = false;
-        for (const { d, tm } of slotList) {
-          const k = key(d, tm);
-          if (tBusy[row.teacher].has(k)) continue;
-          if (gBusy[row.group].has(k))   continue;
-          // don't place same subject twice same day
-          if (entries.some(e => e.group === row.group && e.course === row.subject && e.day === d)) continue;
-          // teacher day hours
-          tDayH[row.teacher] = tDayH[row.teacher] || {};
-          if ((tDayH[row.teacher][d] || 0) + dur > 8) continue;
+      // Schedule each group independently
+      activeGroups.forEach(grp => {
+        initG(grp);
+        row.slots.forEach((dur, si) => {
+          let placed = false;
+          for (const { d, tm } of slotList) {
+            const k = key(d, tm);
+            if (tBusy[row.teacher].has(k)) continue;
+            if (gBusy[grp].has(k))         continue;
+            if (entries.some(e => e.group === grp && e.course === row.subject && e.day === d)) continue;
+            tDayH[row.teacher] = tDayH[row.teacher] || {};
+            if ((tDayH[row.teacher][d] || 0) + dur > 8) continue;
 
-          let room = '';
-          if (pool.length) {
-            const fr = pool.find(rn => { initR(rn); return !rBusy[rn].has(k); });
-            if (!fr) continue;
-            room = fr;
+            let room = '';
+            if (pool.length) {
+              const fr = pool.find(rn => { initR(rn); return !rBusy[rn].has(k); });
+              if (!fr) continue;
+              room = fr;
+            }
+
+            entries.push({ group: grp, day: d, time: tm, course: row.subject, teacher: row.teacher, room, subjectType: row.subjectType, duration: dur });
+            tBusy[row.teacher].add(k);
+            gBusy[grp].add(k);
+            if (room) { initR(room); rBusy[room].add(k); }
+            tDayH[row.teacher][d] = (tDayH[row.teacher][d] || 0) + dur;
+            placed = true;
+            break;
           }
-
-          entries.push({ group: row.group, day: d, time: tm, course: row.subject, teacher: row.teacher, room, subjectType: row.subjectType, duration: dur });
-          tBusy[row.teacher].add(k);
-          gBusy[row.group].add(k);
-          if (room) { initR(room); rBusy[room].add(k); }
-          tDayH[row.teacher][d] = (tDayH[row.teacher][d] || 0) + dur;
-          placed = true;
-          break;
-        }
-        if (!placed) conflicts.push({ group: row.group, subject: row.subject, teacher: row.teacher, reason: `Session ${si+1} (${dur}h) — no free slot` });
+          if (!placed) conflicts.push({ group: grp, subject: row.subject, teacher: row.teacher, reason: `Session ${si+1} (${dur}h) — no free slot` });
+        });
       });
     });
 
@@ -248,12 +253,24 @@ export default function AutoScheduler() {
                     onChange={e => upd(row.id,'subject',e.target.value)} />
                 </div>
 
-                {/* Group */}
-                <div style={{ flex:1, minWidth:110 }}>
-                  <label style={{ fontSize:'0.68rem', color:'#64748b', fontWeight:600 }}>Group</label>
-                  <input style={inp} list={`gl-${row.id}`} placeholder="CS-22…" value={row.group}
-                    onChange={e => upd(row.id,'group',e.target.value)} />
-                  <datalist id={`gl-${row.id}`}>{existingGroups.map(g=><option key={g} value={g}/>)}</datalist>
+                {/* Groups — multiple */}
+                <div style={{ flex:2, minWidth:150 }}>
+                  <label style={{ fontSize:'0.68rem', color:'#64748b', fontWeight:600 }}>Groups (can add multiple)</label>
+                  {row.groups.map((g, gi) => (
+                    <div key={gi} style={{ display:'flex', gap:4, marginBottom:4 }}>
+                      <input style={{ ...inp, flex:1 }} list={`gl-${row.id}-${gi}`} placeholder="CS-22…" value={g}
+                        onChange={e => setRows(p => p.map(r => r.id!==row.id ? r : { ...r, groups: r.groups.map((x,i)=>i===gi?e.target.value:x) }))} />
+                      <datalist id={`gl-${row.id}-${gi}`}>{existingGroups.map(g=><option key={g} value={g}/>)}</datalist>
+                      {row.groups.length > 1 && (
+                        <button onClick={() => setRows(p => p.map(r => r.id!==row.id ? r : { ...r, groups: r.groups.filter((_,i)=>i!==gi) }))}
+                          style={{ padding:'4px 8px', borderRadius:7, border:'1px solid #fca5a5', background:'transparent', color:'#ef4444', cursor:'pointer', fontSize:'0.8rem' }}>✕</button>
+                      )}
+                    </div>
+                  ))}
+                  <button onClick={() => setRows(p => p.map(r => r.id!==row.id ? r : { ...r, groups: [...r.groups, ''] }))}
+                    style={{ fontSize:'0.68rem', color:'#6366f1', background:'transparent', border:'1px dashed #6366f1', borderRadius:6, padding:'2px 8px', cursor:'pointer', fontWeight:600 }}>
+                    + Add group
+                  </button>
                 </div>
 
                 {/* Type */}
@@ -298,7 +315,7 @@ export default function AutoScheduler() {
                       {row.slots.map((dur,si)=>(
                         <div key={si} style={{ textAlign:'center' }}>
                           <div style={{ fontSize:'0.6rem', color:'#94a3b8' }}>S{si+1}</div>
-                          <input type="number" min={1} max={row.totalHours} value={dur}
+                          <input type="number" min={1} max={4} value={dur}
                             onChange={e => changeSlotDur(row.id,si,+e.target.value)}
                             style={{ width:46, textAlign:'center', borderRadius:8, border:`2px solid ${sumOk?'#6366f1':'#ef4444'}`, padding:'3px', fontWeight:700, fontSize:'0.85rem', color:'#4f46e5', background:'#eef2ff' }} />
                           <div style={{ fontSize:'0.55rem', color:'#94a3b8' }}>{dur===1?'hr':'hrs'}</div>
@@ -313,7 +330,7 @@ export default function AutoScheduler() {
                   <div>
                     <label style={{ fontSize:'0.67rem', color:'#64748b', fontWeight:600, display:'block', marginBottom:3 }}>Quick split</label>
                     <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
-                      {Array.from({length:Math.min(row.totalHours,6)},(_,i)=>i+1).map(n=>(
+                      {Array.from({length:Math.min(row.totalHours,6)},(_,i)=>i+1).filter(n=>autoSplit(row.totalHours,n).every(d=>d<=4)).map(n=>(
                         <button key={n} onClick={()=>changeSlotCount(row.id,n)}
                           style={chip(row.slots.length===n)}>
                           {autoSplit(row.totalHours,n).join('+')}h
