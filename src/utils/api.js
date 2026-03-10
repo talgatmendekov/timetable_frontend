@@ -1,22 +1,16 @@
 // src/utils/api.js — connects to Railway backend
 const BASE_URL = process.env.REACT_APP_API_URL || 'https://timetablebackend-production.up.railway.app/api';
-console.log('🔗 API connecting to:', BASE_URL);
 
 const getToken = () =>
-  localStorage.getItem('token') ||
   localStorage.getItem('scheduleToken') ||
+  localStorage.getItem('token') ||
   localStorage.getItem('authToken') || '';
 
 // ── Retry helper ──────────────────────────────────────────────────────────────
-// Retries up to `retries` times with exponential backoff on NETWORK errors only.
-// 401/403 are auth failures — never retried (retrying with the same empty token
-// just spams the console and delays UX on the login page).
 const apiCall = async (endpoint, options = {}, retries = 3) => {
   const url = `${BASE_URL}${endpoint}`;
 
   for (let attempt = 1; attempt <= retries; attempt++) {
-    // ⚠️  Token is read INSIDE the loop so each retry picks up a freshly-set
-    //     token (e.g. after AuthContext finishes writing it to localStorage).
     const token = getToken();
 
     let response;
@@ -24,15 +18,17 @@ const apiCall = async (endpoint, options = {}, retries = 3) => {
       response = await fetch(url, {
         headers: {
           'Content-Type': 'application/json',
+          // ⚠️ Only send Authorization header when a real token exists.
+          // An empty "Bearer " header causes the backend to return 401
+          // even for guests who never logged in.
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
           ...options.headers,
         },
         ...options,
       });
     } catch (networkErr) {
-      // Pure network failure — retry if attempts remain
       if (attempt < retries) {
-        const delay = attempt * 500; // 500ms, 1000ms, 1500ms
+        const delay = attempt * 500;
         console.warn(`⚠️ API attempt ${attempt} failed, retrying in ${delay}ms...`);
         await new Promise(r => setTimeout(r, delay));
         continue;
@@ -48,18 +44,14 @@ const apiCall = async (endpoint, options = {}, retries = 3) => {
       data = await response.json();
     } catch {
       throw new Error(
-        `Server at ${url} returned non-JSON (status ${response.status}). ` +
-        `Your REACT_APP_API_URL may be wrong or missing /api at the end.`
+        `Server at ${url} returned non-JSON (status ${response.status}).`
       );
     }
 
     if (!response.ok) {
-      // 401 / 403 — auth problem, NEVER retry. Retrying just floods the console
-      // and delays the login page while the token is still empty.
       if (response.status === 401 || response.status === 403) {
         throw new Error(data.error || data.message || `Auth failed: ${response.status}`);
       }
-      // 5xx server errors — retry
       if (response.status >= 500 && attempt < retries) {
         const delay = attempt * 500;
         console.warn(`⚠️ Server error ${response.status}, retrying in ${delay}ms...`);
@@ -75,12 +67,16 @@ const apiCall = async (endpoint, options = {}, retries = 3) => {
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 export const authAPI = {
-  login: (username, password) => {
-    // 🔍 DEBUG: remove after fix — shows exactly which component is calling login()
-    console.trace('🔍 authAPI.login called, username:', username);
-    return apiCall('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) });
+  login: (username, password) =>
+    apiCall('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) }),
+
+  // ⚠️ Only call verify() when a token actually exists.
+  // Calling it with no token sends "Bearer " to the backend which returns 401.
+  verify: () => {
+    const token = getToken();
+    if (!token) return Promise.reject(new Error('No token'));
+    return apiCall('/auth/verify');
   },
-  verify: () => apiCall('/auth/verify'),
 };
 
 // ── Schedule ─────────────────────────────────────────────────────────────────
