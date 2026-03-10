@@ -6,7 +6,7 @@ import './Login.css';
 
 const Login = ({ onViewAsGuest, onSuccess }) => {
   const { login } = useAuth();
-  const { t, lang, changeLang } = useLanguage(); // ← correct names from LanguageContext
+  const { t, lang, changeLang } = useLanguage();
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -14,7 +14,7 @@ const Login = ({ onViewAsGuest, onSuccess }) => {
   const [loading,  setLoading]  = useState(false);
   const [showPass, setShowPass] = useState(false);
   const [theme,    setTheme]    = useState(
-    () => localStorage.getItem('loginTheme') || 'dark'
+    () => localStorage.getItem('scheduleTheme') || 'light'
   );
 
   const usernameRef = useRef(null);
@@ -24,8 +24,12 @@ const Login = ({ onViewAsGuest, onSuccess }) => {
     localStorage.setItem('loginTheme', theme);
   }, [theme]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  // Handle Enter key in password field
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') handleSubmit();
+  };
+
+  const handleSubmit = async () => {
     const u = (usernameRef.current?.value || username).trim();
     const p =  passwordRef.current?.value || password;
     if (!u || !p) {
@@ -109,8 +113,6 @@ const Login = ({ onViewAsGuest, onSuccess }) => {
                 </button>
               ))}
             </div>
-
-            {/* Dark/Light toggle — emoji + label so it's always obvious */}
             <button
               type="button"
               className="lp__theme-toggle"
@@ -127,10 +129,9 @@ const Login = ({ onViewAsGuest, onSuccess }) => {
             <p className="lp__desc">{t('loginTitle') || 'University Schedule'}</p>
           </div>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="lp__form" autoComplete="new-password">
+          {/* ── NO <form> tag — prevents ALL browser auto-submit behavior ── */}
+          <div className="lp__form">
 
-            {/* Username field — NO icon inside input */}
             <div className="lp__field">
               <label className="lp__label" htmlFor="lp-username">
                 {t('username') || 'Username'}
@@ -142,14 +143,16 @@ const Login = ({ onViewAsGuest, onSuccess }) => {
                 className="lp__input"
                 value={username}
                 onChange={e => setUsername(e.target.value)}
+                onKeyDown={handleKeyDown}
                 placeholder={t('username') || 'Username'}
                 disabled={loading}
                 autoComplete="off"
-                name="lp-u"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
               />
             </div>
 
-            {/* Password field — only eye toggle, no lock icon */}
             <div className="lp__field">
               <label className="lp__label" htmlFor="lp-password">
                 {t('password') || 'Password'}
@@ -162,10 +165,10 @@ const Login = ({ onViewAsGuest, onSuccess }) => {
                   className="lp__input lp__input--pass"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
+                  onKeyDown={handleKeyDown}
                   placeholder={t('password') || 'Password'}
                   disabled={loading}
-                  autoComplete="new-password"
-                  name="lp-p"
+                  autoComplete="off"
                 />
                 <button
                   type="button"
@@ -203,7 +206,13 @@ const Login = ({ onViewAsGuest, onSuccess }) => {
               </div>
             )}
 
-            <button type="submit" className="lp__submit" disabled={loading}>
+            {/* type="button" — explicitly NOT type="submit", no form to submit */}
+            <button
+              type="button"
+              className="lp__submit"
+              disabled={loading}
+              onClick={handleSubmit}
+            >
               {loading ? (
                 <span className="lp__spinner" />
               ) : (
@@ -217,7 +226,7 @@ const Login = ({ onViewAsGuest, onSuccess }) => {
                 </>
               )}
             </button>
-          </form>
+          </div>
 
           {onViewAsGuest && (
             <button type="button" className="lp__guest"
