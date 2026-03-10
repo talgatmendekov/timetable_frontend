@@ -205,7 +205,7 @@ export default function AutoScheduler() {
       <div className="as-section-label" style={{ marginTop:20 }}>👨‍🏫 Teachers & Subjects</div>
 
       {rows.map((row) => {
-        const sumOk = row.slots.reduce((a, b) => a + b, 0) === row.totalHours;
+        // sumOk not needed — split validation done inline
         const isExp = expandRow === row.id;
 
         return (
@@ -268,41 +268,66 @@ export default function AutoScheduler() {
 
             {/* Slot split */}
             <div className="as-split-panel">
-              <div className="as-split-top">
+              <label className="as-label" style={{ marginBottom:10 }}>
+                How to split {row.totalHours}h/week
+                <span style={{ fontWeight:400, textTransform:'none', letterSpacing:0, color:'#94a3b8', marginLeft:6 }}>
+                  — choose duration × sessions (must equal {row.totalHours}h total)
+                </span>
+              </label>
+
+              {/* Quick presets: show all valid dur × count combos */}
+              <div className="as-presets" style={{ marginBottom:12 }}>
+                {Array.from({ length: 4 }, (_, di) => di + 1).flatMap(dur =>
+                  (row.totalHours % dur === 0)
+                    ? [{ dur, count: row.totalHours / dur }]
+                    : []
+                ).map(({ dur, count }) => {
+                  const isActive = row.slots.length === count && row.slots.every(s => s === dur);
+                  return (
+                    <button key={`${dur}x${count}`}
+                      className={`as-preset${isActive ? ' active' : ''}`}
+                      onClick={() => setRows(p => p.map(r => r.id !== row.id ? r : {
+                        ...r, slots: Array(count).fill(dur)
+                      }))}>
+                      {dur}h × {count} {count === 1 ? 'day' : 'days'}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Manual override */}
+              <div style={{ display:'flex', alignItems:'flex-end', gap:14, flexWrap:'wrap' }}>
                 <div>
-                  <label className="as-label">Sessions per week</label>
-                  <input className="as-input" type="number" min={1} max={20} value={row.slots.length}
-                    style={{ width:70 }} onChange={e => changeSlotCount(row.id, Math.max(1, +e.target.value))} />
+                  <label className="as-label">Hours per session</label>
+                  <input className="as-input" type="number" min={1} max={4} style={{ width:80 }}
+                    value={row.slots[0] || 1}
+                    onChange={e => {
+                      const dur = Math.max(1, Math.min(4, +e.target.value));
+                      const count = row.slots.length;
+                      setRows(p => p.map(r => r.id !== row.id ? r : {
+                        ...r, slots: Array(count).fill(dur)
+                      }));
+                    }} />
                 </div>
+                <div style={{ fontSize:'1.2rem', color:'var(--text-secondary)', paddingBottom:8 }}>×</div>
                 <div>
-                  <label className="as-label">Duration per session (1–4 hrs)</label>
-                  <div className="as-slot-boxes">
-                    {row.slots.map((dur, si) => (
-                      <div key={si} className="as-slot-box">
-                        <span className="as-slot-num">S{si + 1}</span>
-                        <input type="number" min={1} max={4} value={dur}
-                          className={sumOk ? '' : 'err'}
-                          onChange={e => changeSlotDur(row.id, si, +e.target.value)} />
-                        <span className="as-slot-unit">{dur === 1 ? 'hr' : 'hrs'}</span>
-                      </div>
-                    ))}
-                    <span className={`as-slot-sum ${sumOk ? 'ok' : 'err'}`}>
-                      {sumOk ? `✓ ${row.totalHours}h/wk` : `⚠ ${row.slots.reduce((a, b) => a + b, 0)}/${row.totalHours}h`}
-                    </span>
-                  </div>
+                  <label className="as-label">Days per week</label>
+                  <input className="as-input" type="number" min={1} max={6} style={{ width:80 }}
+                    value={row.slots.length}
+                    onChange={e => {
+                      const count = Math.max(1, Math.min(6, +e.target.value));
+                      const dur = row.slots[0] || 1;
+                      setRows(p => p.map(r => r.id !== row.id ? r : {
+                        ...r, slots: Array(count).fill(dur)
+                      }));
+                    }} />
                 </div>
-                <div>
-                  <label className="as-label">Quick split</label>
-                  <div className="as-presets">
-                    {Array.from({ length: Math.min(row.totalHours, 6) }, (_, i) => i + 1)
-                      .filter(n => autoSplit(row.totalHours, n).every(d => d <= 4))
-                      .map(n => (
-                        <button key={n} className={`as-preset${row.slots.length === n ? ' active' : ''}`}
-                          onClick={() => changeSlotCount(row.id, n)}>
-                          {autoSplit(row.totalHours, n).join('+')}h
-                        </button>
-                      ))}
-                  </div>
+                <div style={{ fontSize:'1.2rem', color:'var(--text-secondary)', paddingBottom:8 }}>=</div>
+                <div style={{ paddingBottom:6 }}>
+                  <span className={`as-slot-sum ${(row.slots[0] || 1) * row.slots.length === row.totalHours ? 'ok' : 'err'}`}>
+                    {(row.slots[0] || 1) * row.slots.length}h / {row.totalHours}h
+                    {(row.slots[0] || 1) * row.slots.length === row.totalHours ? ' ✓' : ' ⚠'}
+                  </span>
                 </div>
               </div>
             </div>
