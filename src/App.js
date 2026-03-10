@@ -96,7 +96,9 @@ const AppContent = () => {
 
   const fetchActiveBookings = React.useCallback(() => {
     const tk = localStorage.getItem('scheduleToken') || '';
-    fetch(`${API_URL}/booking-requests`, { headers: tk ? { Authorization: `Bearer ${tk}` } : {} })
+    // Only fetch booking list when authenticated — endpoint requires auth
+    if (!tk) return;
+    fetch(`${API_URL}/booking-requests`, { headers: { Authorization: `Bearer ${tk}` } })
       .then(r => r.json()).then(d => { if (d.success) setActiveBookings(d.data || []); }).catch(() => {});
   }, []);
   React.useEffect(() => { fetchActiveBookings(); }, [fetchActiveBookings]);
