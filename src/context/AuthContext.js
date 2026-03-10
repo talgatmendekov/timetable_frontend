@@ -27,24 +27,25 @@ export const AuthProvider = ({ children }) => {
     const savedToken = localStorage.getItem('scheduleToken');
     const savedUser  = localStorage.getItem('scheduleUser');
 
-    // Only attempt verify if BOTH token AND user are saved
     if (savedToken && savedUser) {
+      // /verify now always returns 200 — check the `valid` field instead
       authAPI.verify()
-        .then(() => {
-          try {
-            setUser(JSON.parse(savedUser));
-            setIsAuthenticated(true);
-          } catch {
+        .then(data => {
+          if (data?.valid) {
+            try {
+              setUser(JSON.parse(savedUser));
+              setIsAuthenticated(true);
+            } catch {
+              clearAuth();
+            }
+          } else {
+            // Token expired or invalid — clear silently, no console error
             clearAuth();
           }
         })
-        .catch(() => {
-          // 401 = token expired or invalid — silently clear and continue as guest
-          clearAuth();
-        })
+        .catch(() => clearAuth())
         .finally(() => setLoading(false));
     } else {
-      // No saved session — clear any partial/stale keys just in case
       clearAuth();
       setLoading(false);
     }
