@@ -340,3 +340,20 @@
 .as-import-hint {
   font-size: 0.72rem; color: #64748b; font-weight: 500;
 }
+
+/* ── Slot split box (added for slot-splitting UI) ── */
+.as-slot-box {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-top: 8px;
+}
+
+.as-subject-block {
+  background: var(--bg-main, #fff);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
