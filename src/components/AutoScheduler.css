@@ -1,7 +1,7 @@
 /* AutoScheduler.css — matches ExamSchedule / FeedbackDashboard style */
 
 .as-wrap {
-  max-width: 100%;
+  max-width: 960px;
   margin: 0 auto;
   padding-bottom: 40px;
   font-family: inherit;
