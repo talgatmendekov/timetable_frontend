@@ -128,7 +128,7 @@ const Login = ({ onViewAsGuest, onSuccess }) => {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="lp__form" autoComplete="off">
+          <form onSubmit={handleSubmit} className="lp__form" autoComplete="new-password">
 
             {/* Username field — NO icon inside input */}
             <div className="lp__field">
