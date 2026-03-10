@@ -180,7 +180,7 @@ export default function AutoScheduler() {
   };
 
   return (
-    <div className="as-root">
+    <div className="as-root" style={{ maxWidth:'100%', padding:'0 0 40px' }}>
 
       {/* Header */}
       <div className="as-header">
@@ -195,7 +195,7 @@ export default function AutoScheduler() {
 
       {/* Rooms */}
       <div className="as-section-label">🚪 Rooms</div>
-      <div className="as-card" style={{ display:'flex', gap:12, flexWrap:'wrap' }}>
+      <div className="as-card" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
         <div style={{ flex:1, minWidth:180 }}>
           <label className="as-label">Regular rooms</label>
           <input className="as-input" placeholder="B201, B202, A101…" value={rooms} onChange={e => setRooms(e.target.value)} />
@@ -283,7 +283,7 @@ export default function AutoScheduler() {
 
             {/* Slot split */}
             <div className="as-split-panel" style={{ marginTop:14 }}>
-              <div className="as-split-panel-top">
+              <div className="as-split-panel-top" style={{ display:'flex', gap:20, alignItems:'flex-end', flexWrap:'nowrap' }}>
                 <div>
                   <label className="as-label">Sessions per week</label>
                   <input className="as-input" type="number" min={1} max={20} value={row.slots.length}
@@ -309,9 +309,9 @@ export default function AutoScheduler() {
               </div>
 
               {/* Quick presets */}
-              <div style={{ marginTop:10 }}>
+              <div>
                 <label className="as-label">Quick split</label>
-                <div className="as-presets">
+                <div className="as-presets" style={{ flexWrap:'nowrap' }}>
                   {Array.from({ length: Math.min(row.totalHours, 6) }, (_, i) => i + 1)
                     .filter(n => autoSplit(row.totalHours, n).every(d => d <= 4))
                     .map(n => (
@@ -331,7 +331,7 @@ export default function AutoScheduler() {
                 <div className="as-pref-title">⚙️ Preferred days & times for {row.teacher || 'this teacher'}</div>
                 <div style={{ marginBottom:12 }}>
                   <div className="as-pref-sub">📅 Preferred days</div>
-                  <div className="as-chips">
+                  <div className="as-chips" style={{ flexWrap:'wrap' }}>
                     {days.map(d => (
                       <button key={d} className={`as-chip${row.prefDays.includes(d) ? ' as-chip--on' : ''}`}
                         onClick={() => togglePrefDay(row.id, d)}>{d.slice(0, 3)}</button>
@@ -340,7 +340,7 @@ export default function AutoScheduler() {
                 </div>
                 <div>
                   <div className="as-pref-sub">🕐 Preferred times</div>
-                  <div className="as-chips">
+                  <div className="as-chips" style={{ flexWrap:'wrap' }}>
                     {timeSlots.map(tm => (
                       <button key={tm} className={`as-chip as-chip--time${row.prefTimes.includes(tm) ? ' as-chip--on' : ''}`}
                         onClick={() => togglePrefTime(row.id, tm)}>{tm}</button>

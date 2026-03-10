@@ -1,8 +1,6 @@
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap');
-
 /* ── Root & Reset ─────────────────────────────────────────────────────────── */
 .as-root {
-  font-family: 'Syne', sans-serif;
+  font-family: inherit;
   --as-bg: #0a0a0f;
   --as-surface: #111118;
   --as-surface2: #16161f;
@@ -16,7 +14,7 @@
   --as-red: #f87171;
   --as-amber: #fbbf24;
   --as-glow: 0 0 32px rgba(124,106,247,0.25);
-  max-width: 860px;
+  max-width: 100%;
   margin: 0 auto;
   padding: 0 0 60px;
   color: var(--as-text);
@@ -151,7 +149,7 @@
   background: var(--as-surface2);
   color: var(--as-text);
   font-size: 0.84rem;
-  font-family: 'Syne', sans-serif;
+  font-family: inherit;
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
 }
@@ -173,7 +171,7 @@
 /* ── Row grid ─────────────────────────────────────────────────────────────── */
 .as-row-grid {
   display: grid;
-  grid-template-columns: 1.8fr 1.8fr 1fr 0.9fr 0.6fr auto;
+  grid-template-columns: 2fr 2fr 1.2fr 0.8fr auto auto;
   gap: 10px;
   align-items: end;
 }
@@ -193,9 +191,10 @@
 
 .as-split-panel-top {
   display: flex;
-  gap: 16px;
+  gap: 20px;
   align-items: flex-end;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
 }
 
 .as-slot-boxes {
@@ -217,7 +216,7 @@
   text-align: center;
   font-weight: 700;
   font-size: 0.95rem;
-  font-family: 'DM Mono', monospace;
+  font-family: monospace;
   color: var(--as-accent2);
   background: var(--as-surface);
   border-radius: 10px;
@@ -247,7 +246,7 @@
 .as-slot-sum {
   font-size: 0.75rem;
   font-weight: 700;
-  font-family: 'DM Mono', monospace;
+  font-family: monospace;
   padding: 4px 10px;
   border-radius: 20px;
   align-self: center;
@@ -261,7 +260,7 @@
   display: flex;
   gap: 5px;
   flex-wrap: wrap;
-  margin-top: 10px;
+  margin-top: 4px;
 }
 
 .as-preset-btn {
@@ -269,7 +268,7 @@
   border-radius: 20px;
   font-size: 0.7rem;
   font-weight: 700;
-  font-family: 'DM Mono', monospace;
+  font-family: monospace;
   cursor: pointer;
   border: 1px solid var(--as-border-bright);
   background: transparent;
@@ -339,7 +338,7 @@
   border: 1px solid var(--as-border-bright);
   background: transparent;
   color: var(--as-muted);
-  font-family: 'Syne', sans-serif;
+  font-family: inherit;
   transition: all 0.12s;
 }
 
@@ -356,7 +355,7 @@
 }
 
 .as-chip.as-chip--time {
-  font-family: 'DM Mono', monospace;
+  font-family: monospace;
   font-size: 0.65rem;
   padding: 3px 9px;
 }
@@ -378,7 +377,7 @@
   padding: 3px 10px;
   cursor: pointer;
   font-weight: 700;
-  font-family: 'Syne', sans-serif;
+  font-family: inherit;
   transition: all 0.12s;
   margin-top: 2px;
 }
@@ -419,7 +418,7 @@
   color: var(--as-muted);
   font-weight: 700;
   font-size: 0.82rem;
-  font-family: 'Syne', sans-serif;
+  font-family: inherit;
   cursor: pointer;
   transition: all 0.15s;
   letter-spacing: 0.02em;
@@ -441,7 +440,7 @@
   color: #fff;
   font-weight: 800;
   font-size: 1rem;
-  font-family: 'Syne', sans-serif;
+  font-family: inherit;
   letter-spacing: -0.01em;
   cursor: pointer;
   margin-top: 10px;
@@ -482,7 +481,7 @@
   border-radius: 14px;
   padding: 14px 18px;
   border: 1px solid rgba(255,255,255,0.05);
-  font-family: 'DM Mono', monospace;
+  font-family: monospace;
 }
 
 .as-log-line { font-size: 0.76rem; padding: 2px 0; line-height: 1.6; }
@@ -497,7 +496,7 @@
   display: flex;
   gap: 10px;
   margin-bottom: 14px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .as-stat-card {
@@ -592,7 +591,7 @@
   color: #fff;
   font-weight: 800;
   font-size: 0.95rem;
-  font-family: 'Syne', sans-serif;
+  font-family: inherit;
   cursor: pointer;
   margin-top: 12px;
   transition: all 0.2s;
