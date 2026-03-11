@@ -579,3 +579,9 @@
   color: var(--input-ph);
   padding: 0 8px;
 }
+.lp__logo {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+  margin-bottom: 18px;
+}
