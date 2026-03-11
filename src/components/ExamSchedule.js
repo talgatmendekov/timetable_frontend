@@ -100,7 +100,7 @@ export default function ExamSchedule({ readOnly = false, showExamsToGuests = fal
   const [error,    setError]    = useState('');
   const [saving,   setSaving]   = useState(false);
   const [filterGrp,setFilterGrp]= useState('');
-  const [filterMon,setFilterMon]= useState('');
+  const [filterSubj,setFilterSubj]= useState('');
   const [sending,  setSending]  = useState(null);
   const [sendLog,  setSendLog]  = useState([]);
 
@@ -189,16 +189,15 @@ export default function ExamSchedule({ readOnly = false, showExamsToGuests = fal
     w.document.close();
   };
 
-  const months = useMemo(() => {
-    const ms = new Set(exams.map(e => e.exam_date?.slice(0,7)));
-    return [...ms].filter(Boolean).sort();
+  const subjects = useMemo(() => {
+    return [...new Set(exams.map(e => e.subject).filter(Boolean))].sort();
   }, [exams]);
 
   const filteredExams = useMemo(() => exams.filter(e => {
     if (filterGrp && !(e.group_names || []).includes(filterGrp)) return false;
-    if (filterMon && !e.exam_date?.startsWith(filterMon)) return false;
+    if (filterSubj && e.subject !== filterSubj) return false;
     return true;
-  }), [exams, filterGrp, filterMon]);
+  }), [exams, filterGrp, filterSubj]);
 
   const byDate = useMemo(() => {
     const map = {};
@@ -267,12 +266,12 @@ export default function ExamSchedule({ readOnly = false, showExamsToGuests = fal
           <option value="">{t('examFilterGroup') || 'All Groups'}</option>
           {groups.map(g => <option key={g} value={g}>{g}</option>)}
         </select>
-        <select className="es-select" value={filterMon} onChange={e => setFilterMon(e.target.value)}>
-          <option value="">{t('examFilterMonth') || 'All Months'}</option>
-          {months.map(m => <option key={m} value={m}>{new Date(m+'-01').toLocaleDateString('en-GB',{month:'long',year:'numeric'})}</option>)}
+        <select className="es-select" value={filterSubj} onChange={e => setFilterSubj(e.target.value)}>
+          <option value="">{t('examFilterSubject') || 'All Subjects'}</option>
+          {subjects.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
-        {(filterGrp || filterMon) && (
-          <button className="es-btn-clear" onClick={() => { setFilterGrp(''); setFilterMon(''); }}>✕ Clear</button>
+        {(filterGrp || filterSubj) && (
+          <button className="es-btn-clear" onClick={() => { setFilterGrp(''); setFilterSubj(''); }}>✕ Clear</button>
         )}
         <div className="es-count">{filteredExams.length} exam{filteredExams.length !== 1 ? 's' : ''}</div>
       </div>
