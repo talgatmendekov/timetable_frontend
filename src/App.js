@@ -20,10 +20,17 @@ import ExamSchedule              from './components/ExamSchedule';
 import FeedbackDashboard         from './components/FeedbackDashboard';
 
 import { exportToExcel, importFromExcel } from './utils/excelUtils';
-import { parseAlatooSchedule }            from './utils/alatooimport';
 import { LANGUAGE_OPTIONS }               from './data/i18n';
-import logo                               from './assets/logo.png';
-import * as XLSX from 'xlsx';
+
+import logo         from './assets/logo.png';
+import iconAuto     from './assets/auto.webp';
+import iconBooking  from './assets/booking.png';
+import iconExams    from './assets/exams.avif';
+import iconFeedback from './assets/feedback.jpeg';
+import iconSchedule from './assets/schedule.png';
+import iconStats    from './assets/stats.jpeg';
+import iconTelegram from './assets/telegram.jpeg';
+
 import './App.css';
 
 const API_URL    = process.env.REACT_APP_API_URL    || 'https://timetablebackend-production.up.railway.app/api';
@@ -34,11 +41,24 @@ const SCHEDULE_DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Satur
 const getTodayScheduleDay = () => { const t = DAY_NAMES[new Date().getDay()]; return SCHEDULE_DAYS.includes(t) ? t : 'Monday'; };
 const getTodayName        = () => DAY_NAMES[new Date().getDay()];
 
-// Default light mode on first visit
 if (!localStorage.getItem('scheduleTheme')) {
   localStorage.setItem('scheduleTheme', 'light');
   document.body.setAttribute('data-theme', 'light');
 }
+
+// ── Render a tab icon — image asset or emoji ──────────────────────────────────
+const TabIcon = ({ icon, label, active }) => {
+  if (typeof icon === 'string' && icon.startsWith('data:')) {
+    // base64 / imported asset resolved by webpack
+    return <img src={icon} alt={label} style={{ width:22, height:22, objectFit:'contain', borderRadius:4, filter: active ? 'brightness(10)' : 'none' }} />;
+  }
+  // webpack imported images are objects in some configs, or resolved URLs
+  if (icon && typeof icon === 'object') {
+    return <img src={icon} alt={label} style={{ width:22, height:22, objectFit:'contain', borderRadius:4, filter: active ? 'brightness(10)' : 'none' }} />;
+  }
+  // emoji / string fallback
+  return <span style={{ fontSize:'1.1rem', lineHeight:1 }}>{icon}</span>;
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 const AppContent = () => {
@@ -66,12 +86,7 @@ const AppContent = () => {
   const fileInputRef = useRef(null);
   const todayName = getTodayName();
 
-  // Theme
-  React.useEffect(() => {
-    document.body.setAttribute('data-theme', theme);
-    localStorage.setItem('scheduleTheme', theme);
-  }, [theme]);
-
+  React.useEffect(() => { document.body.setAttribute('data-theme', theme); localStorage.setItem('scheduleTheme', theme); }, [theme]);
   React.useEffect(() => { if (isAuthenticated) setShowLoginModal(false); }, [isAuthenticated]);
   React.useEffect(() => { const d = getTodayScheduleDay(); if (d && days.includes(d)) setSelectedDay(d); }, [days]);
 
@@ -96,7 +111,6 @@ const AppContent = () => {
 
   const fetchActiveBookings = React.useCallback(() => {
     const tk = localStorage.getItem('scheduleToken') || '';
-    // Only fetch booking list when authenticated — endpoint requires auth
     if (!tk) return;
     fetch(`${API_URL}/booking-requests`, { headers: { Authorization: `Bearer ${tk}` } })
       .then(r => r.json()).then(d => { if (d.success) setActiveBookings(d.data || []); }).catch(() => {});
@@ -129,8 +143,13 @@ const AppContent = () => {
   const handleFileChange  = async (e) => {
     const file = e?.target?.files?.[0]; if (!file) return; setImporting(true);
     try {
-      try { const parsed = await parseAlatooSchedule(file); if (parsed?.length > 0) { const res = await importSchedule(JSON.stringify(parsed)); alert(res?.success ? `✅ Imported ${parsed.length} classes!` : `❌ ${res?.error}`); return; } throw new Error(); }
-      catch { const result = await importFromExcel(file); if (result.success) { const res = await importSchedule(JSON.stringify({ groups: result.groups, schedule: result.schedule })); alert(res.success ? `✅ Imported ${result.groups.length} groups.` : `❌ ${res.error}`); } else alert('❌ Invalid file format.'); }
+      const result = await importFromExcel(file);
+      if (result.success) {
+        const res = await importSchedule(JSON.stringify({ groups: result.groups, schedule: result.schedule }));
+        alert(res.success ? `✅ Imported ${result.groups.length} groups, ${Object.keys(result.schedule).length} classes.` : `❌ ${res.error}`);
+      } else {
+        alert(`❌ ${result.error || 'Invalid file format.'}`);
+      }
     } catch (err) { alert(`❌ ${err.message}`); }
     finally { setImporting(false); if (fileInputRef.current) fileInputRef.current.value = ''; }
   };
@@ -138,19 +157,19 @@ const AppContent = () => {
 
   const navTabs = [
     ...(!isAuthenticated ? [
-      { id:'mybookings', icon:'📋', label:'My Bookings' },
-      ...(showExamsToGuests ? [{ id:'exams', icon:'🗓', label:'Exams' }] : []),
-      { id:'feedback', icon:'💬', label:'Feedback' },
+      { id:'mybookings', icon: iconBooking,  label:'My Bookings' },
+      ...(showExamsToGuests ? [{ id:'exams', icon: iconExams, label:'Exams' }] : []),
+      { id:'feedback',   icon: iconFeedback, label:'Feedback' },
     ] : []),
     ...(isAuthenticated ? [
-      { id:'print',     icon:'🖨️', label:'Print'         },
-      { id:'dashboard', icon:'📊', label:'Stats'          },
-      { id:'conflicts', icon:'⚠️',  label:'Conflicts', badge: conflictCount },
-      { id:'bookings',  icon:'🏫', label:'Bookings'       },
-      { id:'autosched', icon:{ type: 'image', src: './assets/auto.webp' }, label:'Auto'},
-      { id:'exams',     icon:'🗓', label:'Exams'          },
-      { id:'feedback',  icon:'💬', label:'Feedback', badge: feedbackCount },
-      { id:'telegram',  icon:'📱', label:'Telegram'       },
+      { id:'print',     icon: iconSchedule, label:'Print'                          },
+      { id:'dashboard', icon: iconStats,    label:'Stats'                          },
+      { id:'conflicts', icon: '⚠️',         label:'Conflicts', badge: conflictCount },
+      { id:'bookings',  icon: iconBooking,  label:'Bookings'                       },
+      { id:'autosched', icon: iconAuto,     label:'Auto'                           },
+      { id:'exams',     icon: iconExams,    label:'Exams'                          },
+      { id:'feedback',  icon: iconFeedback, label:'Feedback',  badge: feedbackCount },
+      { id:'telegram',  icon: iconTelegram, label:'Telegram'                       },
     ] : []),
   ];
 
@@ -158,9 +177,7 @@ const AppContent = () => {
     <div className="app-loading"><div className="app-loading-spinner">⏳</div><p>Loading...</p></div>
   );
 
-  // ── btn style helpers (use existing CSS classes) ──────────────────────────
   const S = {
-    // compact topbar
     bar: {
       display:'flex', alignItems:'center', gap:8,
       background:'var(--bg-card)', borderBottom:'1px solid var(--border)',
@@ -204,7 +221,6 @@ const AppContent = () => {
         </div>
       )}
 
-      {/* ── LOGIN MODAL — real Login, completely untouched ── */}
       {showLoginModal && !isAuthenticated && (
         <div onClick={e => { if (e.target===e.currentTarget) setShowLoginModal(false); }}
           style={{ position:'fixed', inset:0, zIndex:9998, background:'rgba(0,0,0,0.82)', backdropFilter:'blur(8px)', display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -216,12 +232,8 @@ const AppContent = () => {
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════════════
-          COMPACT TOPBAR — single row, everything visible
-      ══════════════════════════════════════════════════════ */}
+      {/* ── TOPBAR ── */}
       <div style={S.bar}>
-
-        {/* Logo + title */}
         <img src={logo} alt="" style={{ height:26, width:26, objectFit:'contain', borderRadius:4, flexShrink:0 }} />
         <span style={{ fontWeight:800, fontSize:'0.8rem', color:'var(--text-primary)', whiteSpace:'nowrap', flexShrink:0 }}>
           Alatoo University
@@ -229,7 +241,6 @@ const AppContent = () => {
 
         <div style={S.divider} />
 
-        {/* Day filter pills */}
         <div style={{ display:'flex', gap:4, flexWrap:'wrap', alignItems:'center' }}>
           <button style={S.dayBtn(selectedDay==='', false)} onClick={() => setSelectedDay('')}>{t('allDays')}</button>
           {days.map(day => (
@@ -242,22 +253,18 @@ const AppContent = () => {
 
         <div style={S.divider} />
 
-        {/* Group filter */}
         <select value={selectedGroup} onChange={e => setSelectedGroup(e.target.value)} style={S.select}>
           <option value="">{t('allGroups')}</option>
           {groups.map(g => <option key={g} value={g}>{g}</option>)}
         </select>
 
-        {/* Teacher filter */}
         <select value={selectedTeacher} onChange={e => setSelectedTeacher(e.target.value)} style={S.select}>
           <option value="">{t('allTeachers')}</option>
           {teachers.map(tc => <option key={tc} value={tc}>{tc}</option>)}
         </select>
 
-        {/* Spacer */}
         <div style={{ flex:1 }} />
 
-        {/* Language */}
         <div style={{ display:'flex', gap:2 }}>
           {LANGUAGE_OPTIONS.map(opt => (
             <button key={opt.code} onClick={() => changeLang(opt.code)}
@@ -268,7 +275,6 @@ const AppContent = () => {
           ))}
         </div>
 
-        {/* Theme toggle */}
         <button onClick={() => setTheme(t => t==='light' ? 'dark' : 'light')}
           style={{ background:'transparent', border:'1px solid var(--border)', borderRadius:7, padding:'4px 8px', cursor:'pointer', fontSize:'0.9rem', color:'var(--text-primary)' }}>
           {theme==='light' ? '🌙' : '☀️'}
@@ -276,15 +282,10 @@ const AppContent = () => {
 
         <div style={S.divider} />
 
-        {/* Admin: user badge + logout OR login button */}
         {isAuthenticated ? (
           <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
-            <span className="user-badge" style={{ fontSize:'0.72rem', padding:'4px 10px' }}>
-              👤 {user?.username}
-            </span>
-            <button onClick={() => { logout(); setActiveView('schedule'); }} className="btn btn-secondary" style={{ padding:'4px 12px', fontSize:'0.72rem' }}>
-              {t('logout')}
-            </button>
+            <span className="user-badge" style={{ fontSize:'0.72rem', padding:'4px 10px' }}>👤 {user?.username}</span>
+            <button onClick={() => { logout(); setActiveView('schedule'); }} className="btn btn-secondary" style={{ padding:'4px 12px', fontSize:'0.72rem' }}>{t('logout')}</button>
           </div>
         ) : (
           <button onClick={() => setShowLoginModal(true)} className="btn btn-primary" style={{ padding:'5px 14px', fontSize:'0.75rem', flexShrink:0 }}>
@@ -292,7 +293,6 @@ const AppContent = () => {
           </button>
         )}
 
-        {/* Admin action buttons */}
         {isAuthenticated && (
           <>
             <div style={S.divider} />
@@ -306,7 +306,6 @@ const AppContent = () => {
           </>
         )}
 
-        {/* Guest: book lab */}
         {!isAuthenticated && (
           <button onClick={() => setShowBooking(true)} className="btn btn-primary" style={{ padding:'5px 12px', fontSize:'0.75rem', flexShrink:0 }}>
             🏫 {t('bookLab') || 'Book Lab'}
@@ -314,32 +313,28 @@ const AppContent = () => {
         )}
       </div>
 
-      {/* Error banner */}
       {error && (
         <div className="error-banner">
           ⚠️ {error}. <button onClick={() => window.location.reload()}>Retry</button>
         </div>
       )}
 
-      {/* ══════════════════════════════════════════════════════
-          MAIN: sidebar icon nav (left) + content (right)
-      ══════════════════════════════════════════════════════ */}
+      {/* ── MAIN LAYOUT ── */}
       <div style={{ display:'flex' }}>
 
         {/* Vertical icon nav */}
         <div style={{ width:54, flexShrink:0, background:'var(--bg-card)', borderRight:'1px solid var(--border)', display:'flex', flexDirection:'column', alignItems:'center', padding:'8px 0', gap:4, position:'sticky', top:44, height:'calc(100vh - 44px)', overflowY:'auto' }}>
 
-          {/* Schedule home */}
           <button onClick={() => setActiveView('schedule')} title="Schedule" style={S.iconBtn(activeView==='schedule')}>
-            <span>📅</span><span style={S.iconLabel}>Schedule</span>
+            <TabIcon icon={iconSchedule} label="Schedule" active={activeView==='schedule'} />
+            <span style={S.iconLabel}>Schedule</span>
           </button>
 
           <div style={{ width:32, height:1, background:'var(--border)', margin:'2px 0' }} />
 
-          {/* Feature tabs */}
           {navTabs.map(tab => (
             <button key={tab.id} onClick={() => setActiveView(tab.id)} title={tab.label} style={S.iconBtn(activeView===tab.id)}>
-              <span>{tab.icon}</span>
+              <TabIcon icon={tab.icon} label={tab.label} active={activeView===tab.id} />
               <span style={S.iconLabel}>{tab.label}</span>
               {tab.badge > 0 && (
                 <span style={{ position:'absolute', top:2, right:2, background:'#ef4444', color:'#fff', fontSize:'0.48rem', fontWeight:800, borderRadius:10, padding:'1px 3px', minWidth:12, textAlign:'center', lineHeight:1.4 }}>{tab.badge}</span>
@@ -348,9 +343,8 @@ const AppContent = () => {
           ))}
         </div>
 
-        {/* Content area — schedule at very top, no extra padding */}
+        {/* Content */}
         <div style={{ flex:1, minWidth:0, padding:'8px 16px' }}>
-
           {activeView === 'schedule' && (
             <>
               <EmptyRoomPanel allRooms={allRooms} schedule={schedule} days={days} timeSlots={timeSlots} selectedRoom={selectedRoom} setSelectedRoom={setSelectedRoom} />
@@ -364,7 +358,6 @@ const AppContent = () => {
               />
             </>
           )}
-
           {activeView==='mybookings' && <GuestBookingStatus bookings={activeBookings} onRefresh={setActiveBookings} />}
           {activeView==='print'      && <PrintView />}
           {activeView==='dashboard'  && <TeacherDashboard />}
