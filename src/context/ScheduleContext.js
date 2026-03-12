@@ -13,7 +13,6 @@ export const useSchedule = () => {
   return context;
 };
 
-// ─── Known typo / short-form → canonical name map ────────────────────────────
 const TEACHER_CANONICAL = {
   'dr. daniyar satybaldiev':          'Dr. Daniiar Satybaldiev',
   'mr. daniyar satybaldiev':          'Dr. Daniiar Satybaldiev',
@@ -37,7 +36,6 @@ const TEACHER_CANONICAL = {
   'ms. tattybubu arap kyzy':          'Ms. Tattybubu',
 };
 
-// ─── Teacher name normalisation ───────────────────────────────────────────────
 export function normalizeTeacherName(raw) {
   if (!raw) return '';
   let s = raw.trim();
@@ -73,7 +71,6 @@ export function normalizeTeacherName(raw) {
   return s;
 }
 
-// Deduplicated sorted teacher list
 function buildTeacherList(scheduleMap) {
   const seen   = new Set();
   const result = [];
@@ -87,9 +84,6 @@ function buildTeacherList(scheduleMap) {
 }
 
 export const ScheduleProvider = ({ children }) => {
-  // ⚠️ Wait for AuthContext to finish verifying the token before fetching.
-  // Without this, loadAll() fires before the token is in localStorage,
-  // producing "API attempt N failed, retrying in Nms..." spam on the login page.
   const { loading: authLoading } = useAuth();
 
   const [groups,   setGroups]   = useState(UNIVERSITY_GROUPS);
@@ -97,7 +91,6 @@ export const ScheduleProvider = ({ children }) => {
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState(null);
 
-  // ── loadAll with silent retry — fixes Railway cold-start error on first load ─
   const loadAll = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -105,25 +98,35 @@ export const ScheduleProvider = ({ children }) => {
     const MAX_ATTEMPTS = 4;
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       try {
-        const [scheduleData, groupsData] = await Promise.all([
+        const [scheduleRes, groupsRes] = await Promise.all([
           scheduleAPI.getAll(),
           groupsAPI.getAll(),
         ]);
+
+        // Backend wraps responses as { success, data } — unwrap safely
+        const scheduleData = scheduleRes?.data ?? (
+          scheduleRes && typeof scheduleRes === 'object' && !Array.isArray(scheduleRes) && scheduleRes.success !== undefined
+            ? {}
+            : scheduleRes
+        ) ?? {};
+
+        const groupsData = groupsRes?.data ?? (
+          Array.isArray(groupsRes) ? groupsRes : []
+        ) ?? [];
+
         setSchedule(scheduleData || {});
-        if (groupsData?.length > 0) setGroups(groupsData);
+        if (Array.isArray(groupsData) && groupsData.length > 0) setGroups(groupsData);
         setError(null);
         setLoading(false);
-        return; // ✅ success — stop retrying
+        return;
       } catch (err) {
-        // ⚠️ Never retry auth failures (401/403) — retrying with the same
-        // missing token just spams the console on the login page.
         const isAuthError = err.message?.includes('Auth failed') ||
                             err.message?.includes('401') ||
                             err.message?.includes('403') ||
                             err.message?.includes('Access denied');
 
         if (!isAuthError && attempt < MAX_ATTEMPTS) {
-          const delay = attempt * 800; // 800ms, 1600ms, 2400ms
+          const delay = attempt * 800;
           console.warn(`⚠️ Load attempt ${attempt} failed, retrying in ${delay}ms...`);
           await new Promise(r => setTimeout(r, delay));
         } else {
