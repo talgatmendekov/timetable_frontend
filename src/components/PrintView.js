@@ -2,7 +2,6 @@
 import React, { useState, useRef } from 'react';
 import { useSchedule } from '../context/ScheduleContext';
 import { useLanguage } from '../context/LanguageContext';
-import { SUBJECT_TYPES } from '../data/i18n';
 import './PrintView.css';
 
 const DEPARTMENTS = [
@@ -43,12 +42,6 @@ const PrintView = () => {
   const deptLabel      = (d) => (d && (d[lang] || d.en)) || '';
   const filteredGroups = deptId ? groups.filter(g => dept?.groups.includes(g)) : groups;
   const getClass       = (group, day, time) => schedule[`${group}-${day}-${time}`] || null;
-  const typeOf         = (st) => SUBJECT_TYPES.find(s => s.value === st) || SUBJECT_TYPES[0];
-
-  const typeShort = (st) => {
-    const map = { lecture:'Lec', seminar:'Sem', lab:'Lab', practice:'Prac', other:'—' };
-    return map[st] || 'Lec';
-  };
 
   // ── Build a row with merged cells based on duration ───────────────────────
   // Returns array of {cls, colSpan, skip} for each timeSlot index
@@ -73,14 +66,12 @@ const PrintView = () => {
   // ── Cell renderer ─────────────────────────────────────────────────────────
   const renderCell = (cls, colSpan = 1) => {
     if (!cls) return <span className="pv-cell-empty"> </span>;
-    const ts = typeOf(cls.subjectType);
     return (
-      <div className="pv-cell">
-        <span className="pv-cell-pill" style={{ background: ts.color }}>{typeShort(cls.subjectType)}</span>
+      <div className="pv-cell" style={{ alignItems:"center", textAlign:"center" }}>
         <span className="pv-cell-course">{cls.course}</span>
         {cls.teacher && <span className="pv-cell-teacher">{cls.teacher}</span>}
         {cls.room    && <span className="pv-cell-room">{cls.room}</span>}
-        {colSpan > 1  && <span className="pv-cell-dur">×{colSpan} slots</span>}
+  
       </div>
     );
   };
@@ -129,17 +120,15 @@ const PrintView = () => {
         th:last-child { border-right:none; }
         th.th-label { text-align:left; padding-left:4px; background:#e9ebee; color:#374151; }
         tr:nth-child(even) { background:#f9fafb; }
-        td { padding:${cellPad}; border-bottom:1px solid #e5e7eb; border-right:1px solid #e5e7eb; vertical-align:top; overflow:hidden; }
+        td { padding:${cellPad}; border-bottom:1px solid #e5e7eb; border-right:1px solid #e5e7eb; vertical-align:middle; text-align:center; overflow:hidden; }
         td:last-child { border-right:none; }
         tr:last-child td { border-bottom:none; }
         td.td-label { font-weight:700; font-size:${Math.max(4.5, baseFontPx - 0.5)}px; color:#374151; background:#f3f4f6; white-space:nowrap; padding-left:4px; border-right:2px solid #d1d5db; }
         td.td-merged { background:#eff6ff; border:1px solid #bfdbfe; }
         .pv-cell { display:flex; flex-direction:column; gap:1px; }
-        .pv-cell-pill    { display:inline-block; padding:0 2px; border-radius:2px; font-size:${Math.max(4, baseFontPx - 1.5)}px; font-weight:700; color:#fff; margin-bottom:1px; }
         .pv-cell-course  { font-size:${Math.max(4.5, baseFontPx - 0.5)}px; font-weight:700; color:#111827; line-height:1.2; }
         .pv-cell-teacher { font-size:${Math.max(4, baseFontPx - 1)}px; color:#6b7280; line-height:1.2; }
         .pv-cell-room    { font-size:${Math.max(4, baseFontPx - 1.5)}px; color:#9ca3af; line-height:1.2; }
-        .pv-cell-dur     { font-size:${Math.max(3.5, baseFontPx - 2)}px; color:#93c5fd; font-style:italic; }
         .pv-cell-empty   { color:#e5e7eb; text-align:center; font-size:8px; }
         .pv-footer { border-top:1px solid #e5e7eb; padding:4px 8px; display:flex; justify-content:space-between; background:#f9fafb; }
         .pv-footer-txt { font-size:5.5px; color:#9ca3af; }
