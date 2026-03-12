@@ -21,6 +21,12 @@ const fmt = (dateStr) => {
   return new Date(dateStr).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
 };
 
+const fmtWithDay = (dateStr) => {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-GB', { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
+};
+
 const endTime = (start, dur) => {
   try {
     const parts = (start || '').split(':');
@@ -92,17 +98,18 @@ export default function ExamSchedule({ readOnly = false, showExamsToGuests = fal
   const { t } = useLanguage();
   const { groups, schedule } = useSchedule();
 
-  const [exams,    setExams]    = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [editId,   setEditId]   = useState(null);
-  const [form,     setForm]     = useState(emptyForm());
-  const [error,    setError]    = useState('');
-  const [saving,   setSaving]   = useState(false);
-  const [filterGrp,setFilterGrp]= useState('');
-  const [filterSubj,setFilterSubj]= useState('');
-  const [sending,  setSending]  = useState(null);
-  const [sendLog,  setSendLog]  = useState([]);
+  const [exams,      setExams]      = useState([]);
+  const [loading,    setLoading]    = useState(true);
+  const [showForm,   setShowForm]   = useState(false);
+  const [editId,     setEditId]     = useState(null);
+  const [form,       setForm]       = useState(emptyForm());
+  const [error,      setError]      = useState('');
+  const [saving,     setSaving]     = useState(false);
+  const [filterGrp,  setFilterGrp]  = useState('');
+  const [filterSubj, setFilterSubj] = useState('');
+  const [filterDate, setFilterDate] = useState('');
+  const [sending,    setSending]    = useState(null);
+  const [sendLog,    setSendLog]    = useState([]);
 
   const allRooms    = useMemo(() => [...new Set(Object.values(schedule).map(e=>e.room).filter(Boolean))].sort(), [schedule]);
   const allTeachers = useMemo(() => [...new Set(Object.values(schedule).map(e=>e.teacher).filter(Boolean))].sort(), [schedule]);
@@ -193,11 +200,16 @@ export default function ExamSchedule({ readOnly = false, showExamsToGuests = fal
     return [...new Set(exams.map(e => e.subject).filter(Boolean))].sort();
   }, [exams]);
 
+  const dates = useMemo(() => {
+    return [...new Set(exams.map(e => e.exam_date?.slice(0,10)).filter(Boolean))].sort();
+  }, [exams]);
+
   const filteredExams = useMemo(() => exams.filter(e => {
-    if (filterGrp && !(e.group_names || []).includes(filterGrp)) return false;
+    if (filterGrp  && !(e.group_names || []).includes(filterGrp)) return false;
     if (filterSubj && e.subject !== filterSubj) return false;
+    if (filterDate && e.exam_date?.slice(0,10) !== filterDate) return false;
     return true;
-  }), [exams, filterGrp, filterSubj]);
+  }), [exams, filterGrp, filterSubj, filterDate]);
 
   const byDate = useMemo(() => {
     const map = {};
@@ -229,6 +241,9 @@ export default function ExamSchedule({ readOnly = false, showExamsToGuests = fal
     });
     return ids;
   }, [exams]);
+
+  const clearFilters = () => { setFilterGrp(''); setFilterSubj(''); setFilterDate(''); };
+  const hasFilters = filterGrp || filterSubj || filterDate;
 
   return (
     <div className="es-wrap">
@@ -266,14 +281,34 @@ export default function ExamSchedule({ readOnly = false, showExamsToGuests = fal
           <option value="">{t('examFilterGroup') || 'All Groups'}</option>
           {groups.map(g => <option key={g} value={g}>{g}</option>)}
         </select>
+
         <select className="es-select" value={filterSubj} onChange={e => setFilterSubj(e.target.value)}>
           <option value="">{t('examFilterSubject') || 'All Subjects'}</option>
           {subjects.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
-        {(filterGrp || filterSubj) && (
-          <button className="es-btn-clear" onClick={() => { setFilterGrp(''); setFilterSubj(''); }}>✕ Clear</button>
+
+        <select className="es-select" value={filterDate} onChange={e => setFilterDate(e.target.value)}>
+          <option value="">📅 All Dates</option>
+          {dates.map(d => (
+            <option key={d} value={d}>{fmtWithDay(d)}</option>
+          ))}
+        </select>
+
+        <input
+          type="date"
+          className="es-input"
+          style={{ padding:'5px 8px', fontSize:'0.78rem', maxWidth:148, cursor:'pointer' }}
+          value={filterDate}
+          onChange={e => setFilterDate(e.target.value)}
+          title="Pick a date"
+        />
+
+        {hasFilters && (
+          <button className="es-btn-clear" onClick={clearFilters}>✕ Clear</button>
         )}
-        <div className="es-count">{filteredExams.length} exam{filteredExams.length !== 1 ? 's' : ''}</div>
+        <div className="es-count">
+          {filteredExams.length} of {exams.length} exam{exams.length !== 1 ? 's' : ''}
+        </div>
       </div>
 
       {sendLog.length > 0 && (
@@ -342,8 +377,9 @@ export default function ExamSchedule({ readOnly = false, showExamsToGuests = fal
       ) : Object.keys(byDate).length === 0 ? (
         <div className="es-empty">
           <div style={{ fontSize:'2.5rem', marginBottom:8 }}>📋</div>
-          <div>{t('examNoData') || 'No exams scheduled yet.'}</div>
-          {!readOnly && <div style={{ fontSize:'0.78rem', color:'#94a3b8', marginTop:4 }}>Click "+ Add Exam" to create the first entry.</div>}
+          <div>{hasFilters ? 'No exams match the selected filters.' : (t('examNoData') || 'No exams scheduled yet.')}</div>
+          {hasFilters && <button className="es-btn-clear" style={{ marginTop:8 }} onClick={clearFilters}>✕ Clear filters</button>}
+          {!readOnly && !hasFilters && <div style={{ fontSize:'0.78rem', color:'#94a3b8', marginTop:4 }}>Click "+ Add Exam" to create the first entry.</div>}
         </div>
       ) : (
         <div className="es-table-wrap">

@@ -27,7 +27,7 @@ import iconAuto     from './assets/auto.png';
 import iconBooking  from './assets/booking.png';
 import iconExams    from './assets/exam.jpeg';
 import iconFeedback from './assets/feedback.png';
-import iconSchedule from './assets/schedule.png';
+import iconSchedule from './assets/schedule.jpeg';
 import iconStats    from './assets/stats.jpeg';
 import iconTelegram from './assets/telegram.jpeg';
 import iconPrint    from './assets/print.jpeg';
