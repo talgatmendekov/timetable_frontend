@@ -147,7 +147,7 @@ const AppContent = () => {
       { id:'dashboard', icon:'📊', label:'Stats'          },
       { id:'conflicts', icon:'⚠️',  label:'Conflicts', badge: conflictCount },
       { id:'bookings',  icon:'🏫', label:'Bookings'       },
-      { id:'autosched', icon:'./assets/auto.webp', label:'Auto'},
+      { id:'autosched', icon:{ type: 'image', src: './assets/auto.webp' }, label:'Auto'},
       { id:'exams',     icon:'🗓', label:'Exams'          },
       { id:'feedback',  icon:'💬', label:'Feedback', badge: feedbackCount },
       { id:'telegram',  icon:'📱', label:'Telegram'       },
