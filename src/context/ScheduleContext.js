@@ -103,25 +103,34 @@ export const ScheduleProvider = ({ children }) => {
           groupsAPI.getAll(),
         ]);
 
-        // /api/schedules → plain object {"GROUP-day-time": {...}}  (no wrapper)
-        // /api/groups   → plain string array ['COMSE-25', ...]       (no wrapper)
-        const scheduleData = (
-          scheduleRes &&
-          typeof scheduleRes === 'object' &&
-          !Array.isArray(scheduleRes) &&
-          !scheduleRes.error
-        )
-          ? (scheduleRes.data && typeof scheduleRes.data === 'object' && !Array.isArray(scheduleRes.data)
-              ? scheduleRes.data   // wrapped: { success, data: {...} }
-              : scheduleRes)       // plain object directly
-          : {};
+        // Debug: log raw API responses to diagnose rendering issues
+        console.log('[ScheduleContext] scheduleRes keys:', scheduleRes ? Object.keys(scheduleRes).slice(0,5) : 'null');
+        console.log('[ScheduleContext] groupsRes sample:', JSON.stringify(groupsRes)?.slice(0,100));
 
+        // /api/schedules returns plain object {"GROUP-day-time": {...}} — no wrapper
+        // But handle wrapped { success, data } just in case
+        let scheduleData = {};
+        if (scheduleRes && typeof scheduleRes === 'object' && !Array.isArray(scheduleRes)) {
+          // If it has a 'data' key that is also a plain object, unwrap it
+          if (scheduleRes.data && typeof scheduleRes.data === 'object' && !Array.isArray(scheduleRes.data)) {
+            scheduleData = scheduleRes.data;
+          } else if (!scheduleRes.success && !scheduleRes.error) {
+            // Plain schedule object — use directly
+            scheduleData = scheduleRes;
+          } else if (scheduleRes.success && scheduleRes.data) {
+            scheduleData = scheduleRes.data;
+          }
+        }
+        console.log('[ScheduleContext] scheduleData entries:', Object.keys(scheduleData).length);
+
+        // /api/groups returns plain string array ['COMSE-25', ...]
         const rawGroups = Array.isArray(groupsRes)
           ? groupsRes
           : Array.isArray(groupsRes?.data) ? groupsRes.data : [];
         const groupsData = rawGroups
           .map(g => typeof g === 'string' ? g : (g?.name || g?.group_name || null))
           .filter(Boolean);
+        console.log('[ScheduleContext] groupsData:', groupsData.slice(0,3));
 
                 setSchedule(scheduleData);
         if (groupsData.length > 0) setGroups(groupsData);
