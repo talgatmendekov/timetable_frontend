@@ -103,19 +103,28 @@ export const ScheduleProvider = ({ children }) => {
           groupsAPI.getAll(),
         ]);
 
-        // Backend wraps responses as { success, data } — unwrap safely
-        const scheduleData = scheduleRes?.data ?? (
-          scheduleRes && typeof scheduleRes === 'object' && !Array.isArray(scheduleRes) && scheduleRes.success !== undefined
-            ? {}
-            : scheduleRes
-        ) ?? {};
+        // /api/schedules → plain object {"GROUP-day-time": {...}}  (no wrapper)
+        // /api/groups   → plain string array ['COMSE-25', ...]       (no wrapper)
+        const scheduleData = (
+          scheduleRes &&
+          typeof scheduleRes === 'object' &&
+          !Array.isArray(scheduleRes) &&
+          !scheduleRes.error
+        )
+          ? (scheduleRes.data && typeof scheduleRes.data === 'object' && !Array.isArray(scheduleRes.data)
+              ? scheduleRes.data   // wrapped: { success, data: {...} }
+              : scheduleRes)       // plain object directly
+          : {};
 
-        const groupsData = groupsRes?.data ?? (
-          Array.isArray(groupsRes) ? groupsRes : []
-        ) ?? [];
+        const rawGroups = Array.isArray(groupsRes)
+          ? groupsRes
+          : Array.isArray(groupsRes?.data) ? groupsRes.data : [];
+        const groupsData = rawGroups
+          .map(g => typeof g === 'string' ? g : (g?.name || g?.group_name || null))
+          .filter(Boolean);
 
-        setSchedule(scheduleData || {});
-        if (Array.isArray(groupsData) && groupsData.length > 0) setGroups(groupsData);
+                setSchedule(scheduleData);
+        if (groupsData.length > 0) setGroups(groupsData);
         setError(null);
         setLoading(false);
         return;
