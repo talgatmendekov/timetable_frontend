@@ -25,7 +25,7 @@ import { LANGUAGE_OPTIONS }               from './data/i18n';
 import logo         from './assets/logo.png';
 import iconAuto     from './assets/auto.png';
 import iconBooking  from './assets/booking.png';
-import iconExams    from './assets/exams.png';
+import iconExams    from './assets/exam.jpeg';
 import iconFeedback from './assets/feedback.png';
 import iconSchedule from './assets/schedule.png';
 import iconStats    from './assets/stats.jpeg';
@@ -168,7 +168,7 @@ const AppContent = () => {
       { id:'dashboard', icon: iconStats,    label:'Stats'                          },
       { id:'conflicts', icon: '⚠️',          label:'Conflicts', badge: conflictCount },
       { id:'bookings',  icon: iconBooking,  label:'Bookings'                       },
-      { id:'autosched', icon: iconAuto,     label:'Auto'                           },
+      { id:'autosched', icon: iconAuto,     label:'Auto Schedule'                           },
       { id:'exams',     icon: iconExams,    label:'Exams'                          },
       { id:'feedback',  icon: iconFeedback, label:'Feedback',  badge: feedbackCount },
       { id:'telegram',  icon: iconTelegram, label:'Telegram'                       },
