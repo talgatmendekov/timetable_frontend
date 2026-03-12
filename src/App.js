@@ -23,13 +23,15 @@ import { exportToExcel, importFromExcel } from './utils/excelUtils';
 import { LANGUAGE_OPTIONS }               from './data/i18n';
 
 import logo         from './assets/logo.png';
-import iconAuto     from './assets/auto.webp';
+import iconAuto     from './assets/auto.png';
 import iconBooking  from './assets/booking.png';
-import iconExams    from './assets/exams.avif';
-import iconFeedback from './assets/feedback.jpeg';
+import iconExams    from './assets/exams.png';
+import iconFeedback from './assets/feedback.png';
 import iconSchedule from './assets/schedule.png';
 import iconStats    from './assets/stats.jpeg';
 import iconTelegram from './assets/telegram.jpeg';
+import iconPrint    from './assets/print.jpeg';
+
 
 import './App.css';
 
@@ -162,9 +164,9 @@ const AppContent = () => {
       { id:'feedback',   icon: iconFeedback, label:'Feedback' },
     ] : []),
     ...(isAuthenticated ? [
-      { id:'print',     icon: iconSchedule, label:'Print'                          },
+      { id:'print',     icon: iconPrint, label:'Print'                          },
       { id:'dashboard', icon: iconStats,    label:'Stats'                          },
-      { id:'conflicts', icon: '⚠️',         label:'Conflicts', badge: conflictCount },
+      { id:'conflicts', icon: '⚠️',          label:'Conflicts', badge: conflictCount },
       { id:'bookings',  icon: iconBooking,  label:'Bookings'                       },
       { id:'autosched', icon: iconAuto,     label:'Auto'                           },
       { id:'exams',     icon: iconExams,    label:'Exams'                          },
