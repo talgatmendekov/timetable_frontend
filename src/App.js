@@ -28,7 +28,7 @@ import iconBooking  from './assets/booking.png';
 // exams.avif may have limited browser support — using emoji fallback
 // import iconExams from './assets/exam.jpeg';
 const iconExams = '🗓';
-import iconFeedback from './assets/feedback.png';
+import iconFeedback from './assets/feedback.jpeg';
 import iconSchedule from './assets/schedule.png';
 import iconStats    from './assets/stats.jpeg';
 import iconTelegram from './assets/telegram.jpeg';
@@ -277,10 +277,9 @@ const AppContent = () => {
         {/* Admin actions — inline, same row */}
         {isAuthenticated && (<>
           <button onClick={handleAddGroup}    style={S.btn('var(--primary)')}>＋ {t('addGroup')}</button>
-          <button onClick={handleExport}      style={S.btn('#059669')}>📊</button>
-          <button onClick={handleImportClick} style={S.btn('#0891b2')}>📂</button>
-          <button onClick={handleClearAll}    style={S.btn('var(--error)')}>🗑</button>
-          <button onClick={handleShare}       style={S.btn('#6366f1')}>🔗{shareToast}</button>
+          <button onClick={handleExport}      style={S.btn('#059669')}>📊 {t('export')}</button>
+          <button onClick={handleImportClick} style={S.btn('#0891b2')}>📂 {t('import')}</button>
+          <button onClick={handleClearAll}    style={S.btn('var(--error)')}>🗑 {t('clearAll')}</button>
           <div style={S.divider} />
         </>)}
 
