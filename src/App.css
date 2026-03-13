@@ -314,3 +314,12 @@ body {
   .app-bottom-nav { display: none !important; }
   .app-sidebar { display: flex !important; }
 }
+
+/* Hide room heatmap panel on mobile */
+@media (max-width: 767px) {
+  .erp-trigger-bar,
+  .erp-modal-overlay,
+  [class^="erp-"] {
+    display: none !important;
+  }
+}

@@ -344,7 +344,10 @@
     flex-wrap: wrap;
     gap: 4px;
   }
-  .mob-slot-pill {
+  /* No type pill on mobile — saves space */
+  .mob-slot-pill { display: none; }
+
+  .mob-slot-pill_UNUSED {
     display: inline-flex; align-items: center; gap: 2px;
     font-size: 0.58rem; font-weight: 700; color: #fff;
     padding: 1px 5px; border-radius: 3px;
