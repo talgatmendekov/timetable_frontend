@@ -203,17 +203,8 @@
   /* Скрываем таблицу, показываем карточки */
   .table-wrapper { display: none; }
 
-  /* Легенда — компактная, горизонтальная прокрутка */
-  .type-legend {
-    gap: 10px;
-    padding: 8px 10px;
-    margin-bottom: 8px;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    font-size: 0.72rem;
-  }
-  .legend-drag-hint { display: none; }
+  /* Hide legend on mobile */
+  .type-legend { display: none; }
 
   /* Обёртка контейнера */
   .schedule-container {
