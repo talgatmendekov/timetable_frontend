@@ -26,7 +26,7 @@ import logo         from './assets/logo.png';
 import iconAuto     from './assets/auto.png';
 import iconBooking  from './assets/booking.png';
 const iconExams = '🗓';
-import iconFeedback from './assets/feedback.jpeg';
+import iconFeedback from './assets/feedback.png';
 import iconSchedule from './assets/schedule.png';
 import iconStats    from './assets/stats.jpeg';
 import iconTelegram from './assets/telegram.jpeg';
