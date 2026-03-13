@@ -295,7 +295,6 @@
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
 }
 
-/* Dark mode (screen only) */
 @media (prefers-color-scheme: dark) {
   .pv-wrap          { background: #0f172a; }
   .pv-bar           { background: #1e293b; border: 1px solid #334155; }
