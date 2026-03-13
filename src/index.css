@@ -271,7 +271,7 @@ body[data-theme="dark"] .group-name { color: #f0f5fc !important; }
   .feedback-button { width: auto; }
 }
 
-/* DESKTOP */
+
 @media (min-width: 1024px) {
   body { font-size: 16px; }
   .header-title h1 { font-size: 2rem; }
