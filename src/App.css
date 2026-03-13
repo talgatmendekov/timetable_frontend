@@ -125,12 +125,42 @@ body {
 .bc-preview-subfrom { margin: 0 0 2px; font-size: 0.82rem; color: #6b7280; }
 .bc-preview-divider { margin: 6px 0; font-size: 0.72rem; color: #9ca3af; letter-spacing: -1px; overflow: hidden; }
 
-@media (max-width: 600px) {
-  .tab-bar { gap: 4px; }
-  .tab-btn { padding: 8px 12px; font-size: 0.8rem; }
+@media (max-width: 767px) {
+  .app { padding: 6px; }
+
+  /* Tab bar: icon-only pill row, single line, scrollable */
+  .tab-bar {
+    gap: 3px;
+    padding: 5px 6px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .tab-bar::-webkit-scrollbar { display: none; }
+
+  .tab-btn {
+    padding: 7px 10px;
+    font-size: 0.75rem;
+    gap: 4px;
+    flex-shrink: 0;
+    border-radius: 8px;
+  }
+  /* Hide labels on mobile — icons only */
   .tab-label { display: none; }
-  .tab-icon  { font-size: 1.2rem; }
-  .tab-btn.active .tab-label { display: inline; }
+  .tab-icon  { font-size: 1.1rem; }
+
+  /* Active tab shows its label */
+  .tab-btn.active .tab-label {
+    display: inline;
+    font-size: 0.72rem;
+    max-width: 70px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 .app-loading {

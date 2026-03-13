@@ -1,451 +1,492 @@
-// src/components/ExamSchedule.js
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { useLanguage } from '../context/LanguageContext';
+// src/components/ScheduleTable.js
+import React, { useState, useRef, useMemo } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { useSchedule } from '../context/ScheduleContext';
-import './ExamSchedule.css';
+import { useLanguage } from '../context/LanguageContext';
+import { SUBJECT_TYPES, SUBJECT_TYPE_LABELS } from '../data/i18n';
+import { normalizeTeacherName } from '../context/ScheduleContext';
+import './ScheduleTable.css';
 
-const API_URL  = process.env.REACT_APP_API_URL || 'https://timetablebackend-production.up.railway.app/api';
-const DURATIONS = [60, 90, 120, 150, 180];
-const TIME_SLOTS = [
-  '8:00','8:30','9:00','9:30','10:00','10:30','11:00','11:30',
-  '12:00','12:30','13:00','13:30','14:00','14:30','15:00','15:30',
-  '16:00','16:30','17:00','17:30','18:00',
-];
-
-const getToken = () =>
-  localStorage.getItem('token') ||
-  localStorage.getItem('scheduleToken') || '';
-
-const fmt = (dateStr) => {
-  if (!dateStr) return '';
-  return new Date(dateStr).toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' });
+const getTodayName = () => {
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  return days[new Date().getDay()];
 };
+const getTypeStyle = (subjectType) =>
+  SUBJECT_TYPES.find(s => s.value === subjectType) || SUBJECT_TYPES[0];
 
-const fmtWithDay = (dateStr) => {
-  if (!dateStr) return '';
-  const d = new Date(dateStr);
-  return d.toLocaleDateString('en-GB', { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
-};
+// ── Mobile: collapsible day sections with slot cards ──────────────────────
+const MobileView = ({
+  daysToShow, groupsToShow, timeSlots, schedule, todayName,
+  cellsToSkip, occupiedRoomCells, selectedRoom, normSelectedTeacher,
+  isAuthenticated, bookings, onEditClass, onGuestBookCell, onDeleteGroup,
+  typeLabels, t,
+}) => {
+  const [collapsed, setCollapsed] = useState({});
 
-const endTime = (start, dur) => {
-  try {
-    const parts = (start || '').split(':');
-    const h = Math.min(23, Math.max(0, parseInt(parts[0]) || 0));
-    const m = Math.min(59, Math.max(0, parseInt(parts[1]) || 0));
-    const d = Math.min(300, Math.max(0, parseInt(dur) || 0));
-    const total = h * 60 + m + d;
-    const endH  = Math.floor(total / 60) % 24;
-    const endM  = total % 60;
-    return `${String(endH).padStart(2,'0')}:${String(endM).padStart(2,'0')}`;
-  } catch { return '??:??'; }
-};
+  const getClass = (group, day, time) => schedule[`${group}-${day}-${time}`] || null;
 
-const emptyForm = () => ({
-  group_names: [],
-  subject:     '',
-  teacher:     '',
-  room:        '',
-  exam_date:   '',
-  start_time:  '9:00',
-  duration:    90,
-  notes:       '',
-});
-
-const toMinsLocal = (t) => {
-  const [h,m] = (t||'0:0').split(':').map(Number);
-  return h*60+m;
-};
-
-// GroupPicker
-const GroupPicker = ({ groups, selected, onChange, t }) => {
-  const [search, setSearch] = useState('');
-  const filtered = groups.filter(g => g.toLowerCase().includes(search.toLowerCase()));
-  const toggle = (g) => {
-    if (selected.includes(g)) onChange(selected.filter(x => x !== g));
-    else onChange([...selected, g]);
+  const getBooking = (group, day, time) => {
+    const classEntry = schedule[`${group}-${day}-${time}`];
+    if (classEntry?.room) {
+      return bookings.find(b => b.room === classEntry.room && b.day === day && b.start_time === time) || null;
+    }
+    return bookings.find(b => b.day === day && b.start_time === time &&
+      (b.entity === group || b.name === group)) || null;
   };
+
+  const getConflicts = (group, day, time, classData) => {
+    if (!classData) return [];
+    const out = [];
+    Object.values(schedule).forEach(e => {
+      if (e.group === group || e.day !== day || e.time !== time) return;
+      if (classData.teacher && e.teacher?.toLowerCase() === classData.teacher.toLowerCase()) out.push('teacher');
+      if (classData.room    && e.room?.toLowerCase()    === classData.room.toLowerCase())    out.push('room');
+    });
+    return [...new Set(out)];
+  };
+
+  const toggleDay = (day) => setCollapsed(c => ({ ...c, [day]: !c[day] }));
+
   return (
-    <div className="es-group-picker">
-      <div className="es-gp-header">
-        <span className="es-gp-count">
-          {selected.length > 0 ? `${selected.length} group${selected.length > 1 ? 's' : ''} selected` : 'No groups selected'}
-        </span>
-        <div className="es-gp-actions">
-          <button type="button" className="es-gp-btn" onClick={() => onChange([...groups])}>All</button>
-          <button type="button" className="es-gp-btn" onClick={() => onChange([])}>Clear</button>
-        </div>
-      </div>
-      <input className="es-input es-gp-search" placeholder={t('examSearchGroups')||'Search groups...'} value={search} onChange={e => setSearch(e.target.value)} />
-      <div className="es-gp-grid">
-        {filtered.map(g => (
-          <button key={g} type="button" className={`es-gp-chip ${selected.includes(g) ? 'on' : ''}`} onClick={() => toggle(g)}>
-            {selected.includes(g) && <span className="es-gp-check">✓</span>}{g}
-          </button>
-        ))}
-      </div>
-      {selected.length > 0 && (
-        <div className="es-gp-selected">
-          {selected.map(g => (
-            <span key={g} className="es-gp-pill">{g}<button type="button" onClick={() => toggle(g)}>×</button></span>
-          ))}
-        </div>
-      )}
+    <div>
+      {daysToShow.map(day => {
+        const isToday = day === todayName;
+        const isCollapsed = collapsed[day];
+
+        // Count classes this day across shown groups
+        const classCount = groupsToShow.reduce((acc, group) => {
+          return acc + timeSlots.filter(time => {
+            const cls = getClass(group, day, time);
+            return cls && !cellsToSkip.has(`${group}-${day}-${time}`);
+          }).length;
+        }, 0);
+
+        return (
+          <div key={day} className="mob-day-section">
+            <div
+              className={`mob-day-header ${isToday ? 'today' : ''} ${isCollapsed ? 'collapsed' : ''}`}
+              onClick={() => toggleDay(day)}
+            >
+              <span>{isToday ? '★ ' : ''}{t(day) || day}</span>
+              <span style={{ fontSize: '0.68rem', fontWeight: 400, opacity: 0.8 }}>
+                {classCount} {classCount === 1 ? 'class' : 'classes'}
+              </span>
+              <span className="mob-day-chevron">▼</span>
+            </div>
+
+            {!isCollapsed && groupsToShow.map(group => {
+              // Find all slots for this group+day that have content (filled or empty+editable)
+              const slots = timeSlots.filter(time => !cellsToSkip.has(`${group}-${day}-${time}`));
+              if (!slots.length) return null;
+
+              // Check if this group has any class today
+              const hasAnyClass = slots.some(time => getClass(group, day, time));
+              // In guest mode, skip groups with nothing interesting
+              if (!isAuthenticated && !hasAnyClass && bookings.length === 0) return null;
+
+              return (
+                <div key={group} className="mob-group-block">
+                  <div className="mob-group-label">
+                    {group}
+                    {isAuthenticated && (
+                      <button
+                        className="delete-group-btn"
+                        onClick={e => {
+                          e.stopPropagation();
+                          if (window.confirm(t('confirmDeleteGroup', { group }))) onDeleteGroup(group);
+                        }}
+                      >×</button>
+                    )}
+                  </div>
+
+                  <div className="mob-slots">
+                    {slots.map(time => {
+                      const classData = getClass(group, day, time);
+                      const booking   = getBooking(group, day, time);
+                      const conflicts = getConflicts(group, day, time, classData);
+                      const typeStyle = classData ? getTypeStyle(classData.subjectType) : null;
+                      const duration  = Math.min(6, Math.max(1, parseInt(classData?.duration) || 1));
+
+                      // Teacher filter
+                      if (normSelectedTeacher && classData &&
+                        normalizeTeacherName(classData.teacher) !== normSelectedTeacher) return null;
+                      // Room filter
+                      if (selectedRoom && occupiedRoomCells.has(`${day}-${time}`)) return null;
+
+                      // In guest mode skip completely empty, no-booking slots
+                      if (!isAuthenticated && !classData && !booking) return null;
+
+                      const handleClick = () => {
+                        if (isAuthenticated) { onEditClass(group, day, time); return; }
+                        if (!classData && !booking && onGuestBookCell) onGuestBookCell(group, day, time);
+                      };
+
+                      // Booking style
+                      let bookingBorder = '';
+                      let bookingInfo   = null;
+                      if (booking) {
+                        bookingBorder = booking.status === 'approved' ? '#22c55e'
+                          : booking.status === 'rejected' ? '#ef4444' : '#eab308';
+                        bookingInfo = (
+                          <div className="mob-slot-booking" style={{ color: bookingBorder }}>
+                            {booking.status === 'approved' ? '✅' : booking.status === 'rejected' ? '❌' : '⏳'}
+                            {' '}{booking.name || ''}{booking.room ? ` · ${booking.room}` : ''}
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div
+                          key={time}
+                          className={[
+                            'mob-slot',
+                            conflicts.includes('teacher') ? 'conflict-t' : '',
+                            conflicts.includes('room')    ? 'conflict-r' : '',
+                          ].filter(Boolean).join(' ')}
+                          style={bookingBorder ? { borderLeft: `3px solid ${bookingBorder}` }
+                            : classData && typeStyle ? { borderLeft: `3px solid ${typeStyle.color}` } : {}}
+                          onClick={handleClick}
+                        >
+                          <div className={`mob-slot-time ${isToday ? 'today-t' : ''}`}>
+                            {time}
+                            {duration > 1 && <div style={{ fontSize:'0.56rem', marginTop:2, opacity:0.7 }}>{duration*40}m</div>}
+                          </div>
+
+                          <div className="mob-slot-body">
+                            {classData ? (
+                              <>
+                                {typeStyle && (
+                                  <span className="mob-slot-pill" style={{ background: typeStyle.color }}>
+                                    {typeStyle.icon} {typeLabels[classData.subjectType || 'lecture']}
+                                  </span>
+                                )}
+                                <div className="mob-slot-course">{classData.course}</div>
+                                <div className="mob-slot-meta">
+                                  {classData.teacher && <span>👨‍🏫 {classData.teacher}</span>}
+                                  {classData.room    && <span>🚪 {classData.room}</span>}
+                                  {conflicts.length > 0 && (
+                                    <span className="mob-conflict-badge">
+                                      {conflicts.includes('teacher') ? '⚠️ teacher' : ''}
+                                      {conflicts.includes('room')    ? '⚠️ room'    : ''}
+                                    </span>
+                                  )}
+                                </div>
+                                {bookingInfo}
+                              </>
+                            ) : booking ? (
+                              <>
+                                <div className="mob-slot-course">{booking.purpose}</div>
+                                <div className="mob-slot-meta"><span>👤 {booking.guest_name}</span></div>
+                                {bookingInfo}
+                              </>
+                            ) : isAuthenticated ? (
+                              <span className="mob-slot-empty">+ Add class</span>
+                            ) : (
+                              <span className="mob-slot-empty guest-hint">📅 Tap to book</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
     </div>
   );
 };
 
-export default function ExamSchedule({ readOnly = false, showExamsToGuests = false, setShowExamsToGuests = null }) {
-  const { t } = useLanguage();
-  const { groups, schedule } = useSchedule();
+// ── Main component ────────────────────────────────────────────────────────
+const ScheduleTable = ({
+  selectedDay, selectedTeacher, selectedGroup,
+  selectedRoom,
+  onEditClass, onDeleteGroup,
+  bookings = [],
+  onGuestBookCell,
+}) => {
+  const { isAuthenticated } = useAuth();
+  const { groups, timeSlots, days, schedule, moveClass } = useSchedule();
+  const { t, lang } = useLanguage();
 
-  const [exams,      setExams]      = useState([]);
-  const [loading,    setLoading]    = useState(true);
-  const [showForm,   setShowForm]   = useState(false);
-  const [editId,     setEditId]     = useState(null);
-  const [form,       setForm]       = useState(emptyForm());
-  const [error,      setError]      = useState('');
-  const [saving,     setSaving]     = useState(false);
-  const [filterGrp,  setFilterGrp]  = useState('');
-  const [filterSubj, setFilterSubj] = useState('');
-  const [filterDate, setFilterDate] = useState('');
-  const [sending,    setSending]    = useState(null);
-  const [sendLog,    setSendLog]    = useState([]);
+  const todayName  = getTodayName();
+  const daysToShow = selectedDay ? [selectedDay] : days;
 
-  const allRooms    = useMemo(() => [...new Set(Object.values(schedule).map(e=>e.room).filter(Boolean))].sort(), [schedule]);
-  const allTeachers = useMemo(() => [...new Set(Object.values(schedule).map(e=>e.teacher).filter(Boolean))].sort(), [schedule]);
+  const bookingGroups = [...new Set(
+    bookings
+      .filter(b => ['pending','approved','rejected'].includes(b.status))
+      .map(b => (b.entity?.trim()) ? b.entity.trim() : b.name)
+      .filter(Boolean)
+  )];
+  const baseGroups   = selectedGroup ? groups.filter(g => g === selectedGroup) : groups;
+  const groupsToShow = [
+    ...bookingGroups.filter(g => !baseGroups.includes(g)),
+    ...baseGroups,
+  ];
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    try {
-      const r = await fetch(`${API_URL}/exams`, { headers: { Authorization: `Bearer ${getToken()}` } });
-      const d = await r.json();
-      if (d.success) setExams(d.data);
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
-  }, []);
+  const typeLabels = SUBJECT_TYPE_LABELS[lang] || SUBJECT_TYPE_LABELS.en;
 
-  useEffect(() => { load(); }, [load]);
+  const normSelectedTeacher = useMemo(
+    () => selectedTeacher ? normalizeTeacherName(selectedTeacher) : '',
+    [selectedTeacher]
+  );
 
-  const handleToggleGuestExams = async (val) => {
-    try {
-      await fetch(`${API_URL}/settings/show_exams_to_guests`, {
-        method: 'PUT',
-        headers: { 'Content-Type':'application/json', Authorization:`Bearer ${getToken()}` },
-        body: JSON.stringify({ value: String(val) }),
-      });
-      if (setShowExamsToGuests) setShowExamsToGuests(val);
-    } catch (e) { console.error('Toggle failed:', e); }
-  };
+  const [dragSource, setDragSource] = useState(null);
+  const [dragOver,   setDragOver]   = useState(null);
+  const dragNode = useRef(null);
 
-  const handleSave = async () => {
-    setError('');
-    if (!form.group_names || form.group_names.length === 0) return setError('Select at least one group');
-    if (!form.subject.trim()) return setError('Subject is required');
-    if (!form.room.trim()) return setError('Room is required');
-    if (!form.exam_date) return setError('Date is required');
-    if (!form.start_time) return setError('Start time is required');
-    setSaving(true);
-    try {
-      const url = editId ? `${API_URL}/exams/${editId}` : `${API_URL}/exams`;
-      const method = editId ? 'PUT' : 'POST';
-      const r = await fetch(url, { method, headers: { 'Content-Type':'application/json', Authorization:`Bearer ${getToken()}` }, body: JSON.stringify(form) });
-      const d = await r.json();
-      if (!d.success) return setError(d.error || 'Failed to save');
-      setShowForm(false); setEditId(null); setForm(emptyForm()); load();
-    } catch (e) { setError(e.message); }
-    finally { setSaving(false); }
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm(t('examDeleteConfirm') || 'Delete this exam?')) return;
-    await fetch(`${API_URL}/exams/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${getToken()}` } });
-    setExams(prev => prev.filter(e => e.id !== id));
-  };
-
-  const handleEdit = (exam) => {
-    setForm({
-      group_names: exam.group_names || [],
-      subject: exam.subject, teacher: exam.teacher || '',
-      room: exam.room, exam_date: exam.exam_date?.slice(0,10) || '',
-      start_time: exam.start_time, duration: exam.duration, notes: exam.notes || '',
-    });
-    setEditId(exam.id); setShowForm(true); setError('');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleBroadcast = async (exam) => {
-    setSending(exam.id); setSendLog([]);
-    const groupNames = exam.group_names || [];
-    try {
-      const text = `🎓 <b>Exam Notice</b>\n━━━━━━━━━━━━━━━━━━━━━━\n📚 <b>${exam.subject}</b>\n👥 Groups: <b>${groupNames.join(', ')}</b>\n📅 Date: <b>${fmt(exam.exam_date)}</b>\n⏰ Time: <b>${exam.start_time} – ${endTime(exam.start_time, exam.duration)}</b> (${exam.duration} min)\n🚪 Room: <b>${exam.room}</b>\n${exam.teacher ? `👨‍🏫 Examiner: <b>${exam.teacher}</b>\n` : ''}${exam.notes ? `📝 Notes: ${exam.notes}\n` : ''}━━━━━━━━━━━━━━━━━━━━━━\n<i>— Alatoo International University</i>`;
-      const r = await fetch(`${API_URL}/broadcast`, { method:'POST', headers:{'Content-Type':'application/json', Authorization:`Bearer ${getToken()}`}, body: JSON.stringify({ subject:`Exam: ${exam.subject}`, message:text, groupNames }) });
-      const d = await r.json();
-      if (d.success) setSendLog([`✅ Sent to ${groupNames.length} group(s) — ${d.sent} delivered, ${d.failed} failed`]);
-      else setSendLog([`❌ Failed: ${d.error}`]);
-    } catch (e) { setSendLog([`❌ Error: ${e.message}`]); }
-    finally { setSending(null); }
-  };
-
-  const handlePrint = () => {
-    const w = window.open('', '_blank');
-    const rows = filteredExams.map(e => {
-      const gNames = (e.group_names || []).join(', ');
-      return `<tr><td>${fmt(e.exam_date)}</td><td>${e.start_time} – ${endTime(e.start_time, e.duration)}</td><td>${e.duration} min</td><td>${gNames}</td><td>${e.subject}</td><td>${e.teacher || '—'}</td><td>${e.room}</td><td>${e.notes || '—'}</td></tr>`;
-    }).join('');
-    w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Exam Schedule</title><style>@page{size:A4 landscape;margin:12mm}body{font-family:'Times New Roman',serif;font-size:10pt}table{width:100%;border-collapse:collapse}th{background:#1e293b;color:#fff;padding:6px 8px;font-size:8pt;text-align:left}td{padding:5px 8px;font-size:9pt;border-bottom:1px solid #e2e8f0}tr:nth-child(even) td{background:#f8fafc}</style></head><body><h2 style="text-align:center">Examination Schedule — Alatoo International University</h2><table><thead><tr><th>Date</th><th>Time</th><th>Duration</th><th>Groups</th><th>Subject</th><th>Examiner</th><th>Room</th><th>Notes</th></tr></thead><tbody>${rows}</tbody></table><script>window.onload=()=>{window.print()}</script></body></html>`);
-    w.document.close();
-  };
-
-  const subjects = useMemo(() => {
-    return [...new Set(exams.map(e => e.subject).filter(Boolean))].sort();
-  }, [exams]);
-
-  const dates = useMemo(() => {
-    return [...new Set(exams.map(e => e.exam_date?.slice(0,10)).filter(Boolean))].sort();
-  }, [exams]);
-
-  const filteredExams = useMemo(() => exams.filter(e => {
-    if (filterGrp  && !(e.group_names || []).includes(filterGrp)) return false;
-    if (filterSubj && e.subject !== filterSubj) return false;
-    if (filterDate && e.exam_date?.slice(0,10) !== filterDate) return false;
-    return true;
-  }), [exams, filterGrp, filterSubj, filterDate]);
-
-  const byDate = useMemo(() => {
-    const map = {};
-    filteredExams.forEach(e => {
-      const d = e.exam_date?.slice(0,10);
-      if (!map[d]) map[d] = [];
-      map[d].push(e);
-    });
-    return map;
-  }, [filteredExams]);
-
-  const conflictIds = useMemo(() => {
-    const ids = new Set();
-    const byDateRoom = {};
-    exams.forEach(e => {
-      const k = `${e.exam_date}__${e.room}`;
-      byDateRoom[k] = byDateRoom[k] || [];
-      byDateRoom[k].push(e);
-    });
-    Object.values(byDateRoom).forEach(group => {
-      for (let i = 0; i < group.length; i++) {
-        for (let j = i+1; j < group.length; j++) {
-          const a = group[i], b = group[j];
-          const aS = toMinsLocal(a.start_time), aE = aS + a.duration;
-          const bS = toMinsLocal(b.start_time), bE = bS + b.duration;
-          if (aS < bE && aE > bS) { ids.add(a.id); ids.add(b.id); }
+  const cellsToSkip = useMemo(() => {
+    const s = new Set();
+    Object.values(schedule).forEach(cls => {
+      const dur = Math.min(6, Math.max(1, parseInt(cls.duration) || 1));
+      if (dur > 1) {
+        const idx = timeSlots.indexOf(cls.time);
+        for (let i = 1; i < dur; i++) {
+          if (timeSlots[idx + i]) s.add(`${cls.group}-${cls.day}-${timeSlots[idx + i]}`);
         }
       }
     });
-    return ids;
-  }, [exams]);
+    return s;
+  }, [schedule, timeSlots]);
 
-  const clearFilters = () => { setFilterGrp(''); setFilterSubj(''); setFilterDate(''); };
-  const hasFilters = filterGrp || filterSubj || filterDate;
+  const occupiedRoomCells = useMemo(() => {
+    if (!selectedRoom) return new Set();
+    const s = new Set();
+    Object.values(schedule).forEach(cls => {
+      if (cls.room?.toLowerCase() === selectedRoom.toLowerCase()) s.add(`${cls.day}-${cls.time}`);
+    });
+    return s;
+  }, [schedule, selectedRoom]);
 
-  return (
-    <div className="es-wrap">
-      <div className="es-header">
-        <div className="es-header-left">
-          <div className="es-header-icon">📋</div>
-          <div>
-            <div className="es-title">{t('examSchedule') || 'Exam Schedule'}</div>
-            <div className="es-sub">
-              {exams.length} exam{exams.length !== 1 ? 's' : ''}
-              {conflictIds.size > 0 ? ` · ⚠️ ${Math.floor(conflictIds.size/2)} room conflict(s)` : ' · ✅ No conflicts'}
-            </div>
-          </div>
+  const getClass    = (group, day, time) => schedule[`${group}-${day}-${time}`] || null;
+  const shouldShow  = (classData, day, time) => {
+    if (normSelectedTeacher && classData && normalizeTeacherName(classData.teacher) !== normSelectedTeacher) return false;
+    if (selectedRoom) return !occupiedRoomCells.has(`${day}-${time}`);
+    return true;
+  };
+  const getConflicts = (group, day, time, classData) => {
+    if (!classData) return [];
+    const out = [];
+    Object.values(schedule).forEach(e => {
+      if (e.group === group || e.day !== day || e.time !== time) return;
+      if (classData.teacher && e.teacher?.toLowerCase() === classData.teacher.toLowerCase()) out.push('teacher');
+      if (classData.room    && e.room?.toLowerCase()    === classData.room.toLowerCase())    out.push('room');
+    });
+    return [...new Set(out)];
+  };
+  const getBooking = (group, day, time) => {
+    const classEntry = schedule[`${group}-${day}-${time}`];
+    if (classEntry?.room) return bookings.find(b => b.room === classEntry.room && b.day === day && b.start_time === time) || null;
+    return bookings.find(b => b.day === day && b.start_time === time && (b.entity === group || b.name === group)) || null;
+  };
+
+  // Drag handlers
+  const handleDragStart = (e, group, day, time) => {
+    setDragSource({ group, day, time });
+    dragNode.current = e.target;
+    setTimeout(() => { if (dragNode.current) dragNode.current.style.opacity = '0.4'; }, 0);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+  const handleDragEnd = () => {
+    if (dragNode.current) dragNode.current.style.opacity = '1';
+    setDragSource(null); setDragOver(null); dragNode.current = null;
+  };
+  const handleDragOver = (e, group, day, time) => {
+    e.preventDefault(); e.dataTransfer.dropEffect = 'move';
+    if (!dragOver || dragOver.group !== group || dragOver.day !== day || dragOver.time !== time)
+      setDragOver({ group, day, time });
+  };
+  const handleDragLeave = (e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOver(null); };
+  const handleDrop = (e, toGroup, toDay, toTime) => {
+    e.preventDefault();
+    if (!dragSource) return;
+    const { group: fg, day: fd, time: ft } = dragSource;
+    if (fg === toGroup && fd === toDay && ft === toTime) { handleDragEnd(); return; }
+    moveClass(fg, fd, ft, toGroup, toDay, toTime);
+    handleDragEnd();
+  };
+
+  const Legend = () => (
+    <div className="type-legend">
+      {SUBJECT_TYPES.map(type => (
+        <div key={type.value} className="legend-item">
+          <span className="legend-dot" style={{ background: type.color }} />
+          <span className="legend-label">{type.icon} {typeLabels[type.value]}</span>
         </div>
-        <div className="es-header-actions">
-          {!readOnly && (
-            <label className="es-guest-toggle">
-              <div className={`es-toggle-track ${showExamsToGuests ? 'on' : ''}`} onClick={() => handleToggleGuestExams(!showExamsToGuests)}>
-                <div className="es-toggle-thumb" />
-              </div>
-              <span className="es-toggle-label">{showExamsToGuests ? '👁 Visible to guests' : '🔒 Hidden from guests'}</span>
-            </label>
-          )}
-          <button className="es-btn-print" onClick={handlePrint}>🖨 {t('examPrint') || 'Print / PDF'}</button>
-          {!readOnly && (
-            <button className="es-btn-add" onClick={() => { setShowForm(true); setEditId(null); setForm(emptyForm()); setError(''); }}>
-              + {t('addExam') || 'Add Exam'}
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="es-filters">
-        <select className="es-select" value={filterGrp} onChange={e => setFilterGrp(e.target.value)}>
-          <option value="">{t('examFilterGroup') || 'All Groups'}</option>
-          {groups.map(g => <option key={g} value={g}>{g}</option>)}
-        </select>
-
-        <select className="es-select" value={filterSubj} onChange={e => setFilterSubj(e.target.value)}>
-          <option value="">{t('examFilterSubject') || 'All Subjects'}</option>
-          {subjects.map(s => <option key={s} value={s}>{s}</option>)}
-        </select>
-
-        <select className="es-select" value={filterDate} onChange={e => setFilterDate(e.target.value)}>
-          <option value="">📅 All Dates</option>
-          {dates.map(d => (
-            <option key={d} value={d}>{fmtWithDay(d)}</option>
-          ))}
-        </select>
-
-        <input
-          type="date"
-          className="es-input"
-          style={{ padding:'5px 8px', fontSize:'0.78rem', maxWidth:148, cursor:'pointer' }}
-          value={filterDate}
-          onChange={e => setFilterDate(e.target.value)}
-          title="Pick a date"
-        />
-
-        {hasFilters && (
-          <button className="es-btn-clear" onClick={clearFilters}>✕ Clear</button>
-        )}
-        <div className="es-count">
-          {filteredExams.length} of {exams.length} exam{exams.length !== 1 ? 's' : ''}
-        </div>
-      </div>
-
-      {sendLog.length > 0 && (
-        <div className="es-sendlog">{sendLog.map((l,i) => <div key={i}>{l}</div>)}</div>
-      )}
-
-      {showForm && !readOnly && (
-        <div className="es-form-wrap">
-          <div className="es-form-title">{editId ? `✏️ ${t('editExam')||'Edit Exam'}` : `+ ${t('addExam')||'New Exam'}`}</div>
-          {error && <div className="es-error">⚠️ {error}</div>}
-          <div className="es-form-grid">
-            <div className="es-field">
-              <label>{t('examSubject') || 'Subject'} *</label>
-              <input className="es-input" placeholder="e.g. Mathematics" value={form.subject} onChange={e => setForm(f => ({ ...f, subject: e.target.value }))} />
-            </div>
-            <div className="es-field">
-              <label>{t('examTeacher') || 'Examiner'}</label>
-              <input className="es-input" list="es-teachers-list" placeholder={t('examTeacherName')||'Teacher name'} value={form.teacher} onChange={e => setForm(f => ({ ...f, teacher: e.target.value }))} />
-              <datalist id="es-teachers-list">{allTeachers.map(tc => <option key={tc} value={tc} />)}</datalist>
-            </div>
-            <div className="es-field">
-              <label>{t('examRoom') || 'Room'} *</label>
-              <input className="es-input" list="es-rooms-list" placeholder="e.g. B201" value={form.room} onChange={e => setForm(f => ({ ...f, room: e.target.value }))} />
-              <datalist id="es-rooms-list">{allRooms.map(r => <option key={r} value={r} />)}</datalist>
-            </div>
-            <div className="es-field">
-              <label>{t('examDate') || 'Date'} *</label>
-              <input className="es-input" type="date" value={form.exam_date} onChange={e => setForm(f => ({ ...f, exam_date: e.target.value }))} />
-            </div>
-            <div className="es-field">
-              <label>{t('examTime') || 'Start Time'} *</label>
-              <select className="es-select" value={form.start_time} onChange={e => setForm(f => ({ ...f, start_time: e.target.value }))}>
-                {TIME_SLOTS.map(ts => <option key={ts} value={ts}>{ts}</option>)}
-              </select>
-            </div>
-            <div className="es-field">
-              <label>{t('examDuration') || 'Duration'}</label>
-              <select className="es-select" value={form.duration} onChange={e => setForm(f => ({ ...f, duration: +e.target.value }))}>
-                {DURATIONS.map(d => <option key={d} value={d}>{d} {t('examMinutes')||'min'}</option>)}
-              </select>
-            </div>
-            <div className="es-field es-field-full">
-              <label>{t('examNotes') || 'Notes'}</label>
-              <input className="es-input" placeholder={t('examOptionalNotes')||'Optional instructions...'} value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} />
-            </div>
-          </div>
-          {form.start_time && form.duration && (
-            <div className="es-time-preview">⏰ {form.start_time} – {endTime(form.start_time, form.duration)} ({form.duration} {t('examMinutes')||'min'})</div>
-          )}
-          <div className="es-field es-field-full" style={{ marginBottom:14 }}>
-            <label style={{ fontSize:'0.68rem', fontWeight:700, color:'#64748b', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:6, display:'block' }}>
-              {t('examGroups') || 'Groups'} *
-              <span style={{ color:'#94a3b8', fontWeight:400, textTransform:'none', marginLeft:6 }}>— select all groups taking this exam</span>
-            </label>
-            <GroupPicker groups={groups} selected={form.group_names} onChange={val => setForm(f => ({ ...f, group_names: val }))} t={t} />
-          </div>
-          <div className="es-form-actions">
-            <button className="es-btn-cancel" onClick={() => { setShowForm(false); setEditId(null); setError(''); }}>{t('cancel') || 'Cancel'}</button>
-            <button className="es-btn-save" onClick={handleSave} disabled={saving}>{saving ? '...' : editId ? t('save')||'Save Changes' : t('addExam')||'Add Exam'}</button>
-          </div>
-        </div>
-      )}
-
-      {loading ? (
-        <div className="es-loading">{t('loading') || 'Loading...'}</div>
-      ) : Object.keys(byDate).length === 0 ? (
-        <div className="es-empty">
-          <div style={{ fontSize:'2.5rem', marginBottom:8 }}>📋</div>
-          <div>{hasFilters ? 'No exams match the selected filters.' : (t('examNoData') || 'No exams scheduled yet.')}</div>
-          {hasFilters && <button className="es-btn-clear" style={{ marginTop:8 }} onClick={clearFilters}>✕ Clear filters</button>}
-          {!readOnly && !hasFilters && <div style={{ fontSize:'0.78rem', color:'#94a3b8', marginTop:4 }}>Click "+ Add Exam" to create the first entry.</div>}
-        </div>
-      ) : (
-        <div className="es-table-wrap">
-          <table className="es-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Time</th>
-                <th>Subject</th>
-                <th>Groups</th>
-                <th>Examiner</th>
-                <th>Room</th>
-                <th>Notes</th>
-                {!readOnly && <th></th>}
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(byDate)
-                .sort(([a],[b]) => a.localeCompare(b))
-                .flatMap(([date, dayExams]) => [
-                  <tr key={`d-${date}`} className="es-date-row">
-                    <td colSpan={readOnly ? 7 : 8}>
-                      📅 {fmt(date)} — {new Date(date).toLocaleDateString('en-GB',{ weekday:'long' })}
-                    </td>
-                  </tr>,
-                  ...dayExams
-                    .sort((a,b) => a.start_time.localeCompare(b.start_time))
-                    .map(exam => {
-                      const gNames = exam.group_names || [];
-                      return (
-                        <tr key={exam.id} className={conflictIds.has(exam.id) ? 'es-row-conflict' : ''}>
-                          <td className="es-td-date">{fmt(exam.exam_date)}</td>
-                          <td className="es-td-time">
-                            {exam.start_time}–{endTime(exam.start_time, exam.duration)}
-                            <span className="es-td-dur">{exam.duration}m</span>
-                          </td>
-                          <td className="es-td-subject">
-                            {exam.subject}
-                            {conflictIds.has(exam.id) && <span className="es-conflict-badge">⚠️ conflict</span>}
-                          </td>
-                          <td>
-                            <div className="es-td-groups">
-                              {gNames.map(g => <span key={g} className="es-group-pill">{g}</span>)}
-                              {gNames.length > 1 && <span className="es-group-joint">joint</span>}
-                            </div>
-                          </td>
-                          <td style={{ fontSize:'0.78rem' }}>{exam.teacher || '—'}</td>
-                          <td style={{ fontSize:'0.78rem', fontWeight:600 }}>{exam.room}</td>
-                          <td className="es-td-notes">{exam.notes || ''}</td>
-                          {!readOnly && (
-                            <td>
-                              <div className="es-td-actions">
-                                <button className="es-action-btn tg" onClick={() => handleBroadcast(exam)} disabled={sending === exam.id} title="Send Telegram">{sending === exam.id ? '⏳' : '📨'}</button>
-                                <button className="es-action-btn edit" onClick={() => handleEdit(exam)} title="Edit">✏️</button>
-                                <button className="es-action-btn del" onClick={() => handleDelete(exam.id)} title="Delete">🗑</button>
-                              </div>
-                            </td>
-                          )}
-                        </tr>
-                      );
-                    })
-                ])}
-            </tbody>
-          </table>
-        </div>
-      )}
+      ))}
+      {!isAuthenticated && bookings.length > 0 && <>
+        <div className="legend-item"><span className="legend-dot" style={{background:'#eab308'}}/><span className="legend-label">⏳ Pending</span></div>
+        <div className="legend-item"><span className="legend-dot" style={{background:'#22c55e'}}/><span className="legend-label">✅ Approved</span></div>
+      </>}
+      {isAuthenticated && <div className="legend-item legend-drag-hint">↔ {t('dragHint')}</div>}
     </div>
   );
-}
+
+  // Shared props for mobile view
+  const mobileProps = {
+    daysToShow, groupsToShow, timeSlots, schedule, todayName,
+    cellsToSkip, occupiedRoomCells, selectedRoom, normSelectedTeacher,
+    isAuthenticated, bookings, onEditClass, onGuestBookCell, onDeleteGroup,
+    typeLabels, t,
+  };
+
+  return (
+    <div className="schedule-container">
+      <Legend />
+
+      {/* ── Mobile card view ── */}
+      <MobileView {...mobileProps} />
+
+      {/* ── Desktop table view ── */}
+      <div className="table-wrapper">
+        <table className="schedule-table">
+          <thead>
+            <tr>
+              <th className="group-header">
+                {t('groupTime')}{!isAuthenticated && <div className="lock-icon">🔒</div>}
+              </th>
+              {daysToShow.map(day => (
+                <th key={day}
+                  className={`day-header ${day === todayName ? 'today-col' : ''}`}
+                  colSpan={timeSlots.length}
+                >
+                  {t(day)}{day === todayName && <span className="today-badge"> ★</span>}
+                </th>
+              ))}
+            </tr>
+            <tr>
+              <th className="group-header" />
+              {daysToShow.map(day => timeSlots.map(time => (
+                <th key={`${day}-${time}`}
+                  className={`time-header ${day === todayName ? 'today-time' : ''}`}
+                >{time}</th>
+              )))}
+            </tr>
+          </thead>
+          <tbody>
+            {groupsToShow.map(group => (
+              <tr key={group}>
+                <td className="group-cell">
+                  <div className="group-cell-content">
+                    <span className="group-name">{group}</span>
+                    {isAuthenticated && (
+                      <button className="delete-group-btn" onClick={() => {
+                        if (window.confirm(t('confirmDeleteGroup', { group }))) onDeleteGroup(group);
+                      }}>×</button>
+                    )}
+                  </div>
+                </td>
+                {daysToShow.map(day => timeSlots.map(time => {
+                  const cellKey   = `${group}-${day}-${time}`;
+                  if (cellsToSkip.has(cellKey)) return null;
+                  const classData = getClass(group, day, time);
+                  const show      = shouldShow(classData, day, time);
+                  const isToday   = day === todayName;
+                  const conflicts = getConflicts(group, day, time, classData);
+                  const isDragSrc = dragSource?.group === group && dragSource?.day === day && dragSource?.time === time;
+                  const isDragOvr = dragOver?.group   === group && dragOver?.day   === day && dragOver?.time   === time;
+                  const typeStyle = classData ? getTypeStyle(classData.subjectType) : null;
+                  const duration  = Math.min(6, Math.max(1, parseInt(classData?.duration) || 1));
+                  const booking   = getBooking(group, day, time);
+
+                  if (!show) return (
+                    <td key={cellKey} className={`schedule-cell filtered-out ${isToday ? 'today-cell' : ''}`} colSpan={duration}>
+                      <div className="filtered-label">{t('filtered')}</div>
+                    </td>
+                  );
+
+                  let bookingStyle = {};
+                  let bookingLabel = null;
+                  if (booking) {
+                    bookingStyle = booking.status === 'approved' ? { background:'#dcfce7', borderLeft:'3px solid #22c55e' }
+                      : booking.status === 'rejected' ? { background:'#fee2e2', borderLeft:'3px solid #ef4444' }
+                      : { background:'#fef9c3', borderLeft:'3px solid #eab308' };
+                    bookingLabel = (
+                      <div style={{fontSize:'0.68rem',marginTop:3,fontWeight:600,
+                        color: booking.status==='approved'?'#166534':booking.status==='rejected'?'#991b1b':'#854d0e',
+                        display:'flex',alignItems:'center',gap:3}}>
+                        {booking.status==='approved'?'✅':booking.status==='rejected'?'❌':'⏳'}
+                        <span>{booking.name||''}</span>
+                        {booking.room && <span style={{opacity:0.7}}>· {booking.room}</span>}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <td key={cellKey}
+                      className={[
+                        'schedule-cell',
+                        classData ? 'filled' : '',
+                        isAuthenticated ? 'editable' : (!classData && !booking) ? 'guest-bookable' : '',
+                        isToday ? 'today-cell' : '',
+                        conflicts.includes('teacher') ? 'conflict-teacher' : '',
+                        conflicts.includes('room')    ? 'conflict-room'    : '',
+                        isDragSrc ? 'drag-source' : '',
+                        isDragOvr ? (classData ? 'drag-over-filled' : 'drag-over-empty') : '',
+                        duration > 1 ? 'multi-slot' : '',
+                      ].filter(Boolean).join(' ')}
+                      style={booking ? bookingStyle : (classData && typeStyle ? { background: typeStyle.light, borderLeft:`3px solid ${typeStyle.color}` } : {})}
+                      colSpan={duration}
+                      onClick={() => {
+                        if (isAuthenticated && !dragSource) { onEditClass(group, day, time); return; }
+                        if (!isAuthenticated && !classData && !booking && onGuestBookCell) onGuestBookCell(group, day, time);
+                      }}
+                      draggable={isAuthenticated && !!classData}
+                      onDragStart={classData ? (e) => handleDragStart(e, group, day, time) : undefined}
+                      onDragEnd={handleDragEnd}
+                      onDragOver={(e) => handleDragOver(e, group, day, time)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, group, day, time)}
+                    >
+                      {classData ? (
+                        <div className="cell-content">
+                          {typeStyle && (
+                            <div className="type-pill" style={{ background: typeStyle.color }}>
+                              {typeStyle.icon} {typeLabels[classData.subjectType || 'lecture']}
+                            </div>
+                          )}
+                          {(conflicts.includes('teacher') || conflicts.includes('room')) && (
+                            <div className="cell-conflict-icons">
+                              {conflicts.includes('teacher') && <span>⚠️</span>}
+                              {conflicts.includes('room')    && <span>🚪⚠️</span>}
+                            </div>
+                          )}
+                          <div className="course-name">{classData.course}</div>
+                          {duration > 1 && <div className="duration-indicator">⏱ {duration*40}min</div>}
+                          {classData.teacher && <div className={`teacher-name ${conflicts.includes('teacher')?'conflict-text':''}`}>👨‍🏫 {classData.teacher}</div>}
+                          {classData.room    && <div className={`room-number ${conflicts.includes('room')?'conflict-text':''}`}>🚪 {classData.room}</div>}
+                          {bookingLabel}
+                          {isAuthenticated && <div className="drag-handle">⠿</div>}
+                        </div>
+                      ) : (
+                        <>
+                          {booking ? (
+                            <div className="cell-content">
+                              <div className="course-name">{booking.purpose}</div>
+                              <div className="teacher-name">👤 {booking.guest_name}</div>
+                              {bookingLabel}
+                            </div>
+                          ) : (
+                            <>
+                              {isAuthenticated && <div className="empty-cell">+</div>}
+                              {!isAuthenticated && <div className="guest-book-hint">📅 Click to book</div>}
+                              {isDragOvr && <div className="drop-indicator">Drop here</div>}
+                            </>
+                          )}
+                        </>
+                      )}
+                    </td>
+                  );
+                }))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+};
+
+export default ScheduleTable;
