@@ -181,3 +181,136 @@ body {
   border: none; border-radius: 6px; cursor: pointer;
   font-weight: 700; font-size: 0.82rem; margin-left: auto;
 }
+
+/* ═══════════════════════════════════════════════════════
+   MOBILE TOPBAR + BOTTOM NAV  (≤ 767px)
+   ═══════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+
+  /* Topbar: wrap into 2 tight rows */
+  .app-topbar {
+    flex-wrap: wrap !important;
+    padding: 4px 8px !important;
+    gap: 4px !important;
+    row-gap: 4px !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 200 !important;
+  }
+
+  /* Logo + title — always first, full first row */
+  .app-topbar > img,
+  .app-topbar > span:first-of-type {
+    flex-shrink: 0;
+  }
+
+  /* Selects: shrink nicely */
+  .app-topbar select {
+    padding: 3px 6px !important;
+    font-size: 0.7rem !important;
+    max-width: 100px !important;
+  }
+
+  /* Lang buttons: tiny */
+  .app-topbar .lang-btn {
+    padding: 2px 5px !important;
+    font-size: 0.62rem !important;
+    min-height: 26px !important;
+  }
+
+  /* Admin action buttons: compact */
+  .app-topbar .btn {
+    padding: 3px 7px !important;
+    font-size: 0.65rem !important;
+    min-height: 26px !important;
+  }
+
+  /* User badge: hide role, show only icon+name */
+  .app-topbar .user-badge {
+    font-size: 0.65rem !important;
+    padding: 2px 7px !important;
+  }
+
+  /* Sidebar → hidden on mobile (bottom nav instead) */
+  .app-sidebar {
+    display: none !important;
+  }
+
+  /* Bottom nav bar */
+  .app-bottom-nav {
+    display: flex !important;
+  }
+
+  /* Content: no left indent, add bottom padding for nav */
+  .app-content {
+    padding: 6px 8px 70px 8px !important;
+  }
+}
+
+/* Bottom nav — hidden on desktop */
+.app-bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 300;
+  background: var(--bg-card);
+  border-top: 1px solid var(--border);
+  padding: 4px 4px env(safe-area-inset-bottom, 0px);
+  gap: 2px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.app-bottom-nav::-webkit-scrollbar { display: none; }
+
+.app-bottom-nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 4px 6px;
+  min-width: 46px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  transition: all 0.15s;
+  font-family: inherit;
+}
+.app-bottom-nav-btn.active {
+  background: var(--primary);
+  color: #fff;
+}
+.app-bottom-nav-btn-label {
+  font-size: 0.48rem;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  max-width: 44px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.app-bottom-nav-badge {
+  position: absolute;
+  top: 2px; right: 2px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 0.45rem;
+  font-weight: 800;
+  border-radius: 10px;
+  padding: 1px 3px;
+  min-width: 12px;
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* Desktop: sidebar stays as-is, bottom nav hidden */
+@media (min-width: 768px) {
+  .app-bottom-nav { display: none !important; }
+  .app-sidebar { display: flex !important; }
+}

@@ -23,15 +23,15 @@ import { exportToExcel, importFromExcel } from './utils/excelUtils';
 import { LANGUAGE_OPTIONS }               from './data/i18n';
 
 import logo         from './assets/logo.png';
-import iconAuto     from './assets/auto.png';
+import iconAuto     from './assets/auto.webp';
 import iconBooking  from './assets/booking.png';
-import iconExams    from './assets/exam.jpeg';
-import iconFeedback from './assets/feedback.png';
-import iconSchedule from './assets/schedule.jpeg';
+// exams.avif may have limited browser support — using emoji fallback
+// import iconExams from './assets/exams.avif';
+const iconExams = '🗓';
+import iconFeedback from './assets/feedback.jpeg';
+import iconSchedule from './assets/schedule.png';
 import iconStats    from './assets/stats.jpeg';
 import iconTelegram from './assets/telegram.jpeg';
-import iconPrint    from './assets/print.jpeg';
-
 
 import './App.css';
 
@@ -50,15 +50,23 @@ if (!localStorage.getItem('scheduleTheme')) {
 
 // ── Render a tab icon — image asset or emoji ──────────────────────────────────
 const TabIcon = ({ icon, label, active }) => {
-  if (typeof icon === 'string' && icon.startsWith('data:')) {
-    // base64 / imported asset resolved by webpack
-    return <img src={icon} alt={label} style={{ width:22, height:22, objectFit:'contain', borderRadius:4, filter: active ? 'brightness(10)' : 'none' }} />;
+  // Anything that isn't a pure emoji string gets rendered as <img>
+  // Webpack resolves imported assets to a URL string like "/static/media/auto.abc123.webp"
+  const isEmoji = typeof icon === 'string' && /^(\p{Emoji}|[\u2600-\u27BF])/u.test(icon) && icon.length <= 4;
+  if (!isEmoji && icon) {
+    const src = (typeof icon === 'object' && icon.default) ? icon.default : icon;
+    return (
+      <img
+        src={src}
+        alt={label}
+        style={{ width:22, height:22, objectFit:'contain', borderRadius:4,
+          filter: 'none',
+          opacity: active ? 1 : 0.7,
+          transform: active ? 'scale(1.1)' : 'scale(1)' }}
+        onError={e => { e.target.style.display='none'; e.target.nextSibling && (e.target.nextSibling.style.display='inline'); }}
+      />
+    );
   }
-  // webpack imported images are objects in some configs, or resolved URLs
-  if (icon && typeof icon === 'object') {
-    return <img src={icon} alt={label} style={{ width:22, height:22, objectFit:'contain', borderRadius:4, filter: active ? 'brightness(10)' : 'none' }} />;
-  }
-  // emoji / string fallback
   return <span style={{ fontSize:'1.1rem', lineHeight:1 }}>{icon}</span>;
 };
 
@@ -164,11 +172,11 @@ const AppContent = () => {
       { id:'feedback',   icon: iconFeedback, label:'Feedback' },
     ] : []),
     ...(isAuthenticated ? [
-      { id:'print',     icon: iconPrint, label:'Print'                          },
+      { id:'print',     icon: iconSchedule, label:'Print'                          },
       { id:'dashboard', icon: iconStats,    label:'Stats'                          },
-      { id:'conflicts', icon: '⚠️',          label:'Conflicts', badge: conflictCount },
+      { id:'conflicts', icon: '⚠️',         label:'Conflicts', badge: conflictCount },
       { id:'bookings',  icon: iconBooking,  label:'Bookings'                       },
-      { id:'autosched', icon: iconAuto,     label:'Auto Schedule'                           },
+      { id:'autosched', icon: iconAuto,     label:'Auto'                           },
       { id:'exams',     icon: iconExams,    label:'Exams'                          },
       { id:'feedback',  icon: iconFeedback, label:'Feedback',  badge: feedbackCount },
       { id:'telegram',  icon: iconTelegram, label:'Telegram'                       },
@@ -187,13 +195,7 @@ const AppContent = () => {
       position:'sticky', top:0, zIndex:200,
     },
     divider: { width:1, height:20, background:'var(--border)', flexShrink:0 },
-    dayBtn: (active, isToday) => ({
-      padding:'4px 9px', borderRadius:7, border:`2px solid ${active ? 'var(--primary)' : isToday ? 'var(--accent)' : 'var(--border)'}`,
-      background: active ? 'var(--primary)' : 'transparent',
-      color: active ? '#fff' : isToday ? 'var(--accent)' : 'var(--text-secondary)',
-      fontSize:'0.72rem', fontWeight:700, cursor:'pointer', position:'relative',
-      transition:'all 0.15s', fontFamily:'inherit',
-    }),
+
     select: {
       padding:'4px 8px', borderRadius:7, border:'2px solid var(--border)',
       background:'var(--bg-main)', color:'var(--text-primary)',
@@ -234,83 +236,87 @@ const AppContent = () => {
         </div>
       )}
 
-      {/* ── TOPBAR ── */}
-      <div style={S.bar}>
-        <img src={logo} alt="" style={{ height:26, width:26, objectFit:'contain', borderRadius:4, flexShrink:0 }} />
-        <span style={{ fontWeight:800, fontSize:'0.8rem', color:'var(--text-primary)', whiteSpace:'nowrap', flexShrink:0 }}>
-          Alatoo University
+      {/* ── TOPBAR — single compact row, scrollable ── */}
+      <div style={S.bar} className="app-topbar">
+
+        {/* Logo + name */}
+        <img src={logo} alt="" style={{ height:22, width:22, objectFit:'contain', borderRadius:4, flexShrink:0 }} />
+        <span style={{ fontWeight:800, fontSize:'0.75rem', color:'var(--text-primary)', whiteSpace:'nowrap', flexShrink:0 }}>
+          Alatoo
         </span>
 
         <div style={S.divider} />
 
-        <div style={{ display:'flex', gap:4, flexWrap:'wrap', alignItems:'center' }}>
-          <button style={S.dayBtn(selectedDay==='', false)} onClick={() => setSelectedDay('')}>{t('allDays')}</button>
+        {/* Filters */}
+        <select value={selectedDay} onChange={e => setSelectedDay(e.target.value)} style={S.sel}>
+          <option value="">{t('allDays')}</option>
           {days.map(day => (
-            <button key={day} style={S.dayBtn(selectedDay===day, day===todayName)} onClick={() => setSelectedDay(day)}>
-              {t(day)}
-              {day===todayName && <span style={{ position:'absolute', top:1, right:2, fontSize:'0.4rem', color: selectedDay===day ? '#fff' : 'var(--accent)' }}>●</span>}
-            </button>
+            <option key={day} value={day}>{t(day)}{day===todayName ? ' ★' : ''}</option>
           ))}
-        </div>
+        </select>
 
-        <div style={S.divider} />
-
-        <select value={selectedGroup} onChange={e => setSelectedGroup(e.target.value)} style={S.select}>
+        <select value={selectedGroup} onChange={e => setSelectedGroup(e.target.value)} style={S.sel}>
           <option value="">{t('allGroups')}</option>
           {groups.map(g => <option key={g} value={g}>{g}</option>)}
         </select>
 
-        <select value={selectedTeacher} onChange={e => setSelectedTeacher(e.target.value)} style={S.select}>
+        <select value={selectedTeacher} onChange={e => setSelectedTeacher(e.target.value)} style={S.sel}>
           <option value="">{t('allTeachers')}</option>
           {teachers.map(tc => <option key={tc} value={tc}>{tc}</option>)}
         </select>
 
-        <div style={{ flex:1 }} />
+        <div style={S.divider} />
 
-        <div style={{ display:'flex', gap:2 }}>
-          {LANGUAGE_OPTIONS.map(opt => (
-            <button key={opt.code} onClick={() => changeLang(opt.code)}
-              className={`lang-btn ${lang===opt.code ? 'active' : ''}`}
-              style={{ padding:'3px 7px', fontSize:'0.68rem' }}>
-              {opt.flag} {opt.code.toUpperCase()}
-            </button>
-          ))}
-        </div>
+        {/* Admin actions — inline, same row */}
+        {isAuthenticated && (<>
+          <button onClick={handleAddGroup}    style={S.btn('var(--primary)')}>＋ {t('addGroup')}</button>
+          <button onClick={handleExport}      style={S.btn('#059669')}>📊</button>
+          <button onClick={handleImportClick} style={S.btn('#0891b2')}>📂</button>
+          <button onClick={handleClearAll}    style={S.btn('var(--error)')}>🗑</button>
+          <button onClick={handleShare}       style={S.btn('#6366f1')}>🔗{shareToast}</button>
+          <div style={S.divider} />
+        </>)}
 
-        <button onClick={() => setTheme(t => t==='light' ? 'dark' : 'light')}
-          style={{ background:'transparent', border:'1px solid var(--border)', borderRadius:7, padding:'4px 8px', cursor:'pointer', fontSize:'0.9rem', color:'var(--text-primary)' }}>
+        {/* Guest book button */}
+        {!isAuthenticated && (
+          <button onClick={() => setShowBooking(true)} style={S.btn('var(--primary)')}>
+            🏫 {t('bookLab') || 'Book'}
+          </button>
+        )}
+
+        {/* Spacer pushes right-side items to the end */}
+        <div style={{ flex:1, minWidth:8 }} />
+
+        {/* Language */}
+        {LANGUAGE_OPTIONS.map(opt => (
+          <button key={opt.code} onClick={() => changeLang(opt.code)}
+            style={{ ...S.btn(lang===opt.code ? 'var(--primary)' : 'transparent', lang===opt.code ? '#fff' : 'var(--text-secondary)'),
+              border:`1px solid ${lang===opt.code ? 'var(--primary)' : 'var(--border)'}`,
+              padding:'3px 6px', fontSize:'0.64rem' }}>
+            {opt.flag} {opt.code.toUpperCase()}
+          </button>
+        ))}
+
+        {/* Theme toggle */}
+        <button onClick={() => setTheme(th => th==='light' ? 'dark' : 'light')}
+          style={{ ...S.btn('transparent', 'var(--text-primary)'), border:'1px solid var(--border)', fontSize:'0.85rem', padding:'3px 7px' }}>
           {theme==='light' ? '🌙' : '☀️'}
         </button>
 
         <div style={S.divider} />
 
-        {isAuthenticated ? (
-          <div style={{ display:'flex', alignItems:'center', gap:6, flexShrink:0 }}>
-            <span className="user-badge" style={{ fontSize:'0.72rem', padding:'4px 10px' }}>👤 {user?.username}</span>
-            <button onClick={() => { logout(); setActiveView('schedule'); }} className="btn btn-secondary" style={{ padding:'4px 12px', fontSize:'0.72rem' }}>{t('logout')}</button>
-          </div>
-        ) : (
-          <button onClick={() => setShowLoginModal(true)} className="btn btn-primary" style={{ padding:'5px 14px', fontSize:'0.75rem', flexShrink:0 }}>
-            🔐 {t('loginBtn') || 'Admin Login'}
+        {/* User / login */}
+        {isAuthenticated ? (<>
+          <span style={{ fontSize:'0.68rem', color:'var(--text-secondary)', whiteSpace:'nowrap', flexShrink:0 }}>
+            👤 {user?.username}
+          </span>
+          <button onClick={() => { logout(); setActiveView('schedule'); }}
+            style={{ ...S.btn('transparent', 'var(--text-secondary)'), border:'1px solid var(--border)', fontSize:'0.65rem' }}>
+            {t('logout')}
           </button>
-        )}
-
-        {isAuthenticated && (
-          <>
-            <div style={S.divider} />
-            <button onClick={handleAddGroup}    className="btn btn-primary" style={{ padding:'4px 10px', fontSize:'0.7rem' }}>{t('addGroup')}</button>
-            <button onClick={handleExport}      className="btn btn-success" style={{ padding:'4px 10px', fontSize:'0.7rem' }}>📊 {t('export')}</button>
-            <button onClick={handleImportClick} className="btn btn-info"    style={{ padding:'4px 10px', fontSize:'0.7rem' }}>📂 {t('import')}</button>
-            <button onClick={handleClearAll}    className="btn btn-danger"  style={{ padding:'4px 10px', fontSize:'0.7rem' }}>{t('clearAll')}</button>
-            <button onClick={handleShare} style={{ padding:'4px 10px', background:'#6366f1', color:'#fff', border:'none', borderRadius:7, fontSize:'0.7rem', fontWeight:700, cursor:'pointer' }}>
-              🔗{shareToast || ' Share'}
-            </button>
-          </>
-        )}
-
-        {!isAuthenticated && (
-          <button onClick={() => setShowBooking(true)} className="btn btn-primary" style={{ padding:'5px 12px', fontSize:'0.75rem', flexShrink:0 }}>
-            🏫 {t('bookLab') || 'Book Lab'}
+        </>) : (
+          <button onClick={() => setShowLoginModal(true)} style={S.btn('var(--primary)')}>
+            🔐 {t('loginBtn') || 'Login'}
           </button>
         )}
       </div>
@@ -325,7 +331,7 @@ const AppContent = () => {
       <div style={{ display:'flex' }}>
 
         {/* Vertical icon nav */}
-        <div style={{ width:54, flexShrink:0, background:'var(--bg-card)', borderRight:'1px solid var(--border)', display:'flex', flexDirection:'column', alignItems:'center', padding:'8px 0', gap:4, position:'sticky', top:44, height:'calc(100vh - 44px)', overflowY:'auto' }}>
+        <div className="app-sidebar" style={{ width:54, flexShrink:0, background:'var(--bg-card)', borderRight:'1px solid var(--border)', display:'flex', flexDirection:'column', alignItems:'center', padding:'8px 0', gap:4, position:'sticky', top:40, height:'calc(100vh - 40px)', overflowY:'auto' }}>
 
           <button onClick={() => setActiveView('schedule')} title="Schedule" style={S.iconBtn(activeView==='schedule')}>
             <TabIcon icon={iconSchedule} label="Schedule" active={activeView==='schedule'} />
@@ -346,7 +352,7 @@ const AppContent = () => {
         </div>
 
         {/* Content */}
-        <div style={{ flex:1, minWidth:0, padding:'8px 16px' }}>
+        <div className="app-content" style={{ flex:1, minWidth:0, padding:'8px 16px' }}>
           {activeView === 'schedule' && (
             <>
               <EmptyRoomPanel allRooms={allRooms} schedule={schedule} days={days} timeSlots={timeSlots} selectedRoom={selectedRoom} setSelectedRoom={setSelectedRoom} />
@@ -371,6 +377,32 @@ const AppContent = () => {
           {activeView==='telegram'   && <TeacherTelegramManagement />}
         </div>
       </div>
+
+      {/* ── BOTTOM NAV (mobile only) ── */}
+      <nav className="app-bottom-nav">
+        <button
+          className={`app-bottom-nav-btn ${activeView==='schedule' ? 'active' : ''}`}
+          onClick={() => setActiveView('schedule')}
+          title="Schedule"
+        >
+          <TabIcon icon={iconSchedule} label="Schedule" active={activeView==='schedule'} />
+          <span className="app-bottom-nav-btn-label">Schedule</span>
+        </button>
+        {navTabs.map(tab => (
+          <button
+            key={tab.id}
+            className={`app-bottom-nav-btn ${activeView===tab.id ? 'active' : ''}`}
+            onClick={() => setActiveView(tab.id)}
+            title={tab.label}
+          >
+            <TabIcon icon={tab.icon} label={tab.label} active={activeView===tab.id} />
+            <span className="app-bottom-nav-btn-label">{tab.label}</span>
+            {tab.badge > 0 && (
+              <span className="app-bottom-nav-badge">{tab.badge}</span>
+            )}
+          </button>
+        ))}
+      </nav>
 
       {!isAuthenticated && (
         <GuestBooking
