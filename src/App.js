@@ -25,8 +25,10 @@ import { LANGUAGE_OPTIONS }               from './data/i18n';
 import logo         from './assets/logo.png';
 import iconAuto     from './assets/auto.png';
 import iconBooking  from './assets/booking.png';
+// exams.avif may have limited browser support — using emoji fallback
+// import iconExams from './assets/exam.jpeg';
 const iconExams = '🗓';
-import iconFeedback from './assets/feedback.png';
+import iconFeedback from './assets/feedback.jpeg';
 import iconSchedule from './assets/schedule.png';
 import iconStats    from './assets/stats.jpeg';
 import iconTelegram from './assets/telegram.jpeg';
@@ -187,18 +189,25 @@ const AppContent = () => {
 
   const S = {
     bar: {
-      display:'flex', alignItems:'center', gap:8,
+      display:'flex', alignItems:'center', gap:6,
       background:'var(--bg-card)', borderBottom:'1px solid var(--border)',
-      padding:'6px 12px', flexWrap:'wrap',
+      padding:'4px 10px', flexWrap:'nowrap',
       position:'sticky', top:0, zIndex:200,
+      overflowX:'auto', minHeight:40,
     },
-    divider: { width:1, height:20, background:'var(--border)', flexShrink:0 },
-
-    select: {
-      padding:'4px 8px', borderRadius:7, border:'2px solid var(--border)',
+    divider: { width:1, height:18, background:'var(--border)', flexShrink:0, margin:'0 2px' },
+    sel: {
+      padding:'3px 6px', borderRadius:6, border:'1px solid var(--border)',
       background:'var(--bg-main)', color:'var(--text-primary)',
-      fontSize:'0.75rem', cursor:'pointer', fontFamily:'inherit', outline:'none',
+      fontSize:'0.72rem', cursor:'pointer', fontFamily:'inherit', outline:'none',
+      height:28, flexShrink:0,
     },
+    btn: (bg, color='#fff') => ({
+      padding:'3px 8px', borderRadius:6, border:'none',
+      background:bg, color, fontSize:'0.68rem', fontWeight:700,
+      cursor:'pointer', height:28, flexShrink:0, whiteSpace:'nowrap',
+      fontFamily:'inherit',
+    }),
     iconBtn: (active) => ({
       width:44, minHeight:50, borderRadius:11, flexShrink:0,
       border: active ? '2px solid var(--primary)' : '1px solid var(--border)',
