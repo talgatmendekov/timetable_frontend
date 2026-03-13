@@ -23,10 +23,8 @@ import { exportToExcel, importFromExcel } from './utils/excelUtils';
 import { LANGUAGE_OPTIONS }               from './data/i18n';
 
 import logo         from './assets/logo.png';
-import iconAuto     from './assets/auto.webp';
+import iconAuto     from './assets/auto.png';
 import iconBooking  from './assets/booking.png';
-// exams.avif may have limited browser support — using emoji fallback
-// import iconExams from './assets/exams.avif';
 const iconExams = '🗓';
 import iconFeedback from './assets/feedback.jpeg';
 import iconSchedule from './assets/schedule.png';
