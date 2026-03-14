@@ -411,3 +411,12 @@ body {
   /* Footer hidden on mobile (bottom nav replaces it) */
   .app-author-credit { display: none; }
 }
+
+/* ── Admin ⋯ menu — desktop/mobile toggle ───────────────────────────────── */
+.tb-desktop-only { display: inline-flex; }
+.tb-mobile-only  { display: none; }
+
+@media (max-width: 767px) {
+  .tb-desktop-only { display: none !important; }
+  .tb-mobile-only  { display: block !important; }
+}

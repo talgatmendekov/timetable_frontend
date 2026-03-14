@@ -91,6 +91,7 @@ const AppContent = () => {
   const [showExamsToGuests, setShowExamsToGuests] = useState(false);
   const [feedbackCount,     setFeedbackCount]     = useState(0);
   const [shareToast,        setShareToast]        = useState('');
+  const [showAdminMenu,     setShowAdminMenu]     = useState(false);
   const [theme,             setTheme]             = useState(localStorage.getItem('scheduleTheme') || 'light');
 
   const fileInputRef = useRef(null);
@@ -277,11 +278,56 @@ const AppContent = () => {
 
         {/* Admin actions — inline, same row */}
         {isAuthenticated && (<>
-          <button onClick={handleAddGroup}    style={S.btn('var(--primary)')} className="tb-btn-label">＋ {t('addGroup')}</button>
-          <button onClick={handleExport}      style={S.btn('#059669')}        className="tb-btn-label" title={t('export')}>📊 <span className="tb-lbl">{t('export')}</span></button>
-          <button onClick={handleImportClick} style={S.btn('#0891b2')}        className="tb-btn-label" title={t('import')}>📂 <span className="tb-lbl">{t('import')}</span></button>
-          <button onClick={handleClearAll}    style={S.btn('var(--error)')}   className="tb-btn-label" title={t('clearAll')}>🗑 <span className="tb-lbl">{t('clearAll')}</span></button>
-          <div style={S.divider} />
+          {/* Desktop: full buttons */}
+          <button onClick={handleAddGroup}    style={S.btn('var(--primary)')} className="tb-admin-btn tb-desktop-only">＋ {t('addGroup')}</button>
+          <button onClick={handleExport}      style={S.btn('#059669')}        className="tb-admin-btn tb-desktop-only" title={t('export')}>📊 {t('export')}</button>
+          <button onClick={handleImportClick} style={S.btn('#0891b2')}        className="tb-admin-btn tb-desktop-only" title={t('import')}>📂 {t('import')}</button>
+          <button onClick={handleClearAll}    style={S.btn('var(--error)')}   className="tb-admin-btn tb-desktop-only" title={t('clearAll')}>🗑 {t('clearAll')}</button>
+
+          {/* Mobile: ⋯ menu */}
+          <div className="tb-more-wrap tb-mobile-only" style={{ position:'relative', flexShrink:0 }}>
+            <button
+              style={S.btn('var(--bg-hover)', 'var(--text-primary)')}
+              onClick={() => setShowAdminMenu(m => !m)}
+              title="Admin actions"
+            >⋯</button>
+            {showAdminMenu && (
+              <>
+                <div
+                  onClick={() => setShowAdminMenu(false)}
+                  style={{ position:'fixed', inset:0, zIndex:499 }}
+                />
+                <div style={{
+                  position:'fixed', top:42, right:8, zIndex:500,
+                  background:'var(--bg-card)', border:'1px solid var(--border)',
+                  borderRadius:10, boxShadow:'0 4px 20px rgba(0,0,0,0.2)',
+                  display:'flex', flexDirection:'column', minWidth:160, overflow:'hidden',
+                }}>
+                  {[
+                    { label:`＋ ${t('addGroup')}`, action: handleAddGroup,    bg:'var(--primary)' },
+                    { label:`📊 ${t('export')}`,   action: handleExport,      bg:'#059669' },
+                    { label:`📂 ${t('import')}`,   action: handleImportClick, bg:'#0891b2' },
+                    { label:`🗑 ${t('clearAll')}`, action: handleClearAll,    bg:'var(--error)' },
+                  ].map(item => (
+                    <button key={item.label}
+                      onClick={() => { item.action(); setShowAdminMenu(false); }}
+                      style={{
+                        padding:'12px 16px', background:'transparent',
+                        border:'none', borderBottom:'1px solid var(--border)',
+                        color:'var(--text-primary)', fontSize:'0.85rem',
+                        fontWeight:600, cursor:'pointer', textAlign:'left',
+                        fontFamily:'inherit',
+                      }}
+                      onMouseEnter={e => e.target.style.background='var(--bg-hover)'}
+                      onMouseLeave={e => e.target.style.background='transparent'}
+                    >{item.label}</button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          <div style={S.divider} className="tb-desktop-only" />
         </>)}
 
         {/* Guest book button */}
