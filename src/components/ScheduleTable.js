@@ -47,8 +47,36 @@ const MobileView = ({
 
   const toggleDay = (day) => setCollapsed(c => ({ ...c, [day]: !c[day] }));
 
+  // Find today's class count
+  const todayClassCount = groupsToShow.reduce((acc, group) => {
+    return acc + timeSlots.filter(time => {
+      const cls = schedule[`${group}-${todayName}-${time}`];
+      return cls && !cellsToSkip.has(`${group}-${todayName}-${time}`);
+    }).length;
+  }, 0);
+
+  const isTodayShown = daysToShow.includes(todayName);
+
   return (
     <div>
+      {/* ── Sticky today indicator ── */}
+      {isTodayShown && (
+        <div className="mob-today-bar">
+          <span className="mob-today-star">★</span>
+          <span className="mob-today-label">{t(todayName) || todayName}</span>
+          <span className="mob-today-count">{todayClassCount} {todayClassCount === 1 ? 'class' : 'classes'} today</span>
+          <button
+            className="mob-today-jump"
+            onClick={() => {
+              const el = document.querySelector('.mob-day-header.today');
+              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+          >
+            ↓ Jump
+          </button>
+        </div>
+      )}
+
       {daysToShow.map(day => {
         const isToday = day === todayName;
         const isCollapsed = collapsed[day];
