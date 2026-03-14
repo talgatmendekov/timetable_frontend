@@ -25,9 +25,10 @@ import { LANGUAGE_OPTIONS }               from './data/i18n';
 import logo         from './assets/logo.png';
 import iconAuto     from './assets/auto.png';
 import iconBooking  from './assets/booking.png';
-
+// exams.avif may have limited browser support — using emoji fallback
+// import iconExams from './assets/exam.jpeg';
 const iconExams = '🗓';
-import iconFeedback from './assets/feedback.png';
+import iconFeedback from './assets/feedback.jpeg';
 import iconSchedule from './assets/schedule.png';
 import iconStats    from './assets/stats.jpeg';
 import iconTelegram from './assets/telegram.jpeg';
@@ -275,10 +276,10 @@ const AppContent = () => {
 
         {/* Admin actions — inline, same row */}
         {isAuthenticated && (<>
-          <button onClick={handleAddGroup}    style={S.btn('var(--primary)')}>＋ {t('addGroup')}</button>
-          <button onClick={handleExport}      style={S.btn('#059669')}>📊 {t('export')}</button>
-          <button onClick={handleImportClick} style={S.btn('#0891b2')}>📂 {t('import')}</button>
-          <button onClick={handleClearAll}    style={S.btn('var(--error)')}>🗑 {t('clearAll')}</button>
+          <button onClick={handleAddGroup}    style={S.btn('var(--primary)')} className="tb-btn-label">＋ {t('addGroup')}</button>
+          <button onClick={handleExport}      style={S.btn('#059669')}        className="tb-btn-label" title={t('export')}>📊 <span className="tb-lbl">{t('export')}</span></button>
+          <button onClick={handleImportClick} style={S.btn('#0891b2')}        className="tb-btn-label" title={t('import')}>📂 <span className="tb-lbl">{t('import')}</span></button>
+          <button onClick={handleClearAll}    style={S.btn('var(--error)')}   className="tb-btn-label" title={t('clearAll')}>🗑 <span className="tb-lbl">{t('clearAll')}</span></button>
           <div style={S.divider} />
         </>)}
 
@@ -316,8 +317,9 @@ const AppContent = () => {
             👤 {user?.username}
           </span>
           <button onClick={() => { logout(); setActiveView('schedule'); }}
-            style={{ ...S.btn('transparent', 'var(--text-secondary)'), border:'1px solid var(--border)', fontSize:'0.65rem' }}>
-            {t('logout')}
+            style={{ ...S.btn('transparent', 'var(--text-secondary)'), border:'1px solid var(--border)', fontSize:'0.65rem' }}
+            className="tb-btn-label" title={t('logout')}>
+            <span className="tb-lbl">{t('logout')}</span>⏻
           </button>
         </>) : (
           <button onClick={() => setShowLoginModal(true)} style={S.btn('var(--primary)')}>
@@ -419,6 +421,77 @@ const AppContent = () => {
       )}
 
       <ClassModal isOpen={modalOpen} onClose={handleCloseModal} group={currentCell.group} day={currentCell.day} time={currentCell.time} />
+
+      {/* ── Mobile bottom nav ── */}
+      <div className="mob-bottom-nav">
+        <button className={`mob-nav-btn ${activeView==='schedule'?'active':''}`} onClick={() => setActiveView('schedule')}>
+          <span>📅</span><span>Schedule</span>
+        </button>
+        {isAuthenticated && (
+          <button className={`mob-nav-btn ${activeView==='bookings'?'active':''}`} onClick={() => setActiveView('bookings')}>
+            <span>📋</span><span>Bookings</span>
+          </button>
+        )}
+        {!isAuthenticated && (
+          <button className={`mob-nav-btn ${activeView==='mybookings'?'active':''}`} onClick={() => setActiveView('mybookings')}>
+            <span>📋</span><span>My Books</span>
+          </button>
+        )}
+        <button className={`mob-nav-btn ${activeView==='exams'?'active':''}`} onClick={() => setActiveView('exams')}>
+          <span>🎓</span><span>Exams</span>
+        </button>
+        {isAuthenticated && (
+          <button className={`mob-nav-btn ${activeView==='print'?'active':''}`} onClick={() => setActiveView('print')}>
+            <span>🖨️</span><span>Print</span>
+          </button>
+        )}
+        <button className={`mob-nav-btn ${activeView==='feedback'?'active':''}`} onClick={() => setActiveView('feedback')}>
+          <span>💬</span><span>Feedback</span>
+        </button>
+        {isAuthenticated ? (
+          <button className="mob-nav-btn" onClick={() => { logout(); setActiveView('schedule'); }}>
+            <span>⏻</span><span>Logout</span>
+          </button>
+        ) : (
+          <button className="mob-nav-btn" onClick={() => setShowLoginModal(true)}>
+            <span>🔐</span><span>Login</span>
+          </button>
+        )}
+      </div>
+
+      {/* ── Mobile bottom nav ── */}
+      <div className="mob-bottom-nav">
+        <button className={`mob-nav-btn ${activeView==='schedule'?'active':''}`} onClick={() => setActiveView('schedule')}>
+          <span>📅</span><span>Schedule</span>
+        </button>
+        {isAuthenticated ? (<>
+          <button className={`mob-nav-btn ${activeView==='bookings'?'active':''}`} onClick={() => setActiveView('bookings')}>
+            <span>📋</span><span>Bookings</span>
+          </button>
+          <button className={`mob-nav-btn ${activeView==='print'?'active':''}`} onClick={() => setActiveView('print')}>
+            <span>🖨️</span><span>Print</span>
+          </button>
+        </>) : (
+          <button className={`mob-nav-btn ${activeView==='mybookings'?'active':''}`} onClick={() => setActiveView('mybookings')}>
+            <span>📋</span><span>My Books</span>
+          </button>
+        )}
+        <button className={`mob-nav-btn ${activeView==='exams'?'active':''}`} onClick={() => setActiveView('exams')}>
+          <span>🎓</span><span>Exams</span>
+        </button>
+        <button className={`mob-nav-btn ${activeView==='feedback'?'active':''}`} onClick={() => setActiveView('feedback')}>
+          <span>💬</span><span>Feedback</span>
+        </button>
+        {isAuthenticated ? (
+          <button className="mob-nav-btn" onClick={() => { logout(); setActiveView('schedule'); }}>
+            <span>⏻</span><span>Logout</span>
+          </button>
+        ) : (
+          <button className="mob-nav-btn" onClick={() => setShowLoginModal(true)}>
+            <span>🔐</span><span>Login</span>
+          </button>
+        )}
+      </div>
 
       <footer className="app-author-credit">
         <span className="app-author-logo">🏛</span>

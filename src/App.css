@@ -323,3 +323,94 @@ body {
     display: none !important;
   }
 }
+
+/* ── Mobile topbar: icon-only, single row ───────────────────────────────── */
+@media (max-width: 767px) {
+
+  /* Hide sidebar completely on mobile */
+  .app-sidebar {
+    display: none !important;
+  }
+
+  /* Full width content when sidebar hidden */
+  .app-sidebar + div {
+    min-width: 0 !important;
+  }
+
+  /* Topbar stays single row — hide button labels */
+  .tb-lbl { display: none; }
+
+  /* Lang buttons — flag only */
+  .app-topbar .lang-btn {
+    padding: 3px 4px !important;
+    font-size: 0 !important;        /* hide text */
+    min-width: 28px;
+  }
+  .app-topbar .lang-btn::first-letter { font-size: 0.9rem; }
+
+  /* Username — hide on mobile */
+  .app-topbar span[style*="0.68rem"] {
+    display: none !important;
+  }
+}
+
+/* ── Mobile bottom nav bar ──────────────────────────────────────────────── */
+.mob-bottom-nav { display: none; }
+
+@media (max-width: 767px) {
+  /* Show bottom nav */
+  .mob-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    z-index: 300;
+    padding: 4px 0 max(4px, env(safe-area-inset-bottom));
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.15);
+  }
+  .mob-nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px 2px;
+    font-family: inherit;
+    color: var(--text-secondary);
+    font-size: 0.58rem;
+    font-weight: 600;
+    min-height: 48px;
+    transition: color 0.15s;
+  }
+  .mob-nav-btn span:first-child { font-size: 1.2rem; line-height: 1; }
+  .mob-nav-btn.active { color: var(--primary); }
+  .mob-nav-btn:active { opacity: 0.7; }
+
+  /* Push content above bottom nav */
+  .app-content {
+    padding-bottom: 70px !important;
+  }
+
+  /* Hide desktop sidebar */
+  .app-sidebar { display: none !important; }
+
+  /* Topbar: icon-only admin buttons */
+  .tb-lbl { display: none !important; }
+
+  /* Hide username text */
+  .app-topbar .user-text { display: none; }
+
+  /* Shrink lang buttons to flag only */
+  .app-topbar .lang-btn {
+    padding: 3px 5px !important;
+    font-size: 0.6rem !important;
+  }
+
+  /* Footer hidden on mobile (bottom nav replaces it) */
+  .app-author-credit { display: none; }
+}
