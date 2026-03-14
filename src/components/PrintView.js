@@ -1,4 +1,3 @@
-// src/components/PrintView.js
 import React, { useState, useRef } from 'react';
 import { useSchedule } from '../context/ScheduleContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -27,6 +26,18 @@ const DEPARTMENTS = [
     groups: ['EEAIR-25','EEAIR-24','EEAIR-23'],
   },
 ];
+
+const SHORT_DAY = {
+  Monday:'Mon', Tuesday:'Tue', Wednesday:'Wed',
+  Thursday:'Thu', Friday:'Fri', Saturday:'Sat', Sunday:'Sun',
+  // Russian
+  Понедельник:'Пн', Вторник:'Вт', Среда:'Ср',
+  Четверг:'Чт', Пятница:'Пт', Суббота:'Сб', Воскресенье:'Вс',
+  // Kyrgyz
+  Дүйшөмбү:'Дүй', Шейшемби:'Шей', Шаршемби:'Шар',
+  Бейшемби:'Бей', Жума:'Жум', Ишемби:'Иш',
+};
+const shortDay = (label) => SHORT_DAY[label] || label;
 
 const PrintView = () => {
   const { groups, schedule, timeSlots, days } = useSchedule();
@@ -151,13 +162,9 @@ const PrintView = () => {
             <span className="pv-section-count">{total} classes / week</span>
           </div>
           <table className="pv-table">
-            <colgroup>
-              <col style={{ width:64 }} />
-              {timeSlots.map((_, i) => <col key={i} />)}
-            </colgroup>
             <thead>
               <tr>
-                <th className="th-label" style={{ width:64, minWidth:64, maxWidth:64 }}>{t('day')||'Day'}</th>
+                <th className="th-label">{t('day')||'Day'}</th>
                 {timeSlots.map(tm => <th key={tm}>{tm}</th>)}
               </tr>
             </thead>
@@ -166,7 +173,7 @@ const PrintView = () => {
                 const cells = buildRowCells(group, day);
                 return (
                   <tr key={day}>
-                    <td className="td-label" style={{ width:64, minWidth:64, maxWidth:64, wordBreak:'break-word', whiteSpace:'normal', overflow:'hidden' }}>{t(day)||day}</td>
+                    <td className="td-label">{t(day)||day}</td>
                     {cells.map((cell, idx) => {
                       if (cell.skip) return null;
                       return (
@@ -197,10 +204,6 @@ const PrintView = () => {
           <span className="pv-section-count">{filteredGroups.length} groups</span>
         </div>
         <table className="pv-table">
-          <colgroup>
-            <col style={{ width:80 }} />
-            {timeSlots.map((_, i) => <col key={i} />)}
-          </colgroup>
           <thead>
             <tr>
               <th className="th-label" style={{ width:80, minWidth:80, maxWidth:80 }}>{t('groupTime')||'Group'}</th>
