@@ -324,33 +324,30 @@ body {
   }
 }
 
-/* ── Mobile topbar: icon-only, single row ───────────────────────────────── */
+/* ── Mobile topbar: icon-only, single scrollable row ────────────────────── */
 @media (max-width: 767px) {
 
-  /* Hide sidebar completely on mobile */
-  .app-sidebar {
-    display: none !important;
+  /* Topbar: single row, scrollable, no wrap */
+  .app-topbar {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    gap: 4px !important;
+    padding: 3px 8px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    scrollbar-width: none;
   }
+  .app-topbar::-webkit-scrollbar { display: none; }
 
-  /* Full width content when sidebar hidden */
-  .app-sidebar + div {
-    min-width: 0 !important;
-  }
+  /* Hide labels on admin buttons — icon only */
+  .tb-lbl { display: none !important; }
 
-  /* Topbar stays single row — hide button labels */
-  .tb-lbl { display: none; }
-
-  /* Lang buttons — flag only */
+  /* Lang buttons — shrink */
   .app-topbar .lang-btn {
-    padding: 3px 4px !important;
-    font-size: 0 !important;        /* hide text */
-    min-width: 28px;
-  }
-  .app-topbar .lang-btn::first-letter { font-size: 0.9rem; }
-
-  /* Username — hide on mobile */
-  .app-topbar span[style*="0.68rem"] {
-    display: none !important;
+    padding: 2px 5px !important;
+    font-size: 0.6rem !important;
   }
 }
 

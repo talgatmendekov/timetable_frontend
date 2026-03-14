@@ -193,7 +193,8 @@ const AppContent = () => {
       background:'var(--bg-card)', borderBottom:'1px solid var(--border)',
       padding:'4px 10px', flexWrap:'nowrap',
       position:'sticky', top:0, zIndex:200,
-      overflowX:'auto', minHeight:40,
+      overflowX:'auto', overflowY:'hidden',
+      minHeight:40, maxHeight:48,
     },
     divider: { width:1, height:18, background:'var(--border)', flexShrink:0, margin:'0 2px' },
     sel: {

@@ -200,8 +200,21 @@
    ════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 767px) {
 
-  /* Скрываем таблицу, показываем карточки */
-  .table-wrapper { display: none; }
+  /* Hide desktop table on mobile */
+  .schedule-container .table-wrapper { display: none !important; }
+  .schedule-table { display: none !important; }
+
+  /* Force mobile cards visible */
+  .mob-day-section  { display: block !important; }
+  .mob-day-header   { display: flex !important; }
+  .mob-group-block  { display: block !important; }
+  .mob-slots        { display: flex !important; }
+
+  /* Force mobile cards visible */
+  .mob-day-section  { display: block !important; }
+  .mob-day-header   { display: flex !important; }
+  .mob-group-block  { display: block !important; }
+  .mob-slots        { display: flex !important; }
 
   /* Hide legend on mobile */
   .type-legend { display: none; }
