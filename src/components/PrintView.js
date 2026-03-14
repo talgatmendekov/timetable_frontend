@@ -151,9 +151,13 @@ const PrintView = () => {
             <span className="pv-section-count">{total} classes / week</span>
           </div>
           <table className="pv-table">
+            <colgroup>
+              <col style={{ width:64 }} />
+              {timeSlots.map((_, i) => <col key={i} />)}
+            </colgroup>
             <thead>
               <tr>
-                <th className="th-label" style={{ width:52 }}>{t('day')||'Day'}</th>
+                <th className="th-label" style={{ width:64, minWidth:64, maxWidth:64 }}>{t('day')||'Day'}</th>
                 {timeSlots.map(tm => <th key={tm}>{tm}</th>)}
               </tr>
             </thead>
@@ -162,7 +166,7 @@ const PrintView = () => {
                 const cells = buildRowCells(group, day);
                 return (
                   <tr key={day}>
-                    <td className="td-label">{t(day)||day}</td>
+                    <td className="td-label" style={{ width:64, minWidth:64, maxWidth:64, wordBreak:'break-word', whiteSpace:'normal', overflow:'hidden' }}>{t(day)||day}</td>
                     {cells.map((cell, idx) => {
                       if (cell.skip) return null;
                       return (
@@ -193,9 +197,13 @@ const PrintView = () => {
           <span className="pv-section-count">{filteredGroups.length} groups</span>
         </div>
         <table className="pv-table">
+          <colgroup>
+            <col style={{ width:80 }} />
+            {timeSlots.map((_, i) => <col key={i} />)}
+          </colgroup>
           <thead>
             <tr>
-              <th className="th-label" style={{ width:70 }}>{t('groupTime')||'Group'}</th>
+              <th className="th-label" style={{ width:80, minWidth:80, maxWidth:80 }}>{t('groupTime')||'Group'}</th>
               {timeSlots.map(tm => <th key={tm}>{tm}</th>)}
             </tr>
           </thead>
@@ -204,7 +212,7 @@ const PrintView = () => {
               const cells = buildRowCells(group, day);
               return (
                 <tr key={group}>
-                  <td className="td-label">{group}</td>
+                  <td className="td-label" style={{ width:80, minWidth:80, maxWidth:80, wordBreak:'break-word', whiteSpace:'normal', overflow:'hidden' }}>{group}</td>
                   {cells.map((cell, idx) => {
                     if (cell.skip) return null;
                     return (
