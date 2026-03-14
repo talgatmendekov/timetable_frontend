@@ -402,7 +402,7 @@ body {
   /* Hide username text */
   .app-topbar .user-text { display: none; }
 
-  
+  /* Shrink lang buttons to flag only */
   .app-topbar .lang-btn {
     padding: 3px 5px !important;
     font-size: 0.6rem !important;
@@ -413,10 +413,14 @@ body {
 }
 
 /* ── Admin ⋯ menu — desktop/mobile toggle ───────────────────────────────── */
-.tb-desktop-only { display: inline-flex; }
-.tb-mobile-only  { display: none; }
+.tb-desktop-only { display: inline-flex !important; }
+.tb-mobile-only  { display: none !important; }
 
 @media (max-width: 767px) {
-  .tb-desktop-only { display: none !important; }
-  .tb-mobile-only  { display: block !important; }
+  button.tb-desktop-only,
+  div.tb-desktop-only,
+  .app-topbar .tb-desktop-only { display: none !important; visibility: hidden !important; width: 0 !important; padding: 0 !important; margin: 0 !important; overflow: hidden !important; border: none !important; }
+  button.tb-mobile-only,
+  div.tb-mobile-only,
+  .app-topbar .tb-mobile-only  { display: block !important; visibility: visible !important; }
 }

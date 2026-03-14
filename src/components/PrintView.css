@@ -1,3 +1,8 @@
+/* =============================================================
+   PrintView.css - World-class university schedule design
+   Inspired by: Linear, Notion, Swiss design systems
+   ============================================================= */
+
 .pv-wrap {
   min-height: 100vh;
   background: #eef0f6;
@@ -61,6 +66,8 @@
 }
 .pv-mode:hover { background: #eef0fb; border-color: #a5b4fc; color: #4338ca; }
 .pv-mode.pv-mode-on { background: #0f172a; border-color: #0f172a; color: #fff; font-weight: 600; }
+
+.pv-dept-sel { display: none; }
 
 .pv-sel {
   padding: 8px 12px;
@@ -311,4 +318,70 @@
   .pv-cell-room     { color: #64748b; }
   .pv-footer        { background: #0f172a; border-color: #334155; }
   .pv-footer-txt    { color: #475569; }
+}
+
+/* ── PrintView mobile ────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+
+  .pv-wrap { padding: 8px 8px 80px; }
+
+  /* Controls bar: stack vertically */
+  .pv-bar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 10px;
+  }
+  .pv-ctrl { width: 100%; }
+  .pv-lbl  { font-size: 0.62rem; }
+
+  /* Dept buttons → hide, show select */
+  .pv-dept-btns { display: none !important; }
+  .pv-dept-sel  { display: block !important; width: 100%; }
+
+  /* View mode buttons: full width */
+  .pv-row { gap: 4px; }
+  .pv-mode { flex: 1; font-size: 0.78rem; padding: 8px 10px; }
+
+  /* Group/day select: full width */
+  .pv-sel { width: 100%; }
+
+  /* Print button: full width */
+  .pv-print { width: 100%; text-align: center; }
+
+  /* Preview: no border radius, edge to edge */
+  .pv-preview {
+    border-radius: 8px;
+    overflow-x: auto;
+  }
+
+  /* Header: compact */
+  .pv-header {
+    padding: 12px 14px !important;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+  }
+  .pv-header-meta { text-align: left; }
+  .pv-header-title { font-size: 0.95rem !important; }
+
+  /* Sections padding */
+  .pv-sections { padding: 10px 8px 16px !important; gap: 16px !important; }
+
+  /* Table: scrollable */
+  .pv-section { overflow-x: auto; }
+  .pv-table {
+    min-width: 600px;
+    font-size: 0.62rem;
+  }
+  .pv-table th { padding: 5px 4px !important; font-size: 0.55rem !important; }
+  .pv-table td { padding: 4px 3px !important; }
+  .pv-table td.td-label { padding: 4px 6px !important; font-size: 0.6rem !important; }
+  .pv-cell-course  { font-size: 0.62rem !important; }
+  .pv-cell-teacher { font-size: 0.56rem !important; }
+  .pv-cell-room    { font-size: 0.52rem !important; }
+
+  /* Footer */
+  .pv-footer { padding: 8px 12px !important; flex-direction: column; gap: 2px; }
 }

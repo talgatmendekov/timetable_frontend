@@ -178,7 +178,7 @@ const MobileView = ({
                           onClick={handleClick}
                         >
                           <div className={`mob-slot-time ${isToday ? 'today-t' : ''}`}>
-                            {time}
+                            {time.includes('-') ? time.split('-')[0] : time}
                             {duration > 1 && <div style={{ fontSize:'0.56rem', marginTop:2, opacity:0.7 }}>{duration*40}m</div>}
                           </div>
 

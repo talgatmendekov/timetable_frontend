@@ -301,18 +301,19 @@
 
   /* Время слева — узкая колонка */
   .mob-slot-time {
-    flex: 0 0 54px;
+    flex: 0 0 38px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.64rem;
+    font-size: 0.6rem;
     font-weight: 700;
     color: var(--text-secondary);
     border-right: 2px solid var(--border);
     background: var(--bg-main);
-    padding: 4px 2px;
+    padding: 4px 1px;
     text-align: center;
     line-height: 1.2;
+    overflow: hidden;
   }
   .mob-slot-time.today-t { color: var(--accent); background: rgba(251,191,36,0.06); }
 

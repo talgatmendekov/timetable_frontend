@@ -1,3 +1,4 @@
+// src/components/PrintView.js
 import React, { useState, useRef } from 'react';
 import { useSchedule } from '../context/ScheduleContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -243,7 +244,8 @@ const PrintView = () => {
       <div className="pv-bar">
         <div className="pv-ctrl">
           <span className="pv-lbl">🏛 Department</span>
-          <div className="pv-row">
+          {/* Desktop: buttons */}
+          <div className="pv-row pv-dept-btns">
             {[{id:'',icon:'🌐',en:'All',ru:'Все',ky:'Баары'}, ...DEPARTMENTS].map(d => (
               <button
                 key={d.id}
@@ -254,6 +256,17 @@ const PrintView = () => {
               </button>
             ))}
           </div>
+          {/* Mobile: select */}
+          <select
+            className="pv-sel pv-dept-sel"
+            value={deptId}
+            onChange={e => { setDeptId(e.target.value); setSelectedGroup(''); }}
+          >
+            <option value="">🌐 All Departments</option>
+            {DEPARTMENTS.map(d => (
+              <option key={d.id} value={d.id}>{d.icon} {deptLabel(d)}</option>
+            ))}
+          </select>
         </div>
 
         <div className="pv-ctrl">
