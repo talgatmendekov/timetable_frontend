@@ -402,7 +402,7 @@ body {
   /* Hide username text */
   .app-topbar .user-text { display: none; }
 
-  /* Shrink lang buttons to flag only */
+  
   .app-topbar .lang-btn {
     padding: 3px 5px !important;
     font-size: 0.6rem !important;
