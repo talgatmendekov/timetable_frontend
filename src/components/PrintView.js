@@ -88,68 +88,92 @@ const PrintView = () => {
     );
   };
 
-  // ── Print popup ───────────────────────────────────────────────────────────
-  const handlePrint = () => {
-    const html = printRef.current?.innerHTML;
-    if (!html) return;
-    const w = window.open('', '_blank');
+  // ── PDF download via browser print-to-PDF ────────────────────────────────
+  const [printing, setPrinting] = React.useState(false);
 
+  const buildPrintHTML = () => {
+    const html = printRef.current?.innerHTML;
+    if (!html) return null;
     const groupCount = selectedGroup ? 1 : filteredGroups.length;
     const colCount   = timeSlots.length + 1;
-    const rowBudgetMm  = Math.max(8, Math.floor(164 / Math.max(groupCount, 1)));
-    const byColFont    = Math.floor(52 / colCount);
-    const byGroupFont  = Math.floor(rowBudgetMm * 0.85);
-    const baseFontPx   = Math.max(4, Math.min(7, Math.min(byColFont, byGroupFont)));
-    const cellPad      = groupCount <= 4 ? '3px 2px' : groupCount <= 8 ? '2px 2px' : '1px 1px';
-    const thFontPx     = Math.max(3.5, baseFontPx - 0.5);
-    const headerPad    = groupCount <= 6 ? '8px 12px' : '5px 10px';
-
-    w.document.write(`<!DOCTYPE html><html><head>
+    const rowBudgetMm = Math.max(8, Math.floor(164 / Math.max(groupCount, 1)));
+    const byColFont   = Math.floor(52 / colCount);
+    const byGroupFont = Math.floor(rowBudgetMm * 0.85);
+    const baseFontPx  = Math.max(4, Math.min(7, Math.min(byColFont, byGroupFont)));
+    const cellPad     = groupCount <= 4 ? '3px 2px' : groupCount <= 8 ? '2px 2px' : '1px 1px';
+    const thFontPx    = Math.max(3.5, baseFontPx - 0.5);
+    const headerPad   = groupCount <= 6 ? '8px 12px' : '5px 10px';
+    return `<!DOCTYPE html><html><head>
       <meta charset="UTF-8">
       <title>Schedule — Alatoo International University</title>
       <style>
         @page { size: A4 landscape; margin: 5mm 6mm; }
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family: Arial, Helvetica, sans-serif; font-size:${baseFontPx}px; color:#000; background:#fff; }
-        .pv-header {
-          background:#0f172a; padding:${headerPad};
-          display:flex; align-items:center; justify-content:space-between;
-        }
-        .pv-header-left  { display:flex; align-items:center; gap:8px; }
-        .pv-header-seal  { width:28px; height:28px; background:#fff; border:2px solid #818cf8; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:6px; font-weight:900; color:#4f46e5; letter-spacing:-0.5px; flex-shrink:0; }
+        .pv-header { background:#0f172a; padding:${headerPad}; display:flex; align-items:center; justify-content:space-between; }
+        .pv-header-left { display:flex; align-items:center; gap:8px; }
+        .pv-header-seal { width:28px; height:28px; background:#fff; border:2px solid #818cf8; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:6px; font-weight:900; color:#4f46e5; letter-spacing:-0.5px; flex-shrink:0; }
         .pv-header-title { font-size:10px; font-weight:800; color:#fff; }
-        .pv-header-sub   { font-size:6px; color:#94a3b8; margin-top:1px; }
-        .pv-header-dept  { font-size:6.5px; font-weight:700; color:#818cf8; text-transform:uppercase; letter-spacing:0.07em; }
-        .pv-header-date  { font-size:6px; color:#cbd5e1; margin-top:2px; }
-        .pv-header-meta  { text-align:right; }
+        .pv-header-sub { font-size:6px; color:#94a3b8; margin-top:1px; }
+        .pv-header-dept { font-size:6.5px; font-weight:700; color:#818cf8; text-transform:uppercase; letter-spacing:0.07em; }
+        .pv-header-date { font-size:6px; color:#cbd5e1; margin-top:2px; }
+        .pv-header-meta { text-align:right; }
         .pv-sections { padding:4px 6px 6px; display:flex; flex-direction:column; gap:5px; }
         .pv-section-head { display:flex; align-items:center; gap:4px; margin-bottom:1px; }
-        .pv-section-name  { font-size:7px; font-weight:700; color:#0f172a; }
+        .pv-section-name { font-size:7px; font-weight:700; color:#0f172a; }
         .pv-section-count { font-size:5.5px; color:#94a3b8; margin-left:3px; background:#f1f5f9; padding:1px 4px; border-radius:99px; }
-        table { width:100%; border-collapse:collapse; table-layout:fixed; border:1px solid #d1d5db; }
+        table { width:100%; border-collapse:collapse; table-layout:auto; border:1px solid #d1d5db; }
         thead { background:#f3f4f6; }
-        th { padding:${cellPad}; font-size:${thFontPx}px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:#6b7280; border-bottom:1.5px solid #d1d5db; border-right:1px solid #e5e7eb; text-align:center; white-space:nowrap; overflow:hidden; }
-        th:last-child { border-right:none; }
-        th.th-label { text-align:left; padding-left:4px; background:#e9ebee; color:#374151; }
+        th { padding:${cellPad}; font-size:${thFontPx}px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:#6b7280; border:1px solid #d1d5db; text-align:center; white-space:nowrap; }
+        th.th-label { text-align:left; padding-left:4px; background:#e9ebee; color:#374151; white-space:nowrap; }
         tr:nth-child(even) { background:#f9fafb; }
-        td { padding:${cellPad}; border-bottom:1px solid #e5e7eb; border-right:1px solid #e5e7eb; vertical-align:middle; text-align:center; overflow:hidden; }
-        td:last-child { border-right:none; }
-        tr:last-child td { border-bottom:none; }
-        td.td-label { font-weight:700; font-size:${Math.max(4.5, baseFontPx - 0.5)}px; color:#374151; background:#f3f4f6; white-space:nowrap; padding-left:4px; border-right:2px solid #d1d5db; }
+        td { padding:${cellPad}; border:1px solid #e5e7eb; vertical-align:middle; text-align:center; }
+        td.td-label { font-weight:700; font-size:${Math.max(4.5, baseFontPx - 0.5)}px; color:#374151; background:#f3f4f6; white-space:nowrap; padding:${cellPad.split(' ')[0]} 6px; border-right:2px solid #d1d5db; }
         td.td-merged { background:#eff6ff; border:1px solid #bfdbfe; }
-        .pv-cell { display:flex; flex-direction:column; gap:1px; }
-        .pv-cell-course  { font-size:${Math.max(4.5, baseFontPx - 0.5)}px; font-weight:700; color:#111827; line-height:1.2; }
+        .pv-cell { display:flex; flex-direction:column; gap:1px; align-items:center; text-align:center; }
+        .pv-cell-course { font-size:${Math.max(4.5, baseFontPx - 0.5)}px; font-weight:700; color:#111827; line-height:1.2; }
         .pv-cell-teacher { font-size:${Math.max(4, baseFontPx - 1)}px; color:#6b7280; line-height:1.2; }
-        .pv-cell-room    { font-size:${Math.max(4, baseFontPx - 1.5)}px; color:#9ca3af; line-height:1.2; }
-        .pv-cell-empty   { color:#e5e7eb; text-align:center; font-size:8px; }
+        .pv-cell-room { font-size:${Math.max(4, baseFontPx - 1.5)}px; color:#9ca3af; line-height:1.2; }
+        .pv-cell-empty { color:#e5e7eb; text-align:center; font-size:8px; }
         .pv-footer { border-top:1px solid #e5e7eb; padding:4px 8px; display:flex; justify-content:space-between; background:#f9fafb; }
         .pv-footer-txt { font-size:5.5px; color:#9ca3af; }
-        .pv-section { page-break-inside: avoid; }
+        .pv-section { page-break-inside:avoid; }
         * { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
       </style>
-    </head><body>${html}</body></html>`);
+    </head><body>${html}</body></html>`;
+  };
+
+  // Opens print dialog — user can Save as PDF from there
+  const handlePrint = () => {
+    const content = buildPrintHTML();
+    if (!content) return;
+    const w = window.open('', '_blank');
+    if (!w) { alert('Please allow popups to print/save PDF'); return; }
+    w.document.write(content);
     w.document.close();
     setTimeout(() => { w.focus(); w.print(); }, 400);
+  };
+
+  // Download as HTML file — works on all browsers including mobile Safari
+  const handleDownload = () => {
+    setPrinting(true);
+    try {
+      const content = buildPrintHTML();
+      if (!content) return;
+      const blob = new Blob([content], { type: 'text/html;charset=utf-8' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      const dept = deptId ? DEPARTMENTS.find(d => d.id === deptId)?.en || deptId : 'All';
+      const date = new Date().toISOString().slice(0, 10);
+      a.href     = url;
+      a.download = `Schedule-${dept}-${date}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } finally {
+      setTimeout(() => setPrinting(false), 1000);
+    }
   };
 
   // ── Render: by group (rows = days, cols = time slots, cells merged by duration) ──
@@ -295,7 +319,12 @@ const PrintView = () => {
           </div>
         )}
 
-        <button className="pv-print" onClick={handlePrint}>🖨️ Print / PDF</button>
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+          <button className="pv-print" onClick={handlePrint}>🖨️ Print</button>
+          <button className="pv-download" onClick={handleDownload} disabled={printing}>
+            {printing ? '⏳ Preparing...' : '⬇️ Download HTML'}
+          </button>
+        </div>
       </div>
 
       {dept && (

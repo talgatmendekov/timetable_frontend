@@ -99,6 +99,23 @@
 .pv-print:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(79,70,229,.42); }
 .pv-print:active { transform: translateY(0); }
 
+.pv-download {
+  padding: 10px 22px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #059669 0%, #0891b2 100%);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(5,150,105,.35);
+  transition: transform 0.14s, box-shadow 0.14s;
+  font-family: inherit;
+}
+.pv-download:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(5,150,105,.42); }
+.pv-download:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
 .pv-badge {
   display: inline-flex;
   align-items: center;
@@ -366,7 +383,7 @@
   .pv-header-meta { text-align: left; }
   .pv-header-title { font-size: 0.95rem !important; }
 
- 
+  /* Sections padding */
   .pv-sections { padding: 10px 8px 16px !important; gap: 16px !important; }
 
   /* Table: scrollable */
