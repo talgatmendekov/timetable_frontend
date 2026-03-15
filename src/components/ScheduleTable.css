@@ -301,18 +301,30 @@
 
   /* Время слева — узкая колонка */
   .mob-slot-time {
-    flex: 0 0 62px;
+    flex: 0 0 76px;
+    width: 76px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.62rem;
+    font-size: 0.65rem;
     font-weight: 700;
     color: var(--text-secondary);
     border-right: 2px solid var(--border);
     background: var(--bg-main);
-    padding: 4px 3px;
+    padding: 4px 4px;
     text-align: center;
     line-height: 1.3;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .mob-slot-body {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .mob-slot-course {
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
   }
   .mob-slot-time.today-t { color: var(--accent); background: rgba(251,191,36,0.06); }
