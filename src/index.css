@@ -221,7 +221,17 @@ body[data-theme="dark"] .group-name { color: #f0f5fc !important; }
 .duration-indicator { font-size: 0.6rem; padding: 2px 6px; }
 
 /* MODAL */
-.modal-overlay { background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); }
+.modal-overlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 1000 !important;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px);
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 20px;
+}
 .modal-content {
   background: var(--bg-card);
   color: var(--text-primary);

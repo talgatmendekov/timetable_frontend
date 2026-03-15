@@ -317,7 +317,7 @@ const AppContent = () => {
                   display:'flex', flexDirection:'column', minWidth:160, overflow:'hidden',
                 }}>
                   {[
-                    { label:`＋ ${t('addGroup')}`, action: handleAddGroup,    bg:'var(--primary)' },
+                    { label:`${t('addGroup')}`, action: handleAddGroup,    bg:'var(--primary)' },
                     { label:`📊 ${t('export')}`,   action: handleExport,      bg:'#059669' },
                     { label:`📂 ${t('import')}`,   action: handleImportClick, bg:'#0891b2' },
                     { label:`🗑 ${t('clearAll')}`, action: handleClearAll,    bg:'var(--error)' },
