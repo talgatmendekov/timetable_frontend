@@ -460,3 +460,30 @@ body[data-theme="dark"][data-dept="cs"]   { --primary: #60a5fa; --primary-light:
 body[data-theme="dark"][data-dept="math"] { --primary: #a78bfa; --primary-light: #3b2a6e; }
 body[data-theme="dark"][data-dept="ie"]   { --primary: #fbbf24; --primary-light: #5a3a00; }
 body[data-theme="dark"][data-dept="ee"]   { --primary: #34d399; --primary-light: #054d38; }
+
+
+
+/* ── Display density ─────────────────────────────────────────────────────── */
+/* Compact */
+body[data-density="compact"] .schedule-table th,
+body[data-density="compact"] .schedule-table td { padding: 4px 4px !important; font-size: 0.7rem !important; }
+body[data-density="compact"] .schedule-cell { min-height: 44px !important; }
+body[data-density="compact"] .course-name  { font-size: 0.72rem !important; }
+body[data-density="compact"] .teacher-name,
+body[data-density="compact"] .room-number  { font-size: 0.62rem !important; }
+body[data-density="compact"] .mob-slot     { min-height: 36px !important; }
+body[data-density="compact"] .mob-slot-body { padding: 4px 6px !important; }
+body[data-density="compact"] .mob-slot-course { font-size: 0.75rem !important; }
+
+/* Comfortable (default — no overrides needed) */
+
+/* Spacious */
+body[data-density="spacious"] .schedule-table th,
+body[data-density="spacious"] .schedule-table td { padding: 16px 12px !important; }
+body[data-density="spacious"] .schedule-cell { min-height: 120px !important; }
+body[data-density="spacious"] .course-name  { font-size: 1rem !important; }
+body[data-density="spacious"] .teacher-name,
+body[data-density="spacious"] .room-number  { font-size: 0.85rem !important; }
+body[data-density="spacious"] .mob-slot     { min-height: 64px !important; }
+body[data-density="spacious"] .mob-slot-body { padding: 10px 12px !important; }
+body[data-density="spacious"] .mob-slot-course { font-size: 0.95rem !important; }

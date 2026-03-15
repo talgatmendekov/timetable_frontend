@@ -34,6 +34,8 @@ import iconStats    from './assets/stats.jpeg';
 import iconTelegram from './assets/telegram.jpeg';
 
 import './App.css';
+import OnboardingTour    from './components/OnboardingTour';
+import AnnouncementBanner from './components/AnnouncementBanner';
 
 const API_URL    = process.env.REACT_APP_API_URL    || 'https://timetablebackend-production.up.railway.app/api';
 const PUBLIC_URL = process.env.REACT_APP_BACKEND_URL || 'https://timetablebackend-production.up.railway.app';
@@ -96,19 +98,30 @@ const AppContent = () => {
   const [feedbackCount,     setFeedbackCount]     = useState(0);
   const [shareToast,        setShareToast]        = useState('');
   const [showAdminMenu,     setShowAdminMenu]     = useState(false);
+  const [showTour,          setShowTour]          = useState(() => !localStorage.getItem('tourDone') && false); // auto-show for new admins
+  const [density,           setDensity]           = useState(() => localStorage.getItem('scheduleDensity') || 'comfortable');
   const [theme,             setTheme]             = useState(localStorage.getItem('scheduleTheme') || 'light');
   const [dept,              setDept]              = useState(localStorage.getItem('scheduleDept') || '');
 
   const fileInputRef = useRef(null);
   const todayName = getTodayName();
 
+  React.useEffect(() => {
+    document.body.setAttribute('data-density', density);
+    localStorage.setItem('scheduleDensity', density);
+  }, [density]);
   React.useEffect(() => { document.body.setAttribute('data-theme', theme); localStorage.setItem('scheduleTheme', theme); }, [theme]);
   React.useEffect(() => {
     if (dept) document.body.setAttribute('data-dept', dept);
     else document.body.removeAttribute('data-dept');
     localStorage.setItem('scheduleDept', dept);
   }, [dept]);
-  React.useEffect(() => { if (isAuthenticated) setShowLoginModal(false); }, [isAuthenticated]);
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      setShowLoginModal(false);
+      if (!localStorage.getItem('tourDone')) setShowTour(true);
+    }
+  }, [isAuthenticated]);
   React.useEffect(() => { const d = getTodayScheduleDay(); if (d && days.includes(d)) setSelectedDay(d); }, [days]);
 
   const allRooms = React.useMemo(() => {
@@ -321,6 +334,7 @@ const AppContent = () => {
                     { label:`📊 ${t('export')}`,   action: handleExport,      bg:'#059669' },
                     { label:`📂 ${t('import')}`,   action: handleImportClick, bg:'#0891b2' },
                     { label:`🗑 ${t('clearAll')}`, action: handleClearAll,    bg:'var(--error)' },
+                    { label:'🎓 Restart Tour',          action: () => { localStorage.removeItem('tourDone'); setShowTour(true); }, bg:'#6366f1' },
                   ].map(item => (
                     <button key={item.label}
                       onClick={() => { item.action(); setShowAdminMenu(false); }}
@@ -378,6 +392,32 @@ const AppContent = () => {
             {opt.flag} {opt.code.toUpperCase()}
           </button>
         ))}
+
+        {/* Density toggle */}
+        <select
+          value={density}
+          onChange={e => setDensity(e.target.value)}
+          style={{ ...S.sel, maxWidth:100 }}
+          title="Display density"
+        >
+          <option value="compact">⬛ Compact</option>
+          <option value="comfortable">▪️ Normal</option>
+          <option value="spacious">🔲 Spacious</option>
+        </select>
+
+        {/* Density toggle */}
+        <select value={density} onChange={e => setDensity(e.target.value)} style={{ ...S.sel, maxWidth:100 }} title="Display density">
+          <option value="compact">⬛ Compact</option>
+          <option value="comfortable">▪️ Normal</option>
+          <option value="spacious">🔲 Spacious</option>
+        </select>
+
+        {/* Density toggle */}
+        <select value={density} onChange={e => setDensity(e.target.value)} style={{ ...S.sel, maxWidth:100 }} title="Display density">
+          <option value="compact">⬛ Compact</option>
+          <option value="comfortable">▪️ Normal</option>
+          <option value="spacious">🔲 Spacious</option>
+        </select>
 
         {/* Theme toggle */}
         <button onClick={() => setTheme(th => th==='light' ? 'dark' : 'light')}
@@ -438,6 +478,15 @@ const AppContent = () => {
         <div className="app-content" style={{ flex:1, minWidth:0, padding:'8px 16px' }}>
           {activeView === 'schedule' && (
             <>
+              {/* Global announcements */}
+              <AnnouncementBanner isAdmin={isAuthenticated} />
+
+              {/* Global announcements */}
+              <AnnouncementBanner isAdmin={isAuthenticated} />
+
+              {/* Global announcements */}
+              <AnnouncementBanner isAdmin={isAuthenticated} />
+
               {/* Personal timetable banner for guests */}
               {!isAuthenticated && selectedGroup && (
                 <div style={{
@@ -521,6 +570,15 @@ const AppContent = () => {
 
       <ClassModal isOpen={modalOpen} onClose={handleCloseModal} group={currentCell.group} day={currentCell.day} time={currentCell.time} />
 
+      {/* ── Onboarding Tour ── */}
+      {showTour && isAuthenticated && (
+        <OnboardingTour onFinish={() => setShowTour(false)} />
+      )}
+
+      {showTour && isAuthenticated && <OnboardingTour onFinish={() => setShowTour(false)} />}
+
+      {showTour && isAuthenticated && <OnboardingTour onFinish={() => setShowTour(false)} />}
+
       {/* ── Mobile bottom nav ── */}
       <div className="mob-bottom-nav">
         <button className={`mob-nav-btn ${activeView==='schedule'?'active':''}`} onClick={() => setActiveView('schedule')}>
@@ -557,6 +615,13 @@ const AppContent = () => {
           </button>
         )}
       </div>
+
+      {/* ── Onboarding Tour ── */}
+      {showTour && isAuthenticated && (
+        <OnboardingTour onFinish={() => setShowTour(false)} />
+      )}
+
+      {showTour && isAuthenticated && <OnboardingTour onFinish={() => setShowTour(false)} />}
 
       {/* ── Mobile bottom nav ── */}
       <div className="mob-bottom-nav">

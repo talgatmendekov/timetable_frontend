@@ -1,0 +1,80 @@
+/* AnnouncementBanner.css */
+.ann-wrap { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+
+/* Admin bar */
+.ann-admin-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 12px;
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px;
+  gap: 8px;
+}
+.ann-admin-label { font-size: 0.75rem; font-weight: 700; color: var(--text-secondary); }
+.ann-add-btn {
+  padding: 4px 12px; background: var(--primary); color: #fff;
+  border: none; border-radius: 6px; font-size: 0.75rem; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+}
+.ann-add-btn:hover { opacity: 0.88; }
+
+/* Form */
+.ann-form {
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px;
+}
+.ann-textarea {
+  width: 100%; padding: 8px 10px; border: 1.5px solid var(--border);
+  border-radius: 7px; background: var(--bg-main); color: var(--text-primary);
+  font-size: 0.85rem; font-family: inherit; resize: vertical; outline: none;
+  box-sizing: border-box;
+}
+.ann-textarea:focus { border-color: var(--primary); }
+.ann-form-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.ann-color-row { display: flex; gap: 5px; flex-wrap: wrap; }
+.ann-color-btn {
+  padding: 3px 10px; border-radius: 6px; border: 2px solid transparent;
+  font-size: 0.72rem; font-weight: 700; cursor: pointer; font-family: inherit;
+  opacity: 0.65; transition: opacity 0.15s;
+}
+.ann-color-btn.active { opacity: 1; border-color: rgba(255,255,255,0.6); }
+.ann-date {
+  padding: 4px 8px; border: 1.5px solid var(--border); border-radius: 6px;
+  background: var(--bg-main); color: var(--text-primary);
+  font-size: 0.75rem; font-family: inherit; outline: none;
+}
+.ann-save-btn {
+  padding: 6px 16px; background: var(--primary); color: #fff;
+  border: none; border-radius: 7px; font-size: 0.82rem; font-weight: 700;
+  cursor: pointer; font-family: inherit; margin-left: auto;
+}
+.ann-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Banner */
+.ann-banner {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px; border-radius: 8px;
+  font-size: 0.85rem; font-weight: 600;
+  animation: ann-slide 0.25s ease;
+}
+@keyframes ann-slide { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:none; } }
+
+.ann-icon { font-size: 1rem; flex-shrink: 0; }
+.ann-message { flex: 1; line-height: 1.4; }
+.ann-expires {
+  font-size: 0.7rem; opacity: 0.8; white-space: nowrap;
+  background: rgba(255,255,255,0.15); padding: 2px 8px; border-radius: 99px;
+  flex-shrink: 0;
+}
+.ann-actions { display: flex; gap: 4px; flex-shrink: 0; }
+.ann-del-btn, .ann-dismiss-btn {
+  background: rgba(255,255,255,0.15); border: none; color: inherit;
+  border-radius: 5px; width: 26px; height: 26px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 0.8rem; transition: background 0.15s;
+}
+.ann-del-btn:hover, .ann-dismiss-btn:hover { background: rgba(255,255,255,0.3); }
+
+@media (max-width: 600px) {
+  .ann-form-row { flex-direction: column; align-items: flex-start; }
+  .ann-save-btn { width: 100%; }
+  .ann-banner { flex-wrap: wrap; }
+}
