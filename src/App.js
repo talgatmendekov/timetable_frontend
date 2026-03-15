@@ -317,7 +317,7 @@ const AppContent = () => {
                   display:'flex', flexDirection:'column', minWidth:160, overflow:'hidden',
                 }}>
                   {[
-                    { label:`${t('addGroup')}`, action: handleAddGroup,    bg:'var(--primary)' },
+                    { label:`＋ ${t('addGroup')}`, action: handleAddGroup,    bg:'var(--primary)' },
                     { label:`📊 ${t('export')}`,   action: handleExport,      bg:'#059669' },
                     { label:`📂 ${t('import')}`,   action: handleImportClick, bg:'#0891b2' },
                     { label:`🗑 ${t('clearAll')}`, action: handleClearAll,    bg:'var(--error)' },
@@ -353,7 +353,7 @@ const AppContent = () => {
         {/* Spacer pushes right-side items to the end */}
         <div style={{ flex:1, minWidth:8 }} />
 
-        {/* Department theme picker */}
+{/* Department theme picker */}
         <select
           value={dept}
           onChange={e => setDept(e.target.value)}
@@ -369,39 +369,7 @@ const AppContent = () => {
           <option value="law">⚖️ Law</option>
         </select>
 
-        {/* Department theme picker */}
-        <select
-          value={dept}
-          onChange={e => setDept(e.target.value)}
-          style={{ ...S.sel, maxWidth:90 }}
-          title="Department color theme"
-        >
-          <option value="">🎨 Theme</option>
-          <option value="cs">💻 CS</option>
-          <option value="math">📐 Math</option>
-          <option value="ie">⚙️ IE</option>
-          <option value="ee">⚡ EE</option>
-          <option value="med">🏥 Med</option>
-          <option value="law">⚖️ Law</option>
-        </select>
-
-                {/* Department theme picker */}
-        <select
-          value={dept}
-          onChange={e => setDept(e.target.value)}
-          style={{ ...S.sel, maxWidth:90 }}
-          title="Department color theme"
-        >
-          <option value="">🎨 Theme</option>
-          <option value="cs">💻 CS</option>
-          <option value="math">📐 Math</option>
-          <option value="ie">⚙️ IE</option>
-          <option value="ee">⚡ EE</option>
-          <option value="med">🏥 Med</option>
-          <option value="law">⚖️ Law</option>
-        </select>
-
-        {/* Language */}
+                {/* Language */}
         {LANGUAGE_OPTIONS.map(opt => (
           <button key={opt.code} onClick={() => changeLang(opt.code)}
             style={{ ...S.btn(lang===opt.code ? 'var(--primary)' : 'transparent', lang===opt.code ? '#fff' : 'var(--text-secondary)'),
