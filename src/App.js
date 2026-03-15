@@ -28,7 +28,7 @@ import iconBooking  from './assets/booking.png';
 // exams.avif may have limited browser support — using emoji fallback
 // import iconExams from './assets/exam.jpeg';
 const iconExams = '🗓';
-import iconFeedback from './assets/feedback.png';
+import iconFeedback from './assets/feedback.jpeg';
 import iconSchedule from './assets/schedule.png';
 import iconStats    from './assets/stats.jpeg';
 import iconTelegram from './assets/telegram.jpeg';
@@ -379,8 +379,6 @@ const AppContent = () => {
           <option value="math">📐 Math</option>
           <option value="ie">⚙️ IE</option>
           <option value="ee">⚡ EE</option>
-          <option value="med">🏥 Med</option>
-          <option value="law">⚖️ Law</option>
         </select>
 
                 {/* Language */}
@@ -393,26 +391,7 @@ const AppContent = () => {
           </button>
         ))}
 
-        {/* Density toggle */}
-        <select
-          value={density}
-          onChange={e => setDensity(e.target.value)}
-          style={{ ...S.sel, maxWidth:100 }}
-          title="Display density"
-        >
-          <option value="compact">⬛ Compact</option>
-          <option value="comfortable">▪️ Normal</option>
-          <option value="spacious">🔲 Spacious</option>
-        </select>
-
-        {/* Density toggle */}
-        <select value={density} onChange={e => setDensity(e.target.value)} style={{ ...S.sel, maxWidth:100 }} title="Display density">
-          <option value="compact">⬛ Compact</option>
-          <option value="comfortable">▪️ Normal</option>
-          <option value="spacious">🔲 Spacious</option>
-        </select>
-
-        {/* Density toggle */}
+{/* Density toggle */}
         <select value={density} onChange={e => setDensity(e.target.value)} style={{ ...S.sel, maxWidth:100 }} title="Display density">
           <option value="compact">⬛ Compact</option>
           <option value="comfortable">▪️ Normal</option>
@@ -482,10 +461,10 @@ const AppContent = () => {
               <AnnouncementBanner isAdmin={isAuthenticated} />
 
               {/* Global announcements */}
-              <AnnouncementBanner isAdmin={isAuthenticated} />
+              
 
               {/* Global announcements */}
-              <AnnouncementBanner isAdmin={isAuthenticated} />
+              
 
               {/* Personal timetable banner for guests */}
               {!isAuthenticated && selectedGroup && (
@@ -575,9 +554,9 @@ const AppContent = () => {
         <OnboardingTour onFinish={() => setShowTour(false)} />
       )}
 
-      {showTour && isAuthenticated && <OnboardingTour onFinish={() => setShowTour(false)} />}
+      {showTour && isAuthenticated }
 
-      {showTour && isAuthenticated && <OnboardingTour onFinish={() => setShowTour(false)} />}
+      {showTour && isAuthenticated }
 
       {/* ── Mobile bottom nav ── */}
       <div className="mob-bottom-nav">
@@ -617,11 +596,10 @@ const AppContent = () => {
       </div>
 
       {/* ── Onboarding Tour ── */}
-      {showTour && isAuthenticated && (
-        <OnboardingTour onFinish={() => setShowTour(false)} />
-      )}
+      {showTour && isAuthenticated  
+}
 
-      {showTour && isAuthenticated && <OnboardingTour onFinish={() => setShowTour(false)} />}
+      {showTour && isAuthenticated }
 
       {/* ── Mobile bottom nav ── */}
       <div className="mob-bottom-nav">
