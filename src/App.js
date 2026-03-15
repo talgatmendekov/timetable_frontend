@@ -28,7 +28,7 @@ import iconBooking  from './assets/booking.png';
 // exams.avif may have limited browser support — using emoji fallback
 // import iconExams from './assets/exam.jpeg';
 const iconExams = '🗓';
-import iconFeedback from './assets/feedback.jpeg';
+import iconFeedback from './assets/feedback.png';
 import iconSchedule from './assets/schedule.png';
 import iconStats    from './assets/stats.jpeg';
 import iconTelegram from './assets/telegram.jpeg';
