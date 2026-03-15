@@ -24,6 +24,7 @@ const MobileView = ({
   const [collapsed, setCollapsed] = useState({});
 
   const getClass = (group, day, time) => schedule[`${group}-${day}-${time}`] || null;
+  const startTime = (time) => time ? time.split(/[-–—]/)[0].trim() : time;
 
   const getBooking = (group, day, time) => {
     const classEntry = schedule[`${group}-${day}-${time}`];
@@ -178,8 +179,8 @@ const MobileView = ({
                           onClick={handleClick}
                         >
                           <div className={`mob-slot-time ${isToday ? 'today-t' : ''}`}>
-                            {time.includes('-') ? time.split('-')[0] : time}
-                            {duration > 1 && <div style={{ fontSize:'0.56rem', marginTop:2, opacity:0.7 }}>{duration*40}m</div>}
+                            {time}
+
                           </div>
 
                           <div className="mob-slot-body">
