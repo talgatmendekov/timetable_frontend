@@ -222,7 +222,18 @@ body[data-theme="dark"] .group-name { color: #f0f5fc !important; }
 
 /* MODAL */
 .modal-overlay { background: rgba(0,0,0,0.55); backdrop-filter: blur(4px); }
-.modal-content { background: var(--bg-card); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 20px 60px var(--shadow-lg); width: 95vw; max-width: 95vw; max-height: 90vh; overflow-y: auto; margin: 20px; }
+.modal-content {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px var(--shadow-lg);
+  width: 100%;
+  max-width: 540px;
+  max-height: 90vh;
+  overflow-y: auto;
+  margin: 0;
+}
 .modal-header, .modal-body, .modal-footer { padding: 16px; }
 .modal-header { background: var(--bg-secondary); border-bottom: 1px solid var(--border); }
 .modal-header h2 { color: var(--text-primary); font-size: 1.2rem; font-weight: 700; }
@@ -271,7 +282,7 @@ body[data-theme="dark"] .group-name { color: #f0f5fc !important; }
   .feedback-button { width: auto; }
 }
 
-
+/* DESKTOP */
 @media (min-width: 1024px) {
   body { font-size: 16px; }
   .header-title h1 { font-size: 2rem; }
