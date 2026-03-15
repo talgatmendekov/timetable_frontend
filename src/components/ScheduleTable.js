@@ -195,6 +195,18 @@ const MobileView = ({
                                 <div className="mob-slot-meta">
                                   {classData.teacher && <span>👨‍🏫 {classData.teacher}</span>}
                                   {classData.room    && <span>🚪 {classData.room}</span>}
+                                  {classData.meetingLink && (
+                                    <a href={classData.meetingLink} target="_blank" rel="noopener noreferrer"
+                                      className="meeting-link-btn"
+                                      onClick={e => e.stopPropagation()}
+                                    >🔗 Join</a>
+                                  )}
+                                  {classData.meetingLink && (
+                                    <a href={classData.meetingLink} target="_blank" rel="noopener noreferrer"
+                                      className="meeting-link-btn"
+                                      onClick={e => e.stopPropagation()}
+                                    >🔗 Join</a>
+                                  )}
                                   {conflicts.length > 0 && (
                                     <span className="mob-conflict-badge">
                                       {conflicts.includes('teacher') ? '⚠️ teacher' : ''}

@@ -1,275 +1,205 @@
 // src/components/ClassModal.js
-
 import React, { useState, useEffect } from 'react';
 import { useSchedule } from '../context/ScheduleContext';
 import { useLanguage } from '../context/LanguageContext';
 import { SUBJECT_TYPES, SUBJECT_TYPE_LABELS } from '../data/i18n';
 import './ClassModal.css';
 
-const ClassModal = ({ isOpen, onClose, group, day, time }) => {
-  const { getClassByKey, addOrUpdateClass, deleteClass, schedule, timeSlots } = useSchedule();
+const DURATIONS = [1, 2, 3, 4, 5, 6];
+
+export default function ClassModal({ isOpen, onClose, group, day, time }) {
+  const { schedule, addOrUpdateClass, deleteClass, teachers, timeSlots } = useSchedule();
   const { t, lang } = useLanguage();
+  const typeLabels = SUBJECT_TYPE_LABELS[lang] || SUBJECT_TYPE_LABELS.en;
 
-  const [course, setCourse]           = useState('');
-  const [teacher, setTeacher]         = useState('');
-  const [room, setRoom]               = useState('');
-  const [subjectType, setSubjectType] = useState('lecture');
-  const [duration, setDuration]       = useState(1);
-  const [conflicts, setConflicts]     = useState([]);
+  const existingClass = isOpen && group && day && time
+    ? schedule[`${group}-${day}-${time}`] || null
+    : null;
 
-  // Calculate which slots this class would occupy
-  const getOccupiedSlots = (startTime, dur) => {
-    const startIdx = timeSlots.indexOf(startTime);
-    if (startIdx === -1) return [startTime];
-    const slots = [];
-    for (let i = 0; i < dur && startIdx + i < timeSlots.length; i++) {
-      slots.push(timeSlots[startIdx + i]);
-    }
-    return slots;
-  };
-
-  // Calculate max duration available from this time slot
-  const getMaxDuration = () => {
-    const startIdx = timeSlots.indexOf(time);
-    if (startIdx === -1) return 1;
-    return Math.min(4, timeSlots.length - startIdx);
-  };
+  const [form, setForm] = useState({
+    course: '', teacher: '', room: '',
+    subjectType: 'lecture', duration: 1, meetingLink: '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [linkError, setLinkError] = useState('');
 
   useEffect(() => {
-    if (isOpen && group && day && time) {
-      const classData = getClassByKey(group, day, time);
-      if (classData) {
-        setCourse(classData.course || '');
-        setTeacher(classData.teacher || '');
-        setRoom(classData.room || '');
-        setSubjectType(classData.subjectType || 'lecture');
-        setDuration(classData.duration || 1);
-      } else {
-        setCourse(''); setTeacher(''); setRoom(''); 
-        setSubjectType('lecture'); setDuration(1);
-      }
-      setConflicts([]);
+    if (isOpen) {
+      setForm({
+        course:      existingClass?.course      || '',
+        teacher:     existingClass?.teacher     || '',
+        room:        existingClass?.room        || '',
+        subjectType: existingClass?.subjectType || 'lecture',
+        duration:    existingClass?.duration    || 1,
+        meetingLink: existingClass?.meetingLink || '',
+      });
+      setLinkError('');
     }
-  }, [isOpen, group, day, time, getClassByKey]);
-
-  // Detect conflicts across all slots the class will occupy
-  useEffect(() => {
-    if (!isOpen || !day || !time) return;
-    const detected = [];
-    const slots = getOccupiedSlots(time, duration);
-
-    slots.forEach(slot => {
-      // Check teacher conflict
-      if (teacher.trim()) {
-        Object.values(schedule).forEach(entry => {
-          if (entry.day === day && entry.time === slot && entry.group !== group &&
-              entry.teacher?.toLowerCase() === teacher.trim().toLowerCase()) {
-            detected.push({
-              type: 'teacher',
-              message: t('teacherConflict', { teacher: entry.teacher }),
-              detail: t('teacherConflictIn', { group: entry.group }) + ` (${slot})`
-            });
-          }
-        });
-      }
-
-      // Check room conflict
-      if (room.trim()) {
-        Object.values(schedule).forEach(entry => {
-          if (entry.day === day && entry.time === slot && entry.group !== group &&
-              entry.room?.toLowerCase() === room.trim().toLowerCase()) {
-            detected.push({
-              type: 'room',
-              message: t('roomConflict', { room: entry.room }),
-              detail: t('roomConflictIn', { group: entry.group }) + ` (${slot})`
-            });
-          }
-        });
-      }
-
-      // Check if slot is already occupied by another class
-      if (slot !== time) { // Don't check the starting slot (we're editing/replacing it)
-        const existingClass = getClassByKey(group, day, slot);
-        if (existingClass) {
-          detected.push({
-            type: 'occupied',
-            message: t('slotOccupied') || 'Time slot already occupied',
-            detail: `${slot}: ${existingClass.course}`
-          });
-        }
-      }
-    });
-
-    setConflicts(detected);
-  }, [teacher, room, day, time, duration, group, schedule, t, isOpen, timeSlots, getClassByKey]);
-
-  const handleSave = () => {
-    if (!course.trim()) { alert(t('courseNameRequired')); return; }
-    if (conflicts.some(c => c.type === 'occupied')) {
-      alert(t('cannotSaveOccupied') || 'Cannot save: some time slots are already occupied. Please choose a shorter duration or delete conflicting classes first.');
-      return;
-    }
-    if (conflicts.length > 0) {
-      const proceed = window.confirm(
-        `${t('warningTitle')}\n\n` +
-        conflicts.map(c => `${c.message} ${c.detail}`).join('\n') +
-        `\n\n${t('conflictWarning')}`
-      );
-      if (!proceed) return;
-    }
-
-    // Save the class with duration
-    addOrUpdateClass(group, day, time, {
-      course: course.trim(), 
-      teacher: teacher.trim(),
-      room: room.trim(), 
-      subjectType,
-      duration
-    });
-    onClose();
-  };
-
-  const handleDelete = () => {
-    if (window.confirm(t('confirmDelete'))) { 
-      deleteClass(group, day, time); 
-      onClose(); 
-    }
-  };
+  }, [isOpen, group, day, time]);
 
   if (!isOpen) return null;
 
-  const existingClass = getClassByKey(group, day, time);
-  const typeLabels = SUBJECT_TYPE_LABELS[lang] || SUBJECT_TYPE_LABELS.en;
-  const activeType = SUBJECT_TYPES.find(s => s.value === subjectType);
-  const maxDur = getMaxDuration();
-  const occupiedSlots = getOccupiedSlots(time, duration);
+  const validateLink = (url) => {
+    if (!url) return '';
+    if (!/^https?:\/\//i.test(url)) return 'Link must start with https://';
+    return '';
+  };
+
+  const handleSave = async () => {
+    if (!form.course.trim()) return;
+    const err = validateLink(form.meetingLink);
+    if (err) { setLinkError(err); return; }
+    setSaving(true);
+    try {
+      await addOrUpdateClass(group, day, time, {
+        course:      form.course.trim(),
+        teacher:     form.teacher.trim(),
+        room:        form.room.trim(),
+        subjectType: form.subjectType,
+        duration:    Number(form.duration),
+        meetingLink: form.meetingLink.trim(),
+      });
+      onClose();
+    } finally { setSaving(false); }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm(t('confirmDeleteClass') || 'Delete this class?')) return;
+    setDeleting(true);
+    try { await deleteClass(group, day, time); onClose(); }
+    finally { setDeleting(false); }
+  };
+
+  const typeStyle = SUBJECT_TYPES.find(s => s.value === form.subjectType) || SUBJECT_TYPES[0];
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={e => e.stopPropagation()}>
-        <div className="modal-header" style={{ borderBottom: `3px solid ${activeType?.color}` }}>
-          <h2>{existingClass ? t('editClass') : t('addClass')}</h2>
-          <button className="close-btn" onClick={onClose}>Ã—</button>
+    <div className="modal-overlay" onClick={e => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="modal-content cm-modal">
+        <div className="modal-header cm-header" style={{ borderLeft: `4px solid ${typeStyle.color}` }}>
+          <div>
+            <div className="cm-header-meta">{group} · {day} · {time}</div>
+            <h2 className="cm-header-title">
+              {existingClass ? (t('editClass') || 'Edit Class') : (t('addClass') || 'Add Class')}
+            </h2>
+          </div>
+          <button className="cm-close" onClick={onClose}>✕</button>
         </div>
 
-        <div className="modal-info">
-          <span className="info-badge">{group}</span>
-          <span className="info-badge">{day}</span>
-          <span className="info-badge">{time}</span>
-          <span className="info-badge type-badge" style={{ 
-            background: activeType?.light, 
-            color: activeType?.color, 
-            borderColor: activeType?.color 
-          }}>
-            {activeType?.icon} {typeLabels[subjectType]}
-          </span>
-          <span className="info-badge duration-badge">
-            â± {duration * 40} {t('minutes') || 'min'}
-          </span>
-        </div>
-
-        {/* Duration info */}
-        {duration > 1 && (
-          <div className="duration-info">
-            <strong>{t('occupiesSlots') || 'Occupies slots'}:</strong> {occupiedSlots.join(' â†’ ')}
-          </div>
-        )}
-
-        {/* Subject Type Selector */}
-        <div className="type-selector">
-          {SUBJECT_TYPES.map(type => (
-            <button
-              key={type.value}
-              className={`type-btn ${subjectType === type.value ? 'active' : ''}`}
-              style={subjectType === type.value
-                ? { background: type.color, borderColor: type.color, color: '#fff' }
-                : { borderColor: type.color, color: type.color }
-              }
-              onClick={() => setSubjectType(type.value)}
-            >
-              {type.icon} {typeLabels[type.value]}
-            </button>
-          ))}
-        </div>
-
-        {/* Conflict warnings */}
-        {conflicts.length > 0 && (
-          <div className="conflicts-container">
-            <div className="conflicts-title">{t('warningTitle')}</div>
-            {conflicts.map((conflict, idx) => (
-              <div key={idx} className={`conflict-item conflict-${conflict.type}`}>
-                <span className="conflict-msg">{conflict.message}</span>
-                <span className="conflict-detail">{conflict.detail}</span>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div className="modal-body">
-          <div className="form-group">
-            <label>{t('courseName')} *</label>
-            <input type="text" value={course} autoFocus
-              onChange={e => setCourse(e.target.value)}
-              placeholder="e.g., Data Structures"
-              style={{ borderColor: activeType?.color }}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>{t('duration') || 'Duration'} *</label>
-            <select 
-              value={duration} 
-              onChange={e => setDuration(parseInt(e.target.value))}
-              className="duration-select"
-            >
-              <option value={1}>1 {t('slot') || 'slot'} (40 {t('min') || 'min'})</option>
-              {maxDur >= 2 && <option value={2}>2 {t('slots') || 'slots'} (80 {t('min') || 'min'})</option>}
-              {maxDur >= 3 && <option value={3}>3 {t('slots') || 'slots'} (120 {t('min') || 'min'})</option>}
-              {maxDur >= 4 && <option value={4}>4 {t('slots') || 'slots'} (160 {t('min') || 'min'})</option>}
-            </select>
-            <div className="duration-hint">
-              {duration === 1 && (t('oneSlot') || 'Single 40-minute period')}
-              {duration === 2 && (t('twoSlots') || 'Two consecutive 40-minute periods')}
-              {duration === 3 && (t('threeSlots') || 'Three consecutive 40-minute periods')}
-              {duration === 4 && (t('fourSlots') || 'Four consecutive 40-minute periods')}
+        <div className="modal-body cm-body">
+          {/* Subject type pills */}
+          <div className="cm-field">
+            <label className="cm-label">{t('subjectType') || 'Type'}</label>
+            <div className="cm-type-row">
+              {SUBJECT_TYPES.map(type => (
+                <button
+                  key={type.value}
+                  type="button"
+                  className={`cm-type-btn ${form.subjectType === type.value ? 'active' : ''}`}
+                  style={form.subjectType === type.value
+                    ? { background: type.color, borderColor: type.color, color: '#fff' }
+                    : { borderColor: type.color, color: type.color }}
+                  onClick={() => setForm(f => ({ ...f, subjectType: type.value }))}
+                >
+                  {type.icon} {typeLabels[type.value]}
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="form-group">
-            <label>{t('teacherName')}</label>
-            <input type="text" value={teacher}
-              onChange={e => setTeacher(e.target.value)}
-              placeholder="e.g., Prof. Smith"
-              className={conflicts.some(c => c.type === 'teacher') ? 'input-conflict' : ''}
+          {/* Course */}
+          <div className="cm-field">
+            <label className="cm-label">{t('courseName') || 'Course'} *</label>
+            <input
+              className="cm-input"
+              placeholder={t('courseNamePlaceholder') || 'e.g. Linear Algebra'}
+              value={form.course}
+              onChange={e => setForm(f => ({ ...f, course: e.target.value }))}
+              autoFocus
             />
           </div>
 
-          <div className="form-group">
-            <label>{t('roomNumber')}</label>
-            <input type="text" value={room}
-              onChange={e => setRoom(e.target.value)}
-              placeholder="e.g., Room 305"
-              className={conflicts.some(c => c.type === 'room') ? 'input-conflict' : ''}
+          {/* Teacher */}
+          <div className="cm-field">
+            <label className="cm-label">{t('teacher') || 'Teacher'}</label>
+            <input
+              className="cm-input"
+              list="cm-teachers"
+              placeholder={t('teacherPlaceholder') || 'Teacher name'}
+              value={form.teacher}
+              onChange={e => setForm(f => ({ ...f, teacher: e.target.value }))}
             />
+            <datalist id="cm-teachers">
+              {teachers.map(tc => <option key={tc} value={tc} />)}
+            </datalist>
+          </div>
+
+          {/* Room + Duration row */}
+          <div className="cm-row">
+            <div className="cm-field cm-field-half">
+              <label className="cm-label">{t('room') || 'Room'}</label>
+              <input
+                className="cm-input"
+                placeholder="e.g. B201"
+                value={form.room}
+                onChange={e => setForm(f => ({ ...f, room: e.target.value }))}
+              />
+            </div>
+            <div className="cm-field cm-field-half">
+              <label className="cm-label">{t('duration') || 'Duration (slots)'}</label>
+              <select
+                className="cm-input"
+                value={form.duration}
+                onChange={e => setForm(f => ({ ...f, duration: Number(e.target.value) }))}
+              >
+                {DURATIONS.map(d => (
+                  <option key={d} value={d}>{d} slot{d > 1 ? 's' : ''} ({d * 40} min)</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Meeting link */}
+          <div className="cm-field">
+            <label className="cm-label">
+              🔗 {t('meetingLink') || 'Meeting Link'}
+              <span className="cm-label-hint"> — Zoom, Teams, Meet (optional)</span>
+            </label>
+            <div className="cm-link-row">
+              <input
+                className={`cm-input ${linkError ? 'cm-input-error' : ''}`}
+                placeholder="https://zoom.us/j/... or https://teams.microsoft.com/..."
+                value={form.meetingLink}
+                onChange={e => { setForm(f => ({ ...f, meetingLink: e.target.value })); setLinkError(''); }}
+              />
+              {form.meetingLink && !linkError && (
+                <a href={form.meetingLink} target="_blank" rel="noopener noreferrer" className="cm-link-test">
+                  Test ↗
+                </a>
+              )}
+            </div>
+            {linkError && <div className="cm-error">{linkError}</div>}
           </div>
         </div>
 
-        <div className="modal-footer">
-          <button onClick={onClose} className="btn btn-secondary">{t('cancel')}</button>
+        <div className="modal-footer cm-footer">
           {existingClass && (
-            <button onClick={handleDelete} className="btn btn-danger">{t('delete')}</button>
+            <button className="cm-btn cm-btn-danger" onClick={handleDelete} disabled={deleting}>
+              {deleting ? '...' : '🗑 ' + (t('delete') || 'Delete')}
+            </button>
           )}
+          <div style={{ flex: 1 }} />
+          <button className="cm-btn cm-btn-cancel" onClick={onClose}>{t('cancel') || 'Cancel'}</button>
           <button
+            className="cm-btn cm-btn-save"
             onClick={handleSave}
-            className="btn btn-primary"
-            style={conflicts.length === 0 ? { background: activeType?.color } : { background: '#f59e0b' }}
+            disabled={saving || !form.course.trim()}
+            style={{ background: typeStyle.color }}
           >
-            {conflicts.length > 0 ? `âš ï¸ ${t('save')}` : t('save')}
+            {saving ? '...' : (existingClass ? t('save') || 'Save' : t('add') || 'Add')}
           </button>
         </div>
       </div>
     </div>
   );
-};
-
-export default ClassModal;
+}

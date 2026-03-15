@@ -80,7 +80,11 @@ const AppContent = () => {
   const [activeView,        setActiveView]        = useState('schedule');
   const [selectedDay,       setSelectedDay]       = useState(getTodayScheduleDay);
   const [selectedTeacher,   setSelectedTeacher]   = useState('');
-  const [selectedGroup,     setSelectedGroup]     = useState('');
+  const [selectedGroup,     setSelectedGroup]     = useState(() => {
+    // Personal timetable: restore saved group for guests
+    const saved = localStorage.getItem('myGroup');
+    return saved || '';
+  });
   const [selectedRoom,      setSelectedRoom]      = useState('');
   const [modalOpen,         setModalOpen]         = useState(false);
   const [currentCell,       setCurrentCell]       = useState({ group:null, day:null, time:null });
@@ -93,11 +97,17 @@ const AppContent = () => {
   const [shareToast,        setShareToast]        = useState('');
   const [showAdminMenu,     setShowAdminMenu]     = useState(false);
   const [theme,             setTheme]             = useState(localStorage.getItem('scheduleTheme') || 'light');
+  const [dept,              setDept]              = useState(localStorage.getItem('scheduleDept') || '');
 
   const fileInputRef = useRef(null);
   const todayName = getTodayName();
 
   React.useEffect(() => { document.body.setAttribute('data-theme', theme); localStorage.setItem('scheduleTheme', theme); }, [theme]);
+  React.useEffect(() => {
+    if (dept) document.body.setAttribute('data-dept', dept);
+    else document.body.removeAttribute('data-dept');
+    localStorage.setItem('scheduleDept', dept);
+  }, [dept]);
   React.useEffect(() => { if (isAuthenticated) setShowLoginModal(false); }, [isAuthenticated]);
   React.useEffect(() => { const d = getTodayScheduleDay(); if (d && days.includes(d)) setSelectedDay(d); }, [days]);
 
@@ -264,7 +274,10 @@ const AppContent = () => {
           ))}
         </select>
 
-        <select value={selectedGroup} onChange={e => setSelectedGroup(e.target.value)} style={S.sel}>
+        <select value={selectedGroup} onChange={e => {
+          setSelectedGroup(e.target.value);
+          if (!isAuthenticated) localStorage.setItem('myGroup', e.target.value);
+        }} style={S.sel}>
           <option value="">{t('allGroups')}</option>
           {groups.map(g => <option key={g} value={g}>{g}</option>)}
         </select>
@@ -340,6 +353,54 @@ const AppContent = () => {
         {/* Spacer pushes right-side items to the end */}
         <div style={{ flex:1, minWidth:8 }} />
 
+        {/* Department theme picker */}
+        <select
+          value={dept}
+          onChange={e => setDept(e.target.value)}
+          style={{ ...S.sel, maxWidth:90 }}
+          title="Department color theme"
+        >
+          <option value="">🎨 Theme</option>
+          <option value="cs">💻 CS</option>
+          <option value="math">📐 Math</option>
+          <option value="ie">⚙️ IE</option>
+          <option value="ee">⚡ EE</option>
+          <option value="med">🏥 Med</option>
+          <option value="law">⚖️ Law</option>
+        </select>
+
+        {/* Department theme picker */}
+        <select
+          value={dept}
+          onChange={e => setDept(e.target.value)}
+          style={{ ...S.sel, maxWidth:90 }}
+          title="Department color theme"
+        >
+          <option value="">🎨 Theme</option>
+          <option value="cs">💻 CS</option>
+          <option value="math">📐 Math</option>
+          <option value="ie">⚙️ IE</option>
+          <option value="ee">⚡ EE</option>
+          <option value="med">🏥 Med</option>
+          <option value="law">⚖️ Law</option>
+        </select>
+
+                {/* Department theme picker */}
+        <select
+          value={dept}
+          onChange={e => setDept(e.target.value)}
+          style={{ ...S.sel, maxWidth:90 }}
+          title="Department color theme"
+        >
+          <option value="">🎨 Theme</option>
+          <option value="cs">💻 CS</option>
+          <option value="math">📐 Math</option>
+          <option value="ie">⚙️ IE</option>
+          <option value="ee">⚡ EE</option>
+          <option value="med">🏥 Med</option>
+          <option value="law">⚖️ Law</option>
+        </select>
+
         {/* Language */}
         {LANGUAGE_OPTIONS.map(opt => (
           <button key={opt.code} onClick={() => changeLang(opt.code)}
@@ -409,6 +470,29 @@ const AppContent = () => {
         <div className="app-content" style={{ flex:1, minWidth:0, padding:'8px 16px' }}>
           {activeView === 'schedule' && (
             <>
+              {/* Personal timetable banner for guests */}
+              {!isAuthenticated && selectedGroup && (
+                <div style={{
+                  display:'flex', alignItems:'center', gap:10,
+                  background:'linear-gradient(135deg, var(--primary-light), var(--bg-card))',
+                  border:'1px solid var(--primary)', borderRadius:10,
+                  padding:'8px 14px', marginBottom:8, flexWrap:'wrap',
+                }}>
+                  <span style={{ fontSize:'1.1rem' }}>📌</span>
+                  <span style={{ fontWeight:700, color:'var(--text-primary)', fontSize:'0.85rem' }}>
+                    My Group: <span style={{ color:'var(--primary)' }}>{selectedGroup}</span>
+                  </span>
+                  <span style={{ fontSize:'0.72rem', color:'var(--text-secondary)' }}>
+                    — saved for your next visit
+                  </span>
+                  <button onClick={() => { setSelectedGroup(''); localStorage.removeItem('myGroup'); }}
+                    style={{ marginLeft:'auto', background:'transparent', border:'1px solid var(--border)',
+                      borderRadius:6, padding:'2px 8px', fontSize:'0.7rem', cursor:'pointer',
+                      color:'var(--text-secondary)', fontFamily:'inherit' }}>
+                    ✕ Clear
+                  </button>
+                </div>
+              )}
               <EmptyRoomPanel allRooms={allRooms} schedule={schedule} days={days} timeSlots={timeSlots} selectedRoom={selectedRoom} setSelectedRoom={setSelectedRoom} />
               <ScheduleTable
                 selectedDay={selectedDay} selectedTeacher={selectedTeacher}

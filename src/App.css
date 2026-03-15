@@ -424,3 +424,51 @@ body {
   div.tb-mobile-only,
   .app-topbar .tb-mobile-only  { display: block !important; visibility: visible !important; }
 }
+
+/* ── Department color themes ────────────────────────────────────────────── */
+/* Applied via body[data-dept="cs"] etc. — overrides --primary and --accent */
+
+body[data-dept="cs"] {
+  --primary:       #2563eb;
+  --primary-hover: #1d4ed8;
+  --primary-light: #dbeafe;
+  --accent:        #06b6d4;
+}
+body[data-dept="math"] {
+  --primary:       #7c3aed;
+  --primary-hover: #6d28d9;
+  --primary-light: #ede9fe;
+  --accent:        #a78bfa;
+}
+body[data-dept="ie"] {
+  --primary:       #d97706;
+  --primary-hover: #b45309;
+  --primary-light: #fef3c7;
+  --accent:        #f59e0b;
+}
+body[data-dept="ee"] {
+  --primary:       #059669;
+  --primary-hover: #047857;
+  --primary-light: #d1fae5;
+  --accent:        #34d399;
+}
+body[data-dept="med"] {
+  --primary:       #dc2626;
+  --primary-hover: #b91c1c;
+  --primary-light: #fee2e2;
+  --accent:        #f87171;
+}
+body[data-dept="law"] {
+  --primary:       #0f766e;
+  --primary-hover: #0d6460;
+  --primary-light: #ccfbf1;
+  --accent:        #2dd4bf;
+}
+
+/* Dark mode dept overrides */
+body[data-theme="dark"][data-dept="cs"]   { --primary: #60a5fa; --primary-light: #1e3a6a; }
+body[data-theme="dark"][data-dept="math"] { --primary: #a78bfa; --primary-light: #3b2a6e; }
+body[data-theme="dark"][data-dept="ie"]   { --primary: #fbbf24; --primary-light: #5a3a00; }
+body[data-theme="dark"][data-dept="ee"]   { --primary: #34d399; --primary-light: #054d38; }
+body[data-theme="dark"][data-dept="med"]  { --primary: #f87171; --primary-light: #5a1a1a; }
+body[data-theme="dark"][data-dept="law"]  { --primary: #2dd4bf; --primary-light: #0d4a46; }
