@@ -14,6 +14,100 @@ const getTodayName = () => {
 const getTypeStyle = (subjectType) =>
   SUBJECT_TYPES.find(s => s.value === subjectType) || SUBJECT_TYPES[0];
 
+// ── Helpers ───────────────────────────────────────────────────────────────
+const getCurrentTimeSlot = (timeSlots) => {
+  if (!timeSlots?.length) return null;
+  const now = new Date();
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+  for (const slot of timeSlots) {
+    const match = slot.match(/(\d{1,2}):(\d{2})/);
+    if (!match) continue;
+    const slotMins = parseInt(match[1]) * 60 + parseInt(match[2]);
+    if (Math.abs(nowMins - slotMins) <= 60) return slot;
+  }
+  return timeSlots[0];
+};
+
+// ── Free Rooms Now panel ──────────────────────────────────────────────────
+const FreeRoomNow = ({ schedule, timeSlots, allRooms, t }) => {
+  const [open, setOpen] = useState(false);
+
+  const todayName = getTodayName();
+  const currentSlot = getCurrentTimeSlot(timeSlots);
+
+  const busyRooms = useMemo(() => {
+    if (!currentSlot) return new Set();
+    const busy = new Set();
+    Object.values(schedule).forEach(cls => {
+      if (cls.day === todayName && cls.time === currentSlot && cls.room) {
+        busy.add(cls.room.trim().toLowerCase());
+      }
+    });
+    return busy;
+  }, [schedule, todayName, currentSlot]);
+
+  const freeRooms = useMemo(() =>
+    allRooms.filter(r => !busyRooms.has(r.trim().toLowerCase())),
+    [allRooms, busyRooms]
+  );
+
+  const busyList = useMemo(() =>
+    allRooms.filter(r => busyRooms.has(r.trim().toLowerCase())),
+    [allRooms, busyRooms]
+  );
+
+  return (
+    <div className="frn-wrap">
+      <button
+        className={`frn-trigger${open ? ' open' : ''}`}
+        onClick={() => setOpen(o => !o)}
+      >
+        <span className="frn-icon">🚪</span>
+        <span className="frn-label">Free rooms now</span>
+        {freeRooms.length > 0 && (
+          <span className="frn-badge">{freeRooms.length} free</span>
+        )}
+        <span className="frn-chevron">{open ? '▲' : '▼'}</span>
+      </button>
+
+      {open && (
+        <div className="frn-panel">
+          <div className="frn-panel-header">
+            <span>📅 {todayName}</span>
+            <span>⏰ {currentSlot || '—'}</span>
+          </div>
+
+          {freeRooms.length === 0 && busyList.length === 0 && (
+            <div className="frn-empty">No rooms configured yet.</div>
+          )}
+
+          {freeRooms.length > 0 && (
+            <div className="frn-section">
+              <div className="frn-section-label free">✅ Available</div>
+              <div className="frn-rooms">
+                {freeRooms.map(r => (
+                  <span key={r} className="frn-room free">{r}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {busyList.length > 0 && (
+            <div className="frn-section">
+              <div className="frn-section-label busy">🔴 In use</div>
+              <div className="frn-rooms">
+                {busyList.map(r => (
+                  <span key={r} className="frn-room busy">{r}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 // ── Mobile: collapsible day sections with slot cards ──────────────────────
 const MobileView = ({
   daysToShow, groupsToShow, timeSlots, schedule, todayName,
@@ -108,11 +202,12 @@ const MobileView = ({
                       const conflicts = getConflicts(group, day, time, classData);
                       const typeStyle = classData ? getTypeStyle(classData.subjectType) : null;
                       const duration  = Math.min(6, Math.max(1, parseInt(classData?.duration) || 1));
+                      // Duration in minutes (each slot = 40 min)
+                      const durationMins = duration * 40;
 
                       if (normSelectedTeacher && classData &&
                         normalizeTeacherName(classData.teacher) !== normSelectedTeacher) return null;
                       if (selectedRoom && occupiedRoomCells.has(`${day}-${time}`)) return null;
-                      // Mobile only: hide empty slots unless toggled on
                       if (!showEmpty && !classData && !booking) return null;
 
                       const handleClick = () => {
@@ -141,6 +236,7 @@ const MobileView = ({
                             conflicts.includes('teacher') ? 'conflict-t' : '',
                             conflicts.includes('room')    ? 'conflict-r' : '',
                             !classData && !booking        ? 'mob-slot-empty-row' : '',
+                            duration > 1                  ? 'mob-slot-multi' : '',
                           ].filter(Boolean).join(' ')}
                           style={bookingBorder ? { borderLeft: `3px solid ${bookingBorder}` }
                             : classData && typeStyle ? { borderLeft: `3px solid ${typeStyle.color}` } : {}}
@@ -148,6 +244,10 @@ const MobileView = ({
                         >
                           <div className={`mob-slot-time ${isToday ? 'today-t' : ''}`}>
                             {time}
+                            {/* Duration badge on mobile for multi-slot classes */}
+                            {classData && duration > 1 && (
+                              <span className="mob-duration-badge">⏱ {durationMins}m</span>
+                            )}
                           </div>
 
                           <div className="mob-slot-body">
@@ -162,6 +262,10 @@ const MobileView = ({
                                 <div className="mob-slot-meta">
                                   {classData.teacher && <span>👨‍🏫 {classData.teacher}</span>}
                                   {classData.room    && <span>🚪 {classData.room}</span>}
+                                  {/* Duration shown inline in meta row too */}
+                                  {duration > 1 && (
+                                    <span className="mob-slot-duration-meta">⏱ {durationMins} min</span>
+                                  )}
                                   {classData.meetingLink && (
                                     <a href={classData.meetingLink} target="_blank" rel="noopener noreferrer"
                                       className="meeting-link-btn"
@@ -218,7 +322,7 @@ const ScheduleTable = ({
   const todayName  = getTodayName();
   const daysToShow = selectedDay ? [selectedDay] : days;
 
-  // Mobile-only toggle: show/hide empty slots in card view
+  // Mobile-only toggle
   const [showEmpty, setShowEmpty] = useState(false);
 
   const bookingGroups = [...new Set(
@@ -266,6 +370,13 @@ const ScheduleTable = ({
     });
     return s;
   }, [schedule, selectedRoom]);
+
+  // All unique rooms across the schedule
+  const allRooms = useMemo(() => {
+    const r = new Set();
+    Object.values(schedule).forEach(e => { if (e.room) r.add(e.room.trim()); });
+    return [...r].sort();
+  }, [schedule]);
 
   const getClass    = (group, day, time) => schedule[`${group}-${day}-${time}`] || null;
   const shouldShow  = (classData, day, time) => {
@@ -329,7 +440,7 @@ const ScheduleTable = ({
       </>}
       {isAuthenticated && <div className="legend-item legend-drag-hint">↔ {t('dragHint')}</div>}
 
-      {/* Toggle visible on mobile only via CSS */}
+      {/* Mobile-only toggle */}
       <button
         className={`empty-slot-toggle-btn${showEmpty ? ' active' : ''}`}
         onClick={() => setShowEmpty(s => !s)}
@@ -350,10 +461,13 @@ const ScheduleTable = ({
     <div className="schedule-container">
       <Legend />
 
+      {/* ── Free rooms now — shown on both mobile and desktop ── */}
+      <FreeRoomNow schedule={schedule} timeSlots={timeSlots} allRooms={allRooms} t={t} />
+
       {/* ── Mobile card view ── */}
       <MobileView {...mobileProps} />
 
-      {/* ── Desktop table view — completely unchanged, no empty-slot logic ── */}
+      {/* ── Desktop table view ── */}
       <div className="table-wrapper">
         <table className="schedule-table">
           <thead>
