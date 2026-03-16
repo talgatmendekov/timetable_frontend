@@ -202,7 +202,6 @@ const MobileView = ({
                       const conflicts = getConflicts(group, day, time, classData);
                       const typeStyle = classData ? getTypeStyle(classData.subjectType) : null;
                       const duration  = Math.min(6, Math.max(1, parseInt(classData?.duration) || 1));
-                      // Duration in minutes (each slot = 40 min)
                       const durationMins = duration * 40;
 
                       if (normSelectedTeacher && classData &&
@@ -244,7 +243,7 @@ const MobileView = ({
                         >
                           <div className={`mob-slot-time ${isToday ? 'today-t' : ''}`}>
                             {time}
-                            {/* Duration badge on mobile for multi-slot classes */}
+                            {/* Duration badge — only in the time column, no duplicate in meta */}
                             {classData && duration > 1 && (
                               <span className="mob-duration-badge">⏱ {durationMins}m</span>
                             )}
@@ -262,10 +261,7 @@ const MobileView = ({
                                 <div className="mob-slot-meta">
                                   {classData.teacher && <span>👨‍🏫 {classData.teacher}</span>}
                                   {classData.room    && <span>🚪 {classData.room}</span>}
-                                  {/* Duration shown inline in meta row too */}
-                                  {duration > 1 && (
-                                    <span className="mob-slot-duration-meta">⏱ {durationMins} min</span>
-                                  )}
+                                  {/* ── duration NOT repeated here ── */}
                                   {classData.meetingLink && (
                                     <a href={classData.meetingLink} target="_blank" rel="noopener noreferrer"
                                       className="meeting-link-btn"
@@ -322,7 +318,6 @@ const ScheduleTable = ({
   const todayName  = getTodayName();
   const daysToShow = selectedDay ? [selectedDay] : days;
 
-  // Mobile-only toggle
   const [showEmpty, setShowEmpty] = useState(false);
 
   const bookingGroups = [...new Set(
@@ -371,7 +366,6 @@ const ScheduleTable = ({
     return s;
   }, [schedule, selectedRoom]);
 
-  // All unique rooms across the schedule
   const allRooms = useMemo(() => {
     const r = new Set();
     Object.values(schedule).forEach(e => { if (e.room) r.add(e.room.trim()); });
@@ -400,7 +394,6 @@ const ScheduleTable = ({
     return bookings.find(b => b.day === day && b.start_time === time && (b.entity === group || b.name === group)) || null;
   };
 
-  // Drag handlers
   const handleDragStart = (e, group, day, time) => {
     setDragSource({ group, day, time });
     dragNode.current = e.target;
@@ -439,8 +432,6 @@ const ScheduleTable = ({
         <div className="legend-item"><span className="legend-dot" style={{background:'#22c55e'}}/><span className="legend-label">✅ Approved</span></div>
       </>}
       {isAuthenticated && <div className="legend-item legend-drag-hint">↔ {t('dragHint')}</div>}
-
-      {/* Mobile-only toggle */}
       <button
         className={`empty-slot-toggle-btn${showEmpty ? ' active' : ''}`}
         onClick={() => setShowEmpty(s => !s)}
@@ -461,7 +452,6 @@ const ScheduleTable = ({
     <div className="schedule-container">
       <Legend />
 
-      {/* ── Free rooms now — shown on both mobile and desktop ── */}
       <FreeRoomNow schedule={schedule} timeSlots={timeSlots} allRooms={allRooms} t={t} />
 
       {/* ── Mobile card view ── */}
