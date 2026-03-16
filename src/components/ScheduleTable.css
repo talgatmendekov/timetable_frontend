@@ -125,19 +125,25 @@
   background: linear-gradient(135deg, rgba(37,99,235,0.15), rgba(251,191,36,0.1));
 }
 
-/* ── Empty hidden cell (desktop) — collapsed but still allows drag-drop ── */
+/* ── Empty hidden cell (desktop) — thin sliver, still drag-droppable ── */
 .schedule-cell.empty-hidden {
-  min-height: 8px !important;
-  height: 8px;
+  min-height: 6px !important;
+  height: 6px;
   padding: 0 !important;
-  background: rgba(30,41,59,0.15) !important;
-  border-color: rgba(90,122,154,0.2) !important;
+  background: rgba(30,41,59,0.12) !important;
+  border-color: rgba(90,122,154,0.15) !important;
   cursor: pointer;
   overflow: hidden;
+  transition: height 0.15s ease, background 0.15s;
 }
 .schedule-cell.empty-hidden:hover {
-  background: rgba(37,99,235,0.06) !important;
-  height: 8px;
+  background: rgba(37,99,235,0.08) !important;
+}
+.schedule-cell.empty-hidden.drag-over-empty {
+  height: 40px !important;
+  min-height: 40px !important;
+  background: rgba(37,99,235,0.12) !important;
+  border: 2px dashed #2563eb !important;
 }
 
 .schedule-cell.filtered-out { background: rgba(100,116,139,0.1); opacity: 0.5; }
@@ -175,18 +181,23 @@
   text-transform: uppercase; letter-spacing: 0.4px;
 }
 
-/* ── Legend + empty-slot toggle ─────────────────────────────────────────── */
+/* ── Legend bar ─────────────────────────────────────────────────────────── */
 .type-legend {
-  display: flex; align-items: center; gap: 18px;
-  padding: 10px 16px; background: var(--bg-card);
-  border-radius: 10px; margin-bottom: 12px;
-  border: 1px solid var(--border); flex-wrap: wrap;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 16px;
+  background: var(--bg-card);
+  border-radius: 10px;
+  margin-bottom: 12px;
+  border: 1px solid var(--border);
+  flex-wrap: wrap;
 }
 .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; color: var(--text-secondary); font-weight: 600; }
 .legend-dot  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
 .legend-drag-hint { color: var(--text-secondary); font-style: italic; font-weight: 400; }
 
-/* Empty slot toggle button — sits in the legend bar on desktop, legend bar on mobile */
+/* ── Empty slot toggle button ───────────────────────────────────────────── */
 .empty-slot-toggle-btn {
   margin-left: auto;
   display: inline-flex;
@@ -198,7 +209,7 @@
   color: var(--text-secondary);
   font-size: 0.75rem;
   font-weight: 700;
-  padding: 4px 14px;
+  padding: 5px 14px;
   cursor: pointer;
   font-family: inherit;
   transition: all 0.15s ease;
@@ -258,46 +269,39 @@
   .mob-group-block  { display: block !important; }
   .mob-slots        { display: flex !important; }
 
-  /* Show legend on mobile so the toggle button is visible */
+  /* Legend on mobile: show only the toggle button, hide decorative items */
   .type-legend {
     display: flex !important;
-    gap: 8px;
-    padding: 6px 10px;
+    padding: 6px 8px;
+    gap: 0;
     flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
     margin-bottom: 8px;
   }
-  .type-legend::-webkit-scrollbar { display: none; }
-
-  /* Hide decorative legend items on mobile — only show the toggle */
   .type-legend .legend-item,
   .type-legend .legend-drag-hint {
     display: none !important;
   }
-
-  /* Toggle button on mobile — full width pill */
   .empty-slot-toggle-btn {
     margin-left: 0;
     width: 100%;
     justify-content: center;
-    font-size: 0.78rem;
-    padding: 6px 14px;
+    font-size: 0.8rem;
+    padding: 7px 14px;
+    border-radius: 10px;
   }
 
-  /* Обёртка контейнера */
+  /* Container */
   .schedule-container {
     padding: 8px;
     border-radius: 10px;
   }
 
-  /* ── Мобильные карточки ──────────────────────────────────────────────── */
-
+  /* Day section */
   .mob-day-section {
     margin-bottom: 10px;
   }
 
+  /* Day header */
   .mob-day-header {
     display: flex;
     align-items: center;
@@ -324,6 +328,7 @@
   }
   .mob-day-header.collapsed .mob-day-chevron { transform: rotate(-90deg); }
 
+  /* Group block */
   .mob-group-block {
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -331,6 +336,7 @@
   }
   .mob-group-block:last-child { border-radius: 0 0 8px 8px; }
 
+  /* Group label row */
   .mob-group-label {
     display: flex;
     align-items: center;
@@ -343,12 +349,14 @@
     border-bottom: 1px solid var(--border);
   }
 
+  /* Slot list */
   .mob-slots {
     display: flex;
     flex-direction: column;
     gap: 0;
   }
 
+  /* Single slot row */
   .mob-slot {
     display: flex;
     align-items: stretch;
@@ -370,6 +378,7 @@
     opacity: 0.7;
   }
 
+  /* Time column */
   .mob-slot-time {
     flex: 0 0 76px;
     width: 76px;
@@ -381,7 +390,7 @@
     color: var(--text-secondary);
     border-right: 2px solid var(--border);
     background: var(--bg-main);
-    padding: 4px 4px;
+    padding: 4px;
     text-align: center;
     line-height: 1.3;
     white-space: nowrap;
@@ -389,6 +398,7 @@
   }
   .mob-slot-time.today-t { color: var(--accent); background: rgba(251,191,36,0.06); }
 
+  /* Content column */
   .mob-slot-body {
     flex: 1;
     padding: 6px 8px;
@@ -425,17 +435,11 @@
     gap: 4px;
   }
 
+  /* No type pill on mobile — saves space */
   .mob-slot-pill { display: none; }
 
-  .mob-slot-booking {
-    font-size: 0.68rem; font-weight: 600;
-    margin-top: 2px;
-  }
-  .mob-conflict-badge {
-    font-size: 0.62rem;
-    color: #ef4444;
-    font-weight: 700;
-  }
+  .mob-slot-booking { font-size: 0.68rem; font-weight: 600; margin-top: 2px; }
+  .mob-conflict-badge { font-size: 0.62rem; color: #ef4444; font-weight: 700; }
   .mob-slot.conflict-t { border-left: 3px solid #ef4444; }
   .mob-slot.conflict-r { border-left: 3px solid #f59e0b; }
 
@@ -446,51 +450,14 @@
   }
 }
 
-/* Таблица на десктопе — скрыть мобильные блоки */
+/* Desktop: hide mobile blocks */
 @media (min-width: 768px) {
   .mob-day-section,
   .mob-day-header,
   .mob-group-block,
   .mob-slots { display: none !important; }
-}
 
-/* ── Sticky today indicator (mobile only) ───────────────────────────────── */
-@media (max-width: 767px) {
-  .mob-today-bar {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    position: sticky;
-    top: 40px;
-    z-index: 50;
-    background: linear-gradient(135deg, #d97706, #f59e0b);
-    color: #1a1a1a;
-    padding: 7px 12px;
-    border-radius: 0 0 10px 10px;
-    margin: 0 0 8px 0;
-    box-shadow: 0 3px 10px rgba(217,119,6,0.35);
-    font-weight: 700;
-    font-size: 0.82rem;
-  }
-  .mob-today-star { font-size: 1rem; flex-shrink: 0; }
-  .mob-today-label { font-size: 0.88rem; font-weight: 800; }
-  .mob-today-count { font-size: 0.7rem; font-weight: 500; opacity: 0.8; flex: 1; }
-  .mob-today-jump {
-    background: rgba(0,0,0,0.15);
-    border: none;
-    border-radius: 6px;
-    color: #1a1a1a;
-    font-size: 0.72rem;
-    font-weight: 800;
-    padding: 3px 10px;
-    cursor: pointer;
-    flex-shrink: 0;
-    font-family: inherit;
-  }
-  .mob-today-jump:active { background: rgba(0,0,0,0.25); }
-}
-
-@media (min-width: 768px) {
+  /* Also ensure today bar (if any remnant) is hidden on desktop */
   .mob-today-bar { display: none !important; }
 }
 
