@@ -125,27 +125,6 @@
   background: linear-gradient(135deg, rgba(37,99,235,0.15), rgba(251,191,36,0.1));
 }
 
-/* ── Empty hidden cell (desktop) — thin sliver, still drag-droppable ── */
-.schedule-cell.empty-hidden {
-  min-height: 6px !important;
-  height: 6px;
-  padding: 0 !important;
-  background: rgba(30,41,59,0.12) !important;
-  border-color: rgba(90,122,154,0.15) !important;
-  cursor: pointer;
-  overflow: hidden;
-  transition: height 0.15s ease, background 0.15s;
-}
-.schedule-cell.empty-hidden:hover {
-  background: rgba(37,99,235,0.08) !important;
-}
-.schedule-cell.empty-hidden.drag-over-empty {
-  height: 40px !important;
-  min-height: 40px !important;
-  background: rgba(37,99,235,0.12) !important;
-  border: 2px dashed #2563eb !important;
-}
-
 .schedule-cell.filtered-out { background: rgba(100,116,139,0.1); opacity: 0.5; }
 .filtered-label { color: var(--text-secondary); font-size: 0.75rem; font-style: italic; }
 
@@ -181,54 +160,21 @@
   text-transform: uppercase; letter-spacing: 0.4px;
 }
 
-/* ── Legend bar ─────────────────────────────────────────────────────────── */
+/* ── Legend ─────────────────────────────────────────────────────────────── */
 .type-legend {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 10px 16px;
-  background: var(--bg-card);
-  border-radius: 10px;
-  margin-bottom: 12px;
-  border: 1px solid var(--border);
-  flex-wrap: wrap;
+  display: flex; align-items: center; gap: 18px;
+  padding: 10px 16px; background: var(--bg-card);
+  border-radius: 10px; margin-bottom: 12px;
+  border: 1px solid var(--border); flex-wrap: wrap;
 }
 .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.82rem; color: var(--text-secondary); font-weight: 600; }
 .legend-dot  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.legend-drag-hint { color: var(--text-secondary); font-style: italic; font-weight: 400; }
+.legend-drag-hint { margin-left: auto; color: var(--text-secondary); font-style: italic; font-weight: 400; }
 
-/* ── Empty slot toggle button ───────────────────────────────────────────── */
+/* ── Empty slot toggle button — MOBILE ONLY, hidden on desktop ─────────── */
 .empty-slot-toggle-btn {
-  margin-left: auto;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: var(--bg-main);
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  color: var(--text-secondary);
-  font-size: 0.75rem;
-  font-weight: 700;
-  padding: 5px 14px;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.15s ease;
-  white-space: nowrap;
-  min-height: 0;
-  line-height: 1.4;
-  flex-shrink: 0;
+  display: none; /* hidden by default; shown only inside mobile media query */
 }
-.empty-slot-toggle-btn:hover {
-  background: var(--bg-hover);
-  border-color: var(--primary);
-  color: var(--text-primary);
-}
-.empty-slot-toggle-btn.active {
-  background: var(--primary);
-  color: #fff;
-  border-color: var(--primary);
-}
-.empty-slot-toggle-btn:active { opacity: 0.8; }
 
 /* Drag & Drop */
 .schedule-cell.filled .drag-handle { display: none; position: absolute; top: 3px; left: 3px; font-size: 0.9rem; color: rgba(255,255,255,0.7); cursor: grab; line-height: 1; z-index: 2; }
@@ -269,26 +215,51 @@
   .mob-group-block  { display: block !important; }
   .mob-slots        { display: flex !important; }
 
-  /* Legend on mobile: show only the toggle button, hide decorative items */
+  /* Legend on mobile: hide decorative items, show only the toggle */
   .type-legend {
-    display: flex !important;
     padding: 6px 8px;
     gap: 0;
     flex-wrap: nowrap;
     margin-bottom: 8px;
+    border-radius: 8px;
   }
   .type-legend .legend-item,
   .type-legend .legend-drag-hint {
     display: none !important;
   }
+
+  /* Show the toggle button on mobile */
   .empty-slot-toggle-btn {
-    margin-left: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
     width: 100%;
     justify-content: center;
-    font-size: 0.8rem;
-    padding: 7px 14px;
+    background: var(--bg-main);
+    border: 1px solid var(--border);
     border-radius: 10px;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 7px 14px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    min-height: 0;
+    line-height: 1.4;
   }
+  .empty-slot-toggle-btn:hover {
+    background: var(--bg-hover);
+    border-color: var(--primary);
+    color: var(--text-primary);
+  }
+  .empty-slot-toggle-btn.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+  }
+  .empty-slot-toggle-btn:active { opacity: 0.8; }
 
   /* Container */
   .schedule-container {
@@ -297,9 +268,7 @@
   }
 
   /* Day section */
-  .mob-day-section {
-    margin-bottom: 10px;
-  }
+  .mob-day-section { margin-bottom: 10px; }
 
   /* Day header */
   .mob-day-header {
@@ -368,7 +337,7 @@
   .mob-slot:last-child { border-bottom: none; }
   .mob-slot:active { background: var(--bg-hover); }
 
-  /* Empty slot row — visually de-emphasised */
+  /* Empty slot row — de-emphasised */
   .mob-slot.mob-slot-empty-row {
     min-height: 32px;
     opacity: 0.5;
@@ -455,9 +424,7 @@
   .mob-day-section,
   .mob-day-header,
   .mob-group-block,
-  .mob-slots { display: none !important; }
-
-  /* Also ensure today bar (if any remnant) is hidden on desktop */
+  .mob-slots,
   .mob-today-bar { display: none !important; }
 }
 

@@ -112,7 +112,7 @@ const MobileView = ({
                       if (normSelectedTeacher && classData &&
                         normalizeTeacherName(classData.teacher) !== normSelectedTeacher) return null;
                       if (selectedRoom && occupiedRoomCells.has(`${day}-${time}`)) return null;
-                      // Hide empty slots unless toggled on
+                      // Mobile only: hide empty slots unless toggled on
                       if (!showEmpty && !classData && !booking) return null;
 
                       const handleClick = () => {
@@ -218,7 +218,7 @@ const ScheduleTable = ({
   const todayName  = getTodayName();
   const daysToShow = selectedDay ? [selectedDay] : days;
 
-  // Shared empty-slot toggle — default hidden, works for BOTH mobile and desktop
+  // Mobile-only toggle: show/hide empty slots in card view
   const [showEmpty, setShowEmpty] = useState(false);
 
   const bookingGroups = [...new Set(
@@ -329,11 +329,10 @@ const ScheduleTable = ({
       </>}
       {isAuthenticated && <div className="legend-item legend-drag-hint">↔ {t('dragHint')}</div>}
 
-      {/* ── Empty slot toggle — works for BOTH mobile and desktop ── */}
+      {/* Toggle visible on mobile only via CSS */}
       <button
         className={`empty-slot-toggle-btn${showEmpty ? ' active' : ''}`}
         onClick={() => setShowEmpty(s => !s)}
-        title={showEmpty ? 'Hide empty slots' : 'Show empty slots'}
       >
         {showEmpty ? '🙈 Hide empty' : '👁 Show empty'}
       </button>
@@ -354,7 +353,7 @@ const ScheduleTable = ({
       {/* ── Mobile card view ── */}
       <MobileView {...mobileProps} />
 
-      {/* ── Desktop table view ── */}
+      {/* ── Desktop table view — completely unchanged, no empty-slot logic ── */}
       <div className="table-wrapper">
         <table className="schedule-table">
           <thead>
@@ -405,31 +404,6 @@ const ScheduleTable = ({
                   const typeStyle = classData ? getTypeStyle(classData.subjectType) : null;
                   const duration  = Math.min(6, Math.max(1, parseInt(classData?.duration) || 1));
                   const booking   = getBooking(group, day, time);
-
-                  // Desktop: collapse empty cells to a thin sliver when toggle is off
-                  // Keep drag-over support so drop targets still work
-                  if (!showEmpty && !classData && !booking) {
-                    return (
-                      <td key={cellKey}
-                        className={[
-                          'schedule-cell',
-                          'empty-hidden',
-                          isToday ? 'today-cell' : '',
-                          isDragOvr ? 'drag-over-empty' : '',
-                        ].filter(Boolean).join(' ')}
-                        colSpan={duration}
-                        onClick={() => {
-                          if (isAuthenticated && !dragSource) { onEditClass(group, day, time); return; }
-                          if (!isAuthenticated && onGuestBookCell) onGuestBookCell(group, day, time);
-                        }}
-                        onDragOver={(e) => handleDragOver(e, group, day, time)}
-                        onDragLeave={handleDragLeave}
-                        onDrop={(e) => handleDrop(e, group, day, time)}
-                      >
-                        {isDragOvr && <div className="drop-indicator">Drop here</div>}
-                      </td>
-                    );
-                  }
 
                   if (!show) return (
                     <td key={cellKey} className={`schedule-cell filtered-out ${isToday ? 'today-cell' : ''}`} colSpan={duration}>
