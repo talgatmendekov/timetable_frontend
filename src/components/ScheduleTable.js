@@ -19,13 +19,11 @@ const MobileView = ({
   daysToShow, groupsToShow, timeSlots, schedule, todayName,
   cellsToSkip, occupiedRoomCells, selectedRoom, normSelectedTeacher,
   isAuthenticated, bookings, onEditClass, onGuestBookCell, onDeleteGroup,
-  typeLabels, t,
+  typeLabels, t, showEmpty,
 }) => {
   const [collapsed, setCollapsed] = useState({});
-  const [showEmpty, setShowEmpty] = useState(false);
 
   const getClass = (group, day, time) => schedule[`${group}-${day}-${time}`] || null;
-  const startTime = (time) => time ? time.split(/[-–—]/)[0].trim() : time;
 
   const getBooking = (group, day, time) => {
     const classEntry = schedule[`${group}-${day}-${time}`];
@@ -49,7 +47,6 @@ const MobileView = ({
 
   const toggleDay = (day) => setCollapsed(c => ({ ...c, [day]: !c[day] }));
 
-  // Find today's class count
   const todayClassCount = groupsToShow.reduce((acc, group) => {
     return acc + timeSlots.filter(time => {
       const cls = schedule[`${group}-${todayName}-${time}`];
@@ -61,7 +58,6 @@ const MobileView = ({
 
   return (
     <div>
-      {/* ── Sticky today indicator ── */}
       {isTodayShown && (
         <div className="mob-today-bar">
           <span className="mob-today-star">★</span>
@@ -79,21 +75,10 @@ const MobileView = ({
         </div>
       )}
 
-      {/* ── Empty slot toggle bar ── */}
-      <div className="mob-empty-toggle-bar">
-        <button
-          className={`mob-empty-toggle-btn${showEmpty ? ' active' : ''}`}
-          onClick={() => setShowEmpty(s => !s)}
-        >
-          {showEmpty ? '🙈 Hide empty slots' : '👁 Show empty slots'}
-        </button>
-      </div>
-
       {daysToShow.map(day => {
         const isToday = day === todayName;
         const isCollapsed = collapsed[day];
 
-        // Count classes this day across shown groups
         const classCount = groupsToShow.reduce((acc, group) => {
           return acc + timeSlots.filter(time => {
             const cls = getClass(group, day, time);
@@ -115,11 +100,9 @@ const MobileView = ({
             </div>
 
             {!isCollapsed && groupsToShow.map(group => {
-              // Find all slots for this group+day that have content (filled or empty+editable)
               const slots = timeSlots.filter(time => !cellsToSkip.has(`${group}-${day}-${time}`));
               if (!slots.length) return null;
 
-              // Show group if admin, or if it has any filled/booked slot
               if (!isAuthenticated) {
                 const hasContent = slots.some(time => {
                   const cls = getClass(group, day, time);
@@ -152,12 +135,10 @@ const MobileView = ({
                       const typeStyle = classData ? getTypeStyle(classData.subjectType) : null;
                       const duration  = Math.min(6, Math.max(1, parseInt(classData?.duration) || 1));
 
-                      // Teacher filter
                       if (normSelectedTeacher && classData &&
                         normalizeTeacherName(classData.teacher) !== normSelectedTeacher) return null;
-                      // Room filter
                       if (selectedRoom && occupiedRoomCells.has(`${day}-${time}`)) return null;
-                      // Empty slot filter — hide empty slots unless toggled on
+                      // Hide empty slots unless toggled on
                       if (!showEmpty && !classData && !booking) return null;
 
                       const handleClick = () => {
@@ -165,7 +146,6 @@ const MobileView = ({
                         if (!classData && !booking && onGuestBookCell) onGuestBookCell(group, day, time);
                       };
 
-                      // Booking style
                       let bookingBorder = '';
                       let bookingInfo   = null;
                       if (booking) {
@@ -186,7 +166,7 @@ const MobileView = ({
                             'mob-slot',
                             conflicts.includes('teacher') ? 'conflict-t' : '',
                             conflicts.includes('room')    ? 'conflict-r' : '',
-                            !classData && !booking ? 'mob-slot-empty-row' : '',
+                            !classData && !booking       ? 'mob-slot-empty-row' : '',
                           ].filter(Boolean).join(' ')}
                           style={bookingBorder ? { borderLeft: `3px solid ${bookingBorder}` }
                             : classData && typeStyle ? { borderLeft: `3px solid ${typeStyle.color}` } : {}}
@@ -263,6 +243,9 @@ const ScheduleTable = ({
 
   const todayName  = getTodayName();
   const daysToShow = selectedDay ? [selectedDay] : days;
+
+  // Shared empty-slot toggle — default hidden
+  const [showEmpty, setShowEmpty] = useState(false);
 
   const bookingGroups = [...new Set(
     bookings
@@ -371,15 +354,23 @@ const ScheduleTable = ({
         <div className="legend-item"><span className="legend-dot" style={{background:'#22c55e'}}/><span className="legend-label">✅ Approved</span></div>
       </>}
       {isAuthenticated && <div className="legend-item legend-drag-hint">↔ {t('dragHint')}</div>}
+
+      {/* ── Empty slot toggle button — works for both mobile and desktop ── */}
+      <button
+        className={`empty-slot-toggle-btn${showEmpty ? ' active' : ''}`}
+        onClick={() => setShowEmpty(s => !s)}
+        title={showEmpty ? 'Hide empty slots' : 'Show empty slots'}
+      >
+        {showEmpty ? '🙈 Hide empty' : '👁 Show empty'}
+      </button>
     </div>
   );
 
-  // Shared props for mobile view
   const mobileProps = {
     daysToShow, groupsToShow, timeSlots, schedule, todayName,
     cellsToSkip, occupiedRoomCells, selectedRoom, normSelectedTeacher,
     isAuthenticated, bookings, onEditClass, onGuestBookCell, onDeleteGroup,
-    typeLabels, t,
+    typeLabels, t, showEmpty,
   };
 
   return (
@@ -440,6 +431,31 @@ const ScheduleTable = ({
                   const typeStyle = classData ? getTypeStyle(classData.subjectType) : null;
                   const duration  = Math.min(6, Math.max(1, parseInt(classData?.duration) || 1));
                   const booking   = getBooking(group, day, time);
+
+                  // Desktop: render a minimal collapsed cell when empty and toggle is off
+                  // Still needs drag-over support so we keep the td but collapse it visually
+                  if (!showEmpty && !classData && !booking) {
+                    return (
+                      <td key={cellKey}
+                        className={[
+                          'schedule-cell',
+                          'empty-hidden',
+                          isToday ? 'today-cell' : '',
+                          isDragOvr ? 'drag-over-empty' : '',
+                        ].filter(Boolean).join(' ')}
+                        colSpan={duration}
+                        onClick={() => {
+                          if (isAuthenticated && !dragSource) { onEditClass(group, day, time); return; }
+                          if (!isAuthenticated && onGuestBookCell) onGuestBookCell(group, day, time);
+                        }}
+                        onDragOver={(e) => handleDragOver(e, group, day, time)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, group, day, time)}
+                      >
+                        {isDragOvr && <div className="drop-indicator">Drop here</div>}
+                      </td>
+                    );
+                  }
 
                   if (!show) return (
                     <td key={cellKey} className={`schedule-cell filtered-out ${isToday ? 'today-cell' : ''}`} colSpan={duration}>
