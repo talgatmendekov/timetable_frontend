@@ -22,6 +22,7 @@ const MobileView = ({
   typeLabels, t,
 }) => {
   const [collapsed, setCollapsed] = useState({});
+  const [showEmpty, setShowEmpty] = useState(false);
 
   const getClass = (group, day, time) => schedule[`${group}-${day}-${time}`] || null;
   const startTime = (time) => time ? time.split(/[-–—]/)[0].trim() : time;
@@ -77,6 +78,16 @@ const MobileView = ({
           </button>
         </div>
       )}
+
+      {/* ── Empty slot toggle bar ── */}
+      <div className="mob-empty-toggle-bar">
+        <button
+          className={`mob-empty-toggle-btn${showEmpty ? ' active' : ''}`}
+          onClick={() => setShowEmpty(s => !s)}
+        >
+          {showEmpty ? '🙈 Hide empty slots' : '👁 Show empty slots'}
+        </button>
+      </div>
 
       {daysToShow.map(day => {
         const isToday = day === todayName;
@@ -146,6 +157,8 @@ const MobileView = ({
                         normalizeTeacherName(classData.teacher) !== normSelectedTeacher) return null;
                       // Room filter
                       if (selectedRoom && occupiedRoomCells.has(`${day}-${time}`)) return null;
+                      // Empty slot filter — hide empty slots unless toggled on
+                      if (!showEmpty && !classData && !booking) return null;
 
                       const handleClick = () => {
                         if (isAuthenticated) { onEditClass(group, day, time); return; }
@@ -173,6 +186,7 @@ const MobileView = ({
                             'mob-slot',
                             conflicts.includes('teacher') ? 'conflict-t' : '',
                             conflicts.includes('room')    ? 'conflict-r' : '',
+                            !classData && !booking ? 'mob-slot-empty-row' : '',
                           ].filter(Boolean).join(' ')}
                           style={bookingBorder ? { borderLeft: `3px solid ${bookingBorder}` }
                             : classData && typeStyle ? { borderLeft: `3px solid ${typeStyle.color}` } : {}}
@@ -180,7 +194,6 @@ const MobileView = ({
                         >
                           <div className={`mob-slot-time ${isToday ? 'today-t' : ''}`}>
                             {time}
-
                           </div>
 
                           <div className="mob-slot-body">
@@ -195,12 +208,6 @@ const MobileView = ({
                                 <div className="mob-slot-meta">
                                   {classData.teacher && <span>👨‍🏫 {classData.teacher}</span>}
                                   {classData.room    && <span>🚪 {classData.room}</span>}
-                                  {classData.meetingLink && (
-                                    <a href={classData.meetingLink} target="_blank" rel="noopener noreferrer"
-                                      className="meeting-link-btn"
-                                      onClick={e => e.stopPropagation()}
-                                    >🔗 Join</a>
-                                  )}
                                   {classData.meetingLink && (
                                     <a href={classData.meetingLink} target="_blank" rel="noopener noreferrer"
                                       className="meeting-link-btn"

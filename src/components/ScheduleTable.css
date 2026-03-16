@@ -210,12 +210,6 @@
   .mob-group-block  { display: block !important; }
   .mob-slots        { display: flex !important; }
 
-  /* Force mobile cards visible */
-  .mob-day-section  { display: block !important; }
-  .mob-day-header   { display: flex !important; }
-  .mob-group-block  { display: block !important; }
-  .mob-slots        { display: flex !important; }
-
   /* Hide legend on mobile */
   .type-legend { display: none; }
 
@@ -298,6 +292,17 @@
   }
   .mob-slot:last-child { border-bottom: none; }
   .mob-slot:active { background: var(--bg-hover); }
+
+  /* Empty slot row — visually de-emphasised */
+  .mob-slot.mob-slot-empty-row {
+    min-height: 34px;
+    opacity: 0.55;
+  }
+  .mob-slot.mob-slot-empty-row .mob-slot-time {
+    font-size: 0.6rem;
+    color: var(--text-secondary);
+    opacity: 0.7;
+  }
 
   /* Время слева — узкая колонка */
   .mob-slot-time {
@@ -451,6 +456,41 @@
 
 @media (min-width: 768px) {
   .mob-today-bar { display: none !important; }
+}
+
+/* ── Empty slot toggle bar (mobile only) ────────────────────────────────── */
+@media (max-width: 767px) {
+  .mob-empty-toggle-bar {
+    display: flex;
+    justify-content: flex-end;
+    padding: 4px 4px 6px;
+  }
+  .mob-empty-toggle-btn {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    color: var(--text-secondary);
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 4px 12px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+    line-height: 1.4;
+    min-height: 0;
+  }
+  .mob-empty-toggle-btn.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+  }
+  .mob-empty-toggle-btn:active {
+    opacity: 0.75;
+  }
+}
+
+@media (min-width: 768px) {
+  .mob-empty-toggle-bar { display: none !important; }
 }
 
 /* ── Meeting link button ────────────────────────────────────────────────── */
