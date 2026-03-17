@@ -198,7 +198,7 @@ const AppContent = () => {
     bar: {
       display: 'flex', alignItems: 'center', gap: 6,
       background: 'var(--bg-card)', borderBottom: '1px solid var(--border)',
-      padding: '4px 10px', flexWrap: 'nowrap',
+      padding: '10px 10px', flexWrap: 'nowrap',
       position: 'sticky', top: 0, zIndex: 200,
       overflowX: 'auto', overflowY: 'hidden',
       minHeight: 40, maxHeight: 48,
