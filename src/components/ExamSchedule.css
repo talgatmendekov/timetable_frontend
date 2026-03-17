@@ -4,15 +4,15 @@
    Sizing matches AutoScheduler / Telegram panels — full width of content area.
 */
 
-/* ── Wrapper — full width, no max-width ──────────────────────────────────── */
+/* ── Wrapper — flat, full width, matches AutoScheduler / Telegram ────────── */
 .es-wrap {
   width: 100%;
   box-sizing: border-box;
-  background: var(--bg-card);
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.12);
+  background: transparent;
+  border-radius: 0;
+  border: none;
+  overflow: visible;
+  box-shadow: none;
 }
 
 /* ── Reset buttons inside .es-wrap ──────────────────────────────────────── */
@@ -68,6 +68,7 @@
   padding: 16px 20px;
   background: linear-gradient(135deg, #0f172a, #1e1b4b);
   color: #fff;
+  border-radius: 14px 14px 0 0;
 }
 .es-wrap .es-header-left {
   display: flex;
@@ -162,6 +163,8 @@
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   padding: 10px 20px;
   background: var(--bg-main);
+  border: 1px solid var(--border);
+  border-top: none;
   border-bottom: 1px solid var(--border);
 }
 .es-wrap .es-filters .es-select { max-width: 160px; }
@@ -289,6 +292,10 @@ body[data-theme="dark"] .es-wrap .es-gp-pill { background: #25336a; color: #a5b4
 .es-wrap .es-empty {
   text-align: center; padding: 48px 20px;
   color: var(--text-secondary); font-size: 0.88rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 14px 14px;
 }
 
 /* ── Table — full width ──────────────────────────────────────────────────── */
@@ -296,6 +303,10 @@ body[data-theme="dark"] .es-wrap .es-gp-pill { background: #25336a; color: #a5b4
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 14px 14px;
 }
 .es-wrap .es-table {
   width: 100%;
