@@ -47,7 +47,7 @@ const EmptyRoomPanel = ({
     return Array.from(seen.entries()).map(([key, display]) => ({ key, display }));
   }, [allRooms]);
 
-  // ── Occupancy map (keyed by normalized room name) ──────────────────────────
+  // ── Occupancy map ──────────────────────────────────────────────────────────
   const occupancy = useMemo(() => {
     const map = {};
     normalizedRooms.forEach(({ key }) => {
@@ -77,7 +77,7 @@ const EmptyRoomPanel = ({
     return normalizedRooms.filter(({ key }) => !occupancy[key]?.[todayName]?.[currentSlot]);
   }, [normalizedRooms, occupancy, todayName, currentSlot, isToday]);
 
-  // ── Stats for trigger bar ──────────────────────────────────────────────────
+  // ── Summary stats ──────────────────────────────────────────────────────────
   const summary = useMemo(() => {
     const daysFilter = selDay ? [selDay] : days;
     const total = normalizedRooms.length * daysFilter.length * timeSlots.length;
@@ -100,7 +100,7 @@ const EmptyRoomPanel = ({
   );
 
   const cellColor = (occ) =>
-    occ ? { bg: '#fee2e2', text: '#991b1b' } : { bg: '#dcfce7', text: '#166534' };
+    occ ? { bg: '#fee2e2', text: '#991b1b' } : { bg: '#dcfce7', text: '#166634' };
 
   const daysToShow = selDay ? [selDay] : days;
 
@@ -115,11 +115,11 @@ const EmptyRoomPanel = ({
       {/* ── Trigger bar ───────────────────────────────────────────────────── */}
       <div className="erp-trigger-bar">
         <div className="erp-trigger-stats">
-          <span className="erp-stat-pill free">{summary.free} free slots</span>
-          <span className="erp-stat-pill busy">{summary.busy} busy</span>
-          <span className="erp-stat-pill rooms">{normalizedRooms.length} rooms</span>
+          <span className="erp-stat-pill free">{summary.free} {t('freeSlots') || 'free slots'}</span>
+          <span className="erp-stat-pill busy">{summary.busy} {t('busySlots') || 'busy'}</span>
+          <span className="erp-stat-pill rooms">{normalizedRooms.length} {t('rooms') || 'rooms'}</span>
           {normalizedRooms.length > 0 && currentSlot && isToday && (
-            <span className="erp-stat-pill now">🚪 {freeNowRooms.length} free now</span>
+            <span className="erp-stat-pill now">🚪 {freeNowRooms.length} {t('freeNow') || 'free now'}</span>
           )}
         </div>
         <div className="erp-trigger-actions">
@@ -130,7 +130,7 @@ const EmptyRoomPanel = ({
             </div>
           )}
           <button className="erp-open-btn" onClick={() => setOpen(true)}>
-            🗓 Room Heatmap
+            🗓 {t('roomHeatmap') || 'Room Heatmap'}
           </button>
         </div>
       </div>
@@ -142,8 +142,10 @@ const EmptyRoomPanel = ({
 
             <div className="erp-modal-header">
               <div>
-                <div className="erp-modal-title">Room Availability</div>
-                <div className="erp-modal-sub">{normalizedRooms.length} rooms · {summary.pct}% available</div>
+                <div className="erp-modal-title">{t('roomAvailability') || 'Room Availability'}</div>
+                <div className="erp-modal-sub">
+                  {normalizedRooms.length} {t('rooms') || 'rooms'} · {summary.pct}% {t('free') || 'available'}
+                </div>
               </div>
               <button className="erp-close-btn" onClick={() => setOpen(false)}>✕</button>
             </div>
@@ -151,14 +153,23 @@ const EmptyRoomPanel = ({
             <div className="erp-modal-controls">
               <input
                 className="erp-search"
-                placeholder="Search room..."
+                placeholder={t('searchRoom') || 'Search room…'}
                 value={search}
                 onChange={e => setSrc(e.target.value)}
               />
               <div className="erp-day-tabs">
-                <button className={`erp-day-tab ${selDay === '' ? 'active' : ''}`} onClick={() => setDay('')}>All</button>
+                <button
+                  className={`erp-day-tab ${selDay === '' ? 'active' : ''}`}
+                  onClick={() => setDay('')}
+                >
+                  {t('allDaysTab') || 'All'}
+                </button>
                 {days.map(d => (
-                  <button key={d} className={`erp-day-tab ${selDay === d ? 'active' : ''}`} onClick={() => setDay(d)}>
+                  <button
+                    key={d}
+                    className={`erp-day-tab ${selDay === d ? 'active' : ''}`}
+                    onClick={() => setDay(d)}
+                  >
                     {t(d) || d}
                   </button>
                 ))}
@@ -171,12 +182,12 @@ const EmptyRoomPanel = ({
               {normalizedRooms.length > 0 && currentSlot && isToday && (
                 <div className="erp-free-now-section">
                   <div className="erp-free-now-header">
-                    <span className="erp-free-now-title">🚪 Free right now</span>
-                    <span className="erp-free-now-meta">{todayName} · {currentSlot}</span>
+                    <span className="erp-free-now-title">{t('freeRightNow') || '🚪 Free right now'}</span>
+                    <span className="erp-free-now-meta">{t(todayName) || todayName} · {currentSlot}</span>
                   </div>
                   <div className="erp-free-now-rooms">
                     {freeNowRooms.length === 0
-                      ? <span className="erp-free-now-empty">All rooms currently in use</span>
+                      ? <span className="erp-free-now-empty">{t('allRoomsInUse') || 'All rooms currently in use'}</span>
                       : freeNowRooms.map(({ key, display }) => (
                         <button
                           key={key}
@@ -189,20 +200,20 @@ const EmptyRoomPanel = ({
                 </div>
               )}
 
-              {/* ── Heatmap only — no room list panel ── */}
+              {/* ── Heatmap ── */}
               <div className="erp-heatmap-wrap">
                 <div className="erp-panel-head">
-                  Heatmap
+                  {t('heatmapTitle') || 'Heatmap'}
                   <span className="erp-legend">
-                    <span className="erp-leg-item free">■ Free</span>
-                    <span className="erp-leg-item busy">■ Busy</span>
+                    <span className="erp-leg-item free">■ {t('free') || 'Free'}</span>
+                    <span className="erp-leg-item busy">■ {t('busy') || 'Busy'}</span>
                   </span>
                 </div>
                 <div className="erp-heatmap-scroll">
                   <table className="erp-heatmap-table">
                     <thead>
                       <tr>
-                        <th className="erp-th-room">Room</th>
+                        <th className="erp-th-room">{t('room') || 'Room'}</th>
                         {daysToShow.map(d =>
                           timeSlots.map(tm => (
                             <th key={`${d}-${tm}`} className="erp-th-slot">
@@ -235,7 +246,9 @@ const EmptyRoomPanel = ({
                                     key={`${d}-${tm}`}
                                     className="erp-hm-cell"
                                     style={{ background: col.bg, color: col.text }}
-                                    title={occ ? `${occ.course}${occ.teacher ? ' · ' + occ.teacher : ''}` : 'Free'}
+                                    title={occ
+                                      ? `${occ.course}${occ.teacher ? ' · ' + occ.teacher : ''}`
+                                      : (t('free') || 'Free')}
                                   >
                                     {occ ? '✗' : '✓'}
                                   </td>

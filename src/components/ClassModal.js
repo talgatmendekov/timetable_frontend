@@ -8,7 +8,7 @@ import './ClassModal.css';
 const DURATIONS = [1, 2, 3, 4, 5, 6];
 
 export default function ClassModal({ isOpen, onClose, group, day, time }) {
-  const { schedule, addOrUpdateClass, deleteClass, teachers, timeSlots } = useSchedule();
+  const { schedule, addOrUpdateClass, deleteClass, teachers } = useSchedule();
   const { t, lang } = useLanguage();
   const typeLabels = SUBJECT_TYPE_LABELS[lang] || SUBJECT_TYPE_LABELS.en;
 
@@ -20,7 +20,7 @@ export default function ClassModal({ isOpen, onClose, group, day, time }) {
     course: '', teacher: '', room: '',
     subjectType: 'lecture', duration: 1, meetingLink: '',
   });
-  const [saving, setSaving] = useState(false);
+  const [saving,   setSaving]   = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [linkError, setLinkError] = useState('');
 
@@ -42,7 +42,7 @@ export default function ClassModal({ isOpen, onClose, group, day, time }) {
 
   const validateLink = (url) => {
     if (!url) return '';
-    if (!/^https?:\/\//i.test(url)) return 'Link must start with https://';
+    if (!/^https?:\/\//i.test(url)) return t('meetingLinkError') || 'Link must start with https://';
     return '';
   };
 
@@ -78,7 +78,7 @@ export default function ClassModal({ isOpen, onClose, group, day, time }) {
       <div className="modal-content cm-modal">
         <div className="modal-header cm-header" style={{ borderLeft: `4px solid ${typeStyle.color}` }}>
           <div>
-            <div className="cm-header-meta">{group} · {day} · {time}</div>
+            <div className="cm-header-meta">{group} · {t(day) || day} · {time}</div>
             <h2 className="cm-header-title">
               {existingClass ? (t('editClass') || 'Edit Class') : (t('addClass') || 'Add Class')}
             </h2>
@@ -153,7 +153,11 @@ export default function ClassModal({ isOpen, onClose, group, day, time }) {
                 onChange={e => setForm(f => ({ ...f, duration: Number(e.target.value) }))}
               >
                 {DURATIONS.map(d => (
-                  <option key={d} value={d}>{d} slot{d > 1 ? 's' : ''} ({d * 40} min)</option>
+                  <option key={d} value={d}>
+                    {d} {d > 1
+                      ? (t('slots') || 'slots')
+                      : (t('slot') || 'slot')} ({d * 40} {t('examMinutes') || 'min'})
+                  </option>
                 ))}
               </select>
             </div>
@@ -163,7 +167,7 @@ export default function ClassModal({ isOpen, onClose, group, day, time }) {
           <div className="cm-field">
             <label className="cm-label">
               🔗 {t('meetingLink') || 'Meeting Link'}
-              <span className="cm-label-hint"> — Zoom, Teams, Meet (optional)</span>
+              <span className="cm-label-hint"> — Zoom, Teams, Meet ({t('optional') || 'optional'})</span>
             </label>
             <div className="cm-link-row">
               <input
@@ -174,7 +178,7 @@ export default function ClassModal({ isOpen, onClose, group, day, time }) {
               />
               {form.meetingLink && !linkError && (
                 <a href={form.meetingLink} target="_blank" rel="noopener noreferrer" className="cm-link-test">
-                  Test ↗
+                  {t('test') || 'Test'} ↗
                 </a>
               )}
             </div>
@@ -189,14 +193,16 @@ export default function ClassModal({ isOpen, onClose, group, day, time }) {
             </button>
           )}
           <div style={{ flex: 1 }} />
-          <button className="cm-btn cm-btn-cancel" onClick={onClose}>{t('cancel') || 'Cancel'}</button>
+          <button className="cm-btn cm-btn-cancel" onClick={onClose}>
+            {t('cancel') || 'Cancel'}
+          </button>
           <button
             className="cm-btn cm-btn-save"
             onClick={handleSave}
             disabled={saving || !form.course.trim()}
             style={{ background: typeStyle.color }}
           >
-            {saving ? '...' : (existingClass ? t('save') || 'Save' : t('add') || 'Add')}
+            {saving ? '...' : (existingClass ? (t('save') || 'Save') : (t('add') || 'Add'))}
           </button>
         </div>
       </div>

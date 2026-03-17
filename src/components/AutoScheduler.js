@@ -1,10 +1,11 @@
 // src/components/AutoScheduler.js
 import React, { useState, useCallback } from 'react';
 import { useSchedule } from '../context/ScheduleContext';
+import { useLanguage } from '../context/LanguageContext';
 import './AutoScheduler.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://timetablebackend-production.up.railway.app/api';
-const uid = () => Math.random().toString(36).slice(2, 8);
+const uid     = () => Math.random().toString(36).slice(2, 8);
 
 const autoSplit = (total, n) => {
   const count = Math.max(1, Math.min(n, total));
@@ -25,6 +26,7 @@ const TYPES = ['lecture', 'seminar', 'lab', 'practice'];
 
 export default function AutoScheduler() {
   const { timeSlots, days, importSchedule, groups: existingGroups, schedule, teachers: existingTeachers } = useSchedule();
+  const { t } = useLanguage();
 
   const [rows,      setRows]      = useState([emptyRow()]);
   const [rooms,     setRooms]     = useState('');
@@ -45,26 +47,14 @@ export default function AutoScheduler() {
       ...r, totalHours: val, slots: autoSplit(val, r.slots.length),
     }));
 
-  const changeSlotCount = (id, n) =>
+  const togglePrefDay  = (id, day) =>
     setRows(p => p.map(r => r.id !== id ? r : {
-      ...r, slots: autoSplit(r.totalHours, n),
-    }));
-
-  const changeSlotDur = (id, si, val) =>
-    setRows(p => p.map(r => r.id !== id ? r : {
-      ...r, slots: r.slots.map((d, i) => i === si ? Math.max(1, Math.min(4, val)) : d),
-    }));
-
-  const togglePrefDay = (id, day) =>
-    setRows(p => p.map(r => r.id !== id ? r : {
-      ...r, prefDays: r.prefDays.includes(day)
-        ? r.prefDays.filter(d => d !== day) : [...r.prefDays, day],
+      ...r, prefDays: r.prefDays.includes(day) ? r.prefDays.filter(d => d !== day) : [...r.prefDays, day],
     }));
 
   const togglePrefTime = (id, tm) =>
     setRows(p => p.map(r => r.id !== id ? r : {
-      ...r, prefTimes: r.prefTimes.includes(tm)
-        ? r.prefTimes.filter(t => t !== tm) : [...r.prefTimes, tm],
+      ...r, prefTimes: r.prefTimes.includes(tm) ? r.prefTimes.filter(t => t !== tm) : [...r.prefTimes, tm],
     }));
 
   const getRooms = () => rooms.split(',').map(r => r.trim()).filter(Boolean);
@@ -170,7 +160,7 @@ export default function AutoScheduler() {
     try {
       await importSchedule(JSON.stringify(generated.entries));
       setApplied(true);
-      addLog('✅ Schedule applied to live timetable!', 'success');
+      addLog(t('appliedMsg') || '✅ Schedule applied to live timetable!', 'success');
     } catch (e) { addLog(`❌ ${e.message}`, 'error'); }
   };
 
@@ -182,74 +172,74 @@ export default function AutoScheduler() {
         <div className="as-header-left">
           <div className="as-header-icon">🗓</div>
           <div>
-            <div className="as-title">Auto Schedule Generator</div>
-            <div className="as-sub">Add teachers & subjects → set hours → generate. AI resolves conflicts automatically.</div>
+            <div className="as-title">{t('autoSchedulerTitle') || 'Auto Schedule Generator'}</div>
+            <div className="as-sub">{t('autoSchedulerSub') || 'Add teachers & subjects → set hours → generate.'}</div>
           </div>
         </div>
       </div>
 
       {/* Rooms */}
-      <div className="as-section-label">🚪 Rooms</div>
+      <div className="as-section-label">{t('roomsSection') || '🚪 Rooms'}</div>
       <div className="as-card" style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
         <div>
-          <label className="as-label">Regular rooms (comma separated)</label>
-          <input className="as-input" placeholder="B201, B202, A101…" value={rooms} onChange={e => setRooms(e.target.value)} />
+          <label className="as-label">{t('regularRooms') || 'Regular rooms (comma separated)'}</label>
+          <input className="as-input" placeholder={t('regularRoomsPlaceholder') || 'B201, B202, A101…'} value={rooms} onChange={e => setRooms(e.target.value)} />
         </div>
         <div>
-          <label className="as-label">Lab rooms (for lab subjects)</label>
-          <input className="as-input" placeholder="LAB1, LAB2…" value={labRooms} onChange={e => setLabRooms(e.target.value)} />
+          <label className="as-label">{t('labRooms') || 'Lab rooms (for lab subjects)'}</label>
+          <input className="as-input" placeholder={t('labRoomsPlaceholder') || 'LAB1, LAB2…'} value={labRooms} onChange={e => setLabRooms(e.target.value)} />
         </div>
       </div>
 
       {/* Teacher rows */}
-      <div className="as-section-label" style={{ marginTop:20 }}>👨‍🏫 Teachers & Subjects</div>
+      <div className="as-section-label" style={{ marginTop:20 }}>👨‍🏫 {t('teachersSubjects') || 'Teachers & Subjects'}</div>
 
       {rows.map((row) => {
-        // sumOk not needed — split validation done inline
         const isExp = expandRow === row.id;
-
         return (
           <div key={row.id} className={`as-card${isExp ? ' as-card--active' : ''}`}>
 
             {/* Main grid */}
             <div className="as-row-grid">
               <div>
-                <label className="as-label">Teacher</label>
-                <input className="as-input" list={`tl-${row.id}`} placeholder="Type name…" value={row.teacher}
+                <label className="as-label">{t('teacherLabel') || 'Teacher'}</label>
+                <input className="as-input" list={`tl-${row.id}`} placeholder={t('teacherPlaceholder2') || 'Type name…'} value={row.teacher}
                   onChange={e => upd(row.id, 'teacher', e.target.value)} />
                 <datalist id={`tl-${row.id}`}>{existingTeachers.map(n => <option key={n} value={n} />)}</datalist>
               </div>
               <div>
-                <label className="as-label">Subject</label>
-                <input className="as-input" placeholder="e.g. Mathematics" value={row.subject}
+                <label className="as-label">{t('subjectLabel') || 'Subject'}</label>
+                <input className="as-input" placeholder={t('subjectPlaceholder') || 'e.g. Mathematics'} value={row.subject}
                   onChange={e => upd(row.id, 'subject', e.target.value)} />
               </div>
               <div>
-                <label className="as-label">Type</label>
+                <label className="as-label">{t('typeLabel') || 'Type'}</label>
                 <select className="as-input as-select" value={row.subjectType}
                   onChange={e => upd(row.id, 'subjectType', e.target.value)}>
-                  {TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                  {TYPES.map(tp => <option key={tp} value={tp}>{t(tp) || tp}</option>)}
                 </select>
               </div>
               <div>
-                <label className="as-label">Hrs / week</label>
+                <label className="as-label">{t('hrsWeek') || 'Hrs / week'}</label>
                 <input className="as-input" type="number" min={1} max={20} value={row.totalHours}
                   onChange={e => changeTotalHours(row.id, Math.max(1, +e.target.value))} />
               </div>
               <button className={`as-icon-btn pref${isExp ? ' active' : ''}`}
                 onClick={() => setExpandRow(isExp ? null : row.id)}
-                title="Preferred days & times" style={{ alignSelf:'flex-end' }}>⚙️</button>
+                title={t('prefDays') || 'Preferred days & times'} style={{ alignSelf:'flex-end' }}>⚙️</button>
               {rows.length > 1 && (
                 <button className="as-icon-btn" onClick={() => setRows(p => p.filter(r => r.id !== row.id))}
-                  title="Remove" style={{ alignSelf:'flex-end' }}>✕</button>
+                  title={t('delete') || 'Remove'} style={{ alignSelf:'flex-end' }}>✕</button>
               )}
             </div>
 
             {/* Groups */}
             <div className="as-divider" />
             <label className="as-label">
-              Groups taught
-              <span style={{ fontWeight:400, textTransform:'none', letterSpacing:0, color:'#94a3b8', marginLeft:6 }}>— one teacher can teach multiple groups</span>
+              {t('groupsTaught') || 'Groups taught'}
+              <span style={{ fontWeight:400, textTransform:'none', letterSpacing:0, color:'#94a3b8', marginLeft:6 }}>
+                {t('groupsTaughtHint') || '— one teacher can teach multiple groups'}
+              </span>
             </label>
             {row.groups.map((g, gi) => (
               <div key={gi} className="as-group-row">
@@ -263,70 +253,62 @@ export default function AutoScheduler() {
             ))}
             <button className="as-add-group-btn"
               onClick={() => setRows(p => p.map(r => r.id !== row.id ? r : { ...r, groups: [...r.groups, ''] }))}>
-              + Add group
+              + {t('addGroup') || 'Add group'}
             </button>
 
             {/* Slot split */}
             <div className="as-split-panel">
               <label className="as-label" style={{ marginBottom:10 }}>
-                How to split {row.totalHours}h/week
+                {t('splitTitle') || 'How to split'} {row.totalHours}h/week
                 <span style={{ fontWeight:400, textTransform:'none', letterSpacing:0, color:'#94a3b8', marginLeft:6 }}>
-                  — choose duration × sessions (must equal {row.totalHours}h total)
+                  {t('splitHint') || '— choose duration × sessions'}
                 </span>
               </label>
 
-              {/* Quick presets: show all valid dur × count combos */}
+              {/* Quick presets */}
               <div className="as-presets" style={{ marginBottom:12 }}>
                 {Array.from({ length: 4 }, (_, di) => di + 1).flatMap(dur =>
-                  (row.totalHours % dur === 0)
-                    ? [{ dur, count: row.totalHours / dur }]
-                    : []
+                  (row.totalHours % dur === 0) ? [{ dur, count: row.totalHours / dur }] : []
                 ).map(({ dur, count }) => {
                   const isActive = row.slots.length === count && row.slots.every(s => s === dur);
                   return (
                     <button key={`${dur}x${count}`}
                       className={`as-preset${isActive ? ' active' : ''}`}
-                      onClick={() => setRows(p => p.map(r => r.id !== row.id ? r : {
-                        ...r, slots: Array(count).fill(dur)
-                      }))}>
-                      {dur}h × {count} {count === 1 ? 'day' : 'days'}
+                      onClick={() => setRows(p => p.map(r => r.id !== row.id ? r : { ...r, slots: Array(count).fill(dur) }))}>
+                      {dur}h × {count} {count === 1 ? (t('day')||'day') : (t('days')||'days')}
                     </button>
                   );
                 })}
               </div>
 
-              {/* Manual override */}
+              {/* Manual */}
               <div style={{ display:'flex', alignItems:'flex-end', gap:14, flexWrap:'wrap' }}>
                 <div>
-                  <label className="as-label">Hours per session</label>
+                  <label className="as-label">{t('hoursPerSession') || 'Hours per session'}</label>
                   <input className="as-input" type="number" min={1} max={4} style={{ width:80 }}
                     value={row.slots[0] || 1}
                     onChange={e => {
-                      const dur = Math.max(1, Math.min(4, +e.target.value));
+                      const dur   = Math.max(1, Math.min(4, +e.target.value));
                       const count = row.slots.length;
-                      setRows(p => p.map(r => r.id !== row.id ? r : {
-                        ...r, slots: Array(count).fill(dur)
-                      }));
+                      setRows(p => p.map(r => r.id !== row.id ? r : { ...r, slots: Array(count).fill(dur) }));
                     }} />
                 </div>
                 <div style={{ fontSize:'1.2rem', color:'var(--text-secondary)', paddingBottom:8 }}>×</div>
                 <div>
-                  <label className="as-label">Days per week</label>
+                  <label className="as-label">{t('daysPerWeek') || 'Days per week'}</label>
                   <input className="as-input" type="number" min={1} max={6} style={{ width:80 }}
                     value={row.slots.length}
                     onChange={e => {
                       const count = Math.max(1, Math.min(6, +e.target.value));
-                      const dur = row.slots[0] || 1;
-                      setRows(p => p.map(r => r.id !== row.id ? r : {
-                        ...r, slots: Array(count).fill(dur)
-                      }));
+                      const dur   = row.slots[0] || 1;
+                      setRows(p => p.map(r => r.id !== row.id ? r : { ...r, slots: Array(count).fill(dur) }));
                     }} />
                 </div>
                 <div style={{ fontSize:'1.2rem', color:'var(--text-secondary)', paddingBottom:8 }}>=</div>
                 <div style={{ paddingBottom:6 }}>
-                  <span className={`as-slot-sum ${(row.slots[0] || 1) * row.slots.length === row.totalHours ? 'ok' : 'err'}`}>
-                    {(row.slots[0] || 1) * row.slots.length}h / {row.totalHours}h
-                    {(row.slots[0] || 1) * row.slots.length === row.totalHours ? ' ✓' : ' ⚠'}
+                  <span className={`as-slot-sum ${(row.slots[0]||1) * row.slots.length === row.totalHours ? 'ok' : 'err'}`}>
+                    {(row.slots[0]||1) * row.slots.length}h / {row.totalHours}h
+                    {(row.slots[0]||1) * row.slots.length === row.totalHours ? ' ✓' : ' ⚠'}
                   </span>
                 </div>
               </div>
@@ -335,18 +317,18 @@ export default function AutoScheduler() {
             {/* Preferences */}
             {isExp && (
               <div className="as-pref-panel">
-                <div className="as-pref-title">⚙️ Preferred days & times for {row.teacher || 'this teacher'}</div>
+                <div className="as-pref-title">⚙️ {t('prefDays') || 'Preferred days'} & {t('prefTimes') || 'times'} — {row.teacher || (t('thisTeacher')||'this teacher')}</div>
                 <div style={{ marginBottom:12 }}>
-                  <div className="as-pref-sub">📅 Preferred days</div>
+                  <div className="as-pref-sub">📅 {t('prefDays') || 'Preferred days'}</div>
                   <div className="as-chips">
                     {days.map(d => (
                       <button key={d} className={`as-chip${row.prefDays.includes(d) ? ' on' : ''}`}
-                        onClick={() => togglePrefDay(row.id, d)}>{d.slice(0, 3)}</button>
+                        onClick={() => togglePrefDay(row.id, d)}>{(t(d)||d).slice(0,3)}</button>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <div className="as-pref-sub">🕐 Preferred times</div>
+                  <div className="as-pref-sub">🕐 {t('prefTimes') || 'Preferred times'}</div>
                   <div className="as-chips">
                     {timeSlots.map(tm => (
                       <button key={tm} className={`as-chip time${row.prefTimes.includes(tm) ? ' on' : ''}`}
@@ -362,11 +344,11 @@ export default function AutoScheduler() {
 
       <button className="as-add-row-btn"
         onClick={() => { setRows(p => [...p, emptyRow()]); setExpandRow(null); }}>
-        + Add another teacher / subject
+        {t('addTeacher') || '+ Add another teacher / subject'}
       </button>
 
       <button className="as-generate-btn" onClick={handleGenerate} disabled={busy}>
-        {busy ? '⏳ Generating…' : '🚀 Generate Schedule'}
+        {busy ? (t('generating') || '⏳ Generating…') : (t('generateBtn') || '🚀 Generate Schedule')}
       </button>
 
       {/* Log */}
@@ -379,22 +361,22 @@ export default function AutoScheduler() {
       {/* Results */}
       {generated && (
         <div style={{ marginTop:20 }}>
-          <div className="as-section-label">📊 Results</div>
+          <div className="as-section-label">📊 {t('resultsTitle') || 'Results'}</div>
 
           <div className="as-stats-row">
             <div className="as-stat-card ok">
               <div className="as-stat-num ok">{generated.entries.length}</div>
-              <div className="as-stat-lbl">Sessions placed</div>
+              <div className="as-stat-lbl">{t('sessionsPlaced') || 'Sessions placed'}</div>
             </div>
             <div className={`as-stat-card ${generated.conflicts.length ? 'bad' : 'ok'}`}>
               <div className={`as-stat-num ${generated.conflicts.length ? 'bad' : 'ok'}`}>{generated.conflicts.length}</div>
-              <div className="as-stat-lbl">Unresolved</div>
+              <div className="as-stat-lbl">{t('unresolved') || 'Unresolved'}</div>
             </div>
           </div>
 
           {generated.conflicts.length > 0 && (
             <div className="as-conflicts">
-              <div className="as-conflicts-title">⚠️ Could not place:</div>
+              <div className="as-conflicts-title">{t('couldNotPlace') || '⚠️ Could not place:'}</div>
               {generated.conflicts.map((c, i) => (
                 <div key={i} className="as-conflicts-item">• {c.teacher} → {c.group} · {c.subject} — {c.reason}</div>
               ))}
@@ -404,19 +386,30 @@ export default function AutoScheduler() {
           <div className="as-table-wrap">
             <table className="as-table">
               <thead>
-                <tr>{['Group','Day','Time','Subject','Teacher','Room','Dur','Type'].map(h => <th key={h}>{h}</th>)}</tr>
+                <tr>
+                  {[
+                    t('group')||'Group',
+                    t('Monday')||'Day',
+                    t('examTime')||'Time',
+                    t('examSubject')||'Subject',
+                    t('teacherLabel')||'Teacher',
+                    t('examRoom')||'Room',
+                    t('examDuration')||'Dur',
+                    t('typeLabel')||'Type',
+                  ].map(h => <th key={h}>{h}</th>)}
+                </tr>
               </thead>
               <tbody>
                 {generated.entries.map((e, i) => (
                   <tr key={i}>
                     <td style={{ fontWeight:700 }}>{e.group}</td>
-                    <td>{e.day}</td>
+                    <td>{t(e.day)||e.day}</td>
                     <td style={{ fontFamily:'monospace' }}>{e.time}</td>
                     <td>{e.course}</td>
                     <td style={{ color:'#6366f1', fontWeight:600 }}>{e.teacher || '—'}</td>
                     <td>{e.room || '—'}</td>
                     <td style={{ fontFamily:'monospace', fontWeight:700 }}>{e.duration}h</td>
-                    <td><span className={`as-type-badge ${e.subjectType}`}>{e.subjectType}</span></td>
+                    <td><span className={`as-type-badge ${e.subjectType}`}>{t(e.subjectType)||e.subjectType}</span></td>
                   </tr>
                 ))}
               </tbody>
@@ -424,9 +417,11 @@ export default function AutoScheduler() {
           </div>
 
           {applied ? (
-            <div className="as-applied-msg">✅ Schedule successfully applied to the live timetable!</div>
+            <div className="as-applied-msg">{t('appliedMsg') || '✅ Schedule successfully applied to the live timetable!'}</div>
           ) : (
-            <button className="as-apply-btn" onClick={handleApply}>✅ Apply to Live Schedule</button>
+            <button className="as-apply-btn" onClick={handleApply}>
+              {t('applyBtn') || '✅ Apply to Live Schedule'}
+            </button>
           )}
         </div>
       )}
