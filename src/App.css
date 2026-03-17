@@ -488,6 +488,30 @@ body[data-density="spacious"] .mob-slot     { min-height: 64px !important; }
 body[data-density="spacious"] .mob-slot-body { padding: 10px 12px !important; }
 body[data-density="spacious"] .mob-slot-course { font-size: 0.95rem !important; }
 
+.app {
+  max-width: 100%;
+  padding: 20px;
+  animation: fadeIn 0.5s ease-out;
+  padding-top: 0;   /* topbar handles its own spacing */
+}
+ 
+/* Topbar: add top padding + safe-area support for notched devices */
+.app-topbar {
+  padding-top: max(10px, env(safe-area-inset-top, 10px)) !important;
+  padding-bottom: 6px !important;
+}
+ 
+/* On mobile keep it tight but still off the browser edge */
+@media (max-width: 767px) {
+  .app-topbar {
+    padding-top: max(8px, env(safe-area-inset-top, 8px)) !important;
+    padding-bottom: 4px !important;
+    min-height: 46px !important;
+    max-height: 46px !important;
+  }
+}
+ 
+
 @keyframes logo-heartbeat {
   0%, 100% { transform: scale(1); }
   12%       { transform: scale(1.14); }
