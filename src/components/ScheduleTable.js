@@ -14,100 +14,6 @@ const getTodayName = () => {
 const getTypeStyle = (subjectType) =>
   SUBJECT_TYPES.find(s => s.value === subjectType) || SUBJECT_TYPES[0];
 
-// ── Helpers ───────────────────────────────────────────────────────────────
-const getCurrentTimeSlot = (timeSlots) => {
-  if (!timeSlots?.length) return null;
-  const now = new Date();
-  const nowMins = now.getHours() * 60 + now.getMinutes();
-  for (const slot of timeSlots) {
-    const match = slot.match(/(\d{1,2}):(\d{2})/);
-    if (!match) continue;
-    const slotMins = parseInt(match[1]) * 60 + parseInt(match[2]);
-    if (Math.abs(nowMins - slotMins) <= 60) return slot;
-  }
-  return timeSlots[0];
-};
-
-// ── Free Rooms Now panel ──────────────────────────────────────────────────
-const FreeRoomNow = ({ schedule, timeSlots, allRooms, t }) => {
-  const [open, setOpen] = useState(false);
-
-  const todayName = getTodayName();
-  const currentSlot = getCurrentTimeSlot(timeSlots);
-
-  const busyRooms = useMemo(() => {
-    if (!currentSlot) return new Set();
-    const busy = new Set();
-    Object.values(schedule).forEach(cls => {
-      if (cls.day === todayName && cls.time === currentSlot && cls.room) {
-        busy.add(cls.room.trim().toLowerCase());
-      }
-    });
-    return busy;
-  }, [schedule, todayName, currentSlot]);
-
-  const freeRooms = useMemo(() =>
-    allRooms.filter(r => !busyRooms.has(r.trim().toLowerCase())),
-    [allRooms, busyRooms]
-  );
-
-  const busyList = useMemo(() =>
-    allRooms.filter(r => busyRooms.has(r.trim().toLowerCase())),
-    [allRooms, busyRooms]
-  );
-
-  return (
-    <div className="frn-wrap">
-      <button
-        className={`frn-trigger${open ? ' open' : ''}`}
-        onClick={() => setOpen(o => !o)}
-      >
-        <span className="frn-icon">🚪</span>
-        <span className="frn-label">Free rooms now</span>
-        {freeRooms.length > 0 && (
-          <span className="frn-badge">{freeRooms.length} free</span>
-        )}
-        <span className="frn-chevron">{open ? '▲' : '▼'}</span>
-      </button>
-
-      {open && (
-        <div className="frn-panel">
-          <div className="frn-panel-header">
-            <span>📅 {todayName}</span>
-            <span>⏰ {currentSlot || '—'}</span>
-          </div>
-
-          {freeRooms.length === 0 && busyList.length === 0 && (
-            <div className="frn-empty">No rooms configured yet.</div>
-          )}
-
-          {freeRooms.length > 0 && (
-            <div className="frn-section">
-              <div className="frn-section-label free">✅ Available</div>
-              <div className="frn-rooms">
-                {freeRooms.map(r => (
-                  <span key={r} className="frn-room free">{r}</span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {busyList.length > 0 && (
-            <div className="frn-section">
-              <div className="frn-section-label busy">🔴 In use</div>
-              <div className="frn-rooms">
-                {busyList.map(r => (
-                  <span key={r} className="frn-room busy">{r}</span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
 // ── Mobile: collapsible day sections with slot cards ──────────────────────
 const MobileView = ({
   daysToShow, groupsToShow, timeSlots, schedule, todayName,
@@ -243,7 +149,6 @@ const MobileView = ({
                         >
                           <div className={`mob-slot-time ${isToday ? 'today-t' : ''}`}>
                             {time}
-                            {/* Duration badge — only in the time column, no duplicate in meta */}
                             {classData && duration > 1 && (
                               <span className="mob-duration-badge">⏱ {durationMins}m</span>
                             )}
@@ -261,7 +166,6 @@ const MobileView = ({
                                 <div className="mob-slot-meta">
                                   {classData.teacher && <span>👨‍🏫 {classData.teacher}</span>}
                                   {classData.room    && <span>🚪 {classData.room}</span>}
-                                  {/* ── duration NOT repeated here ── */}
                                   {classData.meetingLink && (
                                     <a href={classData.meetingLink} target="_blank" rel="noopener noreferrer"
                                       className="meeting-link-btn"
@@ -366,12 +270,6 @@ const ScheduleTable = ({
     return s;
   }, [schedule, selectedRoom]);
 
-  const allRooms = useMemo(() => {
-    const r = new Set();
-    Object.values(schedule).forEach(e => { if (e.room) r.add(e.room.trim()); });
-    return [...r].sort();
-  }, [schedule]);
-
   const getClass    = (group, day, time) => schedule[`${group}-${day}-${time}`] || null;
   const shouldShow  = (classData, day, time) => {
     if (normSelectedTeacher && classData && normalizeTeacherName(classData.teacher) !== normSelectedTeacher) return false;
@@ -451,8 +349,6 @@ const ScheduleTable = ({
   return (
     <div className="schedule-container">
       <Legend />
-
-      <FreeRoomNow schedule={schedule} timeSlots={timeSlots} allRooms={allRooms} t={t} />
 
       {/* ── Mobile card view ── */}
       <MobileView {...mobileProps} />

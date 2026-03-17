@@ -199,127 +199,18 @@
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   FREE ROOMS NOW panel
-   ════════════════════════════════════════════════════════════════════════ */
-.frn-wrap {
-  margin-bottom: 12px;
-}
-
-.frn-trigger {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 10px 16px;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--text-primary);
-  font-size: 0.85rem;
-  font-weight: 700;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.15s ease;
-  text-align: left;
-}
-.frn-trigger:hover {
-  background: var(--bg-hover);
-  border-color: var(--primary);
-}
-.frn-trigger.open {
-  border-radius: 10px 10px 0 0;
-  border-bottom-color: transparent;
-  background: var(--bg-hover);
-}
-
-.frn-icon   { font-size: 1rem; flex-shrink: 0; }
-.frn-label  { flex: 1; }
-.frn-chevron { font-size: 0.65rem; color: var(--text-secondary); flex-shrink: 0; }
-
-.frn-badge {
-  background: #059669;
-  color: #fff;
-  font-size: 0.65rem;
-  font-weight: 800;
-  padding: 2px 8px;
-  border-radius: 20px;
-  flex-shrink: 0;
-}
-
-.frn-panel {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-top: none;
-  border-radius: 0 0 10px 10px;
-  padding: 12px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.frn-panel-header {
-  display: flex;
-  gap: 16px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--border);
-}
-
-.frn-empty { font-size: 0.8rem; color: var(--text-secondary); font-style: italic; }
-
-.frn-section { display: flex; flex-direction: column; gap: 6px; }
-
-.frn-section-label {
-  font-size: 0.72rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-.frn-section-label.free { color: #059669; }
-.frn-section-label.busy { color: #ef4444; }
-
-.frn-rooms { display: flex; flex-wrap: wrap; gap: 6px; }
-
-.frn-room {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 10px;
-  border-radius: 6px;
-  font-size: 0.78rem;
-  font-weight: 700;
-}
-.frn-room.free {
-  background: rgba(5,150,105,0.12);
-  color: #059669;
-  border: 1px solid rgba(5,150,105,0.3);
-}
-.frn-room.busy {
-  background: rgba(239,68,68,0.08);
-  color: #ef4444;
-  border: 1px solid rgba(239,68,68,0.2);
-  text-decoration: line-through;
-  opacity: 0.7;
-}
-
-
-/* ═══════════════════════════════════════════════════════════════════════════
    MOBILE — карточки столбиком вместо таблицы
    ════════════════════════════════════════════════════════════════════════ */
 @media (max-width: 767px) {
 
-  /* Hide desktop table on mobile */
   .schedule-container .table-wrapper { display: none !important; }
   .schedule-table { display: none !important; }
 
-  /* Force mobile cards visible */
   .mob-day-section  { display: block !important; }
   .mob-day-header   { display: flex !important; }
   .mob-group-block  { display: block !important; }
   .mob-slots        { display: flex !important; }
 
-  /* Legend on mobile: hide decorative items, show only the toggle */
   .type-legend {
     padding: 6px 8px;
     gap: 0;
@@ -354,17 +245,10 @@
   .empty-slot-toggle-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
   .empty-slot-toggle-btn:active { opacity: 0.8; }
 
-  /* Container */
   .schedule-container { padding: 8px; border-radius: 10px; }
 
-  /* Free rooms panel — slightly more compact on mobile */
-  .frn-trigger { font-size: 0.8rem; padding: 8px 12px; }
-  .frn-panel   { padding: 10px 12px; }
-
-  /* Day section */
   .mob-day-section { margin-bottom: 10px; }
 
-  /* Day header */
   .mob-day-header {
     display: flex;
     align-items: center;
@@ -384,11 +268,9 @@
   .mob-day-chevron { margin-left: auto; font-size: 0.7rem; transition: transform 0.2s; }
   .mob-day-header.collapsed .mob-day-chevron { transform: rotate(-90deg); }
 
-  /* Group block */
   .mob-group-block { background: var(--bg-card); border: 1px solid var(--border); border-top: none; }
   .mob-group-block:last-child { border-radius: 0 0 8px 8px; }
 
-  /* Group label row */
   .mob-group-label {
     display: flex;
     align-items: center;
@@ -403,7 +285,6 @@
 
   .mob-slots { display: flex; flex-direction: column; gap: 0; }
 
-  /* Single slot row */
   .mob-slot {
     display: flex;
     align-items: stretch;
@@ -415,14 +296,10 @@
   .mob-slot:last-child { border-bottom: none; }
   .mob-slot:active { background: var(--bg-hover); }
 
-  /* Multi-slot row — taller to visually communicate longer duration */
   .mob-slot.mob-slot-multi { min-height: 62px; }
-
-  /* Empty slot row */
   .mob-slot.mob-slot-empty-row { min-height: 32px; opacity: 0.5; }
   .mob-slot.mob-slot-empty-row .mob-slot-time { font-size: 0.6rem; opacity: 0.7; }
 
-  /* Time column — flex-direction column so badge sits below time */
   .mob-slot-time {
     flex: 0 0 76px;
     width: 76px;
@@ -444,7 +321,6 @@
   }
   .mob-slot-time.today-t { color: var(--accent); background: rgba(251,191,36,0.06); }
 
-  /* ── Duration badge in time column only — no duplicate elsewhere ── */
   .mob-duration-badge {
     display: inline-flex;
     align-items: center;
@@ -461,7 +337,6 @@
     letter-spacing: 0.02em;
   }
 
-  /* Content column */
   .mob-slot-body {
     flex: 1;
     padding: 6px 8px;
@@ -503,7 +378,6 @@
   .mob-group-label .delete-group-btn { margin-left: auto; width: 20px; height: 20px; font-size: 1rem; }
 }
 
-/* Desktop: hide mobile blocks */
 @media (min-width: 768px) {
   .mob-day-section,
   .mob-day-header,
