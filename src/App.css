@@ -487,3 +487,19 @@ body[data-density="spacious"] .room-number  { font-size: 0.85rem !important; }
 body[data-density="spacious"] .mob-slot     { min-height: 64px !important; }
 body[data-density="spacious"] .mob-slot-body { padding: 10px 12px !important; }
 body[data-density="spacious"] .mob-slot-course { font-size: 0.95rem !important; }
+
+@keyframes logo-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(139, 26, 26, 0);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 0 7px rgba(139, 26, 26, 0.18);
+  }
+}
+ 
+.app-logo-anim {
+  animation: logo-pulse 2.8s ease-in-out infinite;
+  border-radius: 50%;   /* keeps the glow ring perfectly circular */
+}

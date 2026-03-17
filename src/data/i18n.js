@@ -518,7 +518,7 @@ export const translations = {
     bnLogin:              'Войти',
 
     footerDeveloped:      'Разработано',
-    footerDeveloper:      'Талгат Мендеков',
+    footerDeveloper:      'Талгатом Мендековым',
     footerUniversity:     'Международный университет Ала-Тоо',
 
     appLoading:           'Загрузка...',
@@ -946,7 +946,7 @@ export const translations = {
     bnLogin:              'Кирүү',
 
     footerDeveloped:      'Иштелип чыккан',
-    footerDeveloper:      'Талгат Мендеков',
+    footerDeveloper:      'Талгат Мендеков тарабынан',
     footerUniversity:     'Эл аралык Ала-Тоо университети',
 
     appLoading:           'Жүктөлүүдө...',

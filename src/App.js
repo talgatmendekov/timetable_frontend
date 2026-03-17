@@ -249,7 +249,7 @@ const AppContent = () => {
 
       {/* ── TOPBAR ── */}
       <div style={S.bar} className="app-topbar">
-        <img src={logo} alt="" style={{ height:22, width:22, objectFit:'contain', borderRadius:4, flexShrink:0 }} />
+        <img src={logo} className="app-logo-anim" alt="" style={{ height:32, width:32, objectFit:'contain', borderRadius:50, flexShrink:0 }} />
         <span style={{ fontWeight:800, fontSize:'0.75rem', color:'var(--text-primary)', whiteSpace:'nowrap', flexShrink:0 }}>
           Alatoo
         </span>
