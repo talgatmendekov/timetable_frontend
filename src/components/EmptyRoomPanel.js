@@ -19,6 +19,9 @@ const getCurrentTimeSlot = (timeSlots) => {
   return timeSlots[0];
 };
 
+// Normalize room name: trim + uppercase so "b101" and "B101" are the same room
+const normalizeRoom = (r) => r?.trim().toUpperCase() || '';
+
 const EmptyRoomPanel = ({
   allRooms    = [],
   schedule    = {},
@@ -27,8 +30,8 @@ const EmptyRoomPanel = ({
   selectedRoom,
   setSelectedRoom,
 }) => {
-  const { t }           = useLanguage();
-  const [open, setOpen] = useState(false);
+  const { t }            = useLanguage();
+  const [open, setOpen]  = useState(false);
   const [selDay, setDay] = useState('');
   const [search, setSrc] = useState('');
   const [sortBy, setSrt] = useState('name');
@@ -36,59 +39,75 @@ const EmptyRoomPanel = ({
   const todayName   = getTodayName();
   const currentSlot = getCurrentTimeSlot(timeSlots);
 
-  // ── Occupancy map ──────────────────────────────────────────────────────────
+  // ── Deduplicate rooms by normalized name ───────────────────────────────────
+  // Keep the first encountered casing as the display name
+  const normalizedRooms = useMemo(() => {
+    const seen = new Map(); // normalizedKey -> displayName
+    allRooms.forEach(r => {
+      const key = normalizeRoom(r);
+      if (key && !seen.has(key)) seen.set(key, r.trim());
+    });
+    return Array.from(seen.entries()).map(([key, display]) => ({ key, display }));
+  }, [allRooms]);
+
+  // ── Occupancy map (keyed by normalized room name) ──────────────────────────
   const occupancy = useMemo(() => {
     const map = {};
-    allRooms.forEach(r => { map[r] = {}; days.forEach(d => { map[r][d] = {}; }); });
+    normalizedRooms.forEach(({ key }) => {
+      map[key] = {};
+      days.forEach(d => { map[key][d] = {}; });
+    });
     Object.values(schedule).forEach(e => {
-      if (!e.room || !map[e.room]) return;
-      if (!map[e.room][e.day]) map[e.room][e.day] = {};
+      if (!e.room) return;
+      const key = normalizeRoom(e.room);
+      if (!map[key]) return;
+      if (!map[key][e.day]) map[key][e.day] = {};
       const dur = Math.min(6, Math.max(1, parseInt(e.duration) || 1));
       const idx = timeSlots.indexOf(e.time);
       for (let i = 0; i < dur; i++) {
         const tm = timeSlots[idx + i];
-        if (tm) map[e.room][e.day][tm] = { course: e.course, teacher: e.teacher };
+        if (tm) map[key][e.day][tm] = { course: e.course, teacher: e.teacher };
       }
     });
     return map;
-  }, [allRooms, schedule, days, timeSlots]);
+  }, [normalizedRooms, schedule, days, timeSlots]);
 
   // ── Free right now ─────────────────────────────────────────────────────────
   const isToday = days.includes(todayName);
 
   const freeNowRooms = useMemo(() => {
-    if (!currentSlot || !isToday) return allRooms;
-    return allRooms.filter(r => !occupancy[r]?.[todayName]?.[currentSlot]);
-  }, [allRooms, occupancy, todayName, currentSlot, isToday]);
+    if (!currentSlot || !isToday) return normalizedRooms;
+    return normalizedRooms.filter(({ key }) => !occupancy[key]?.[todayName]?.[currentSlot]);
+  }, [normalizedRooms, occupancy, todayName, currentSlot, isToday]);
 
   // ── Per-room stats ─────────────────────────────────────────────────────────
   const roomStats = useMemo(() => {
     const daysFilter = selDay ? [selDay] : days;
-    return allRooms
-      .filter(r => r.toLowerCase().includes(search.toLowerCase()))
-      .map(room => {
+    return normalizedRooms
+      .filter(({ display }) => display.toLowerCase().includes(search.toLowerCase()))
+      .map(({ key, display }) => {
         const total = daysFilter.length * timeSlots.length;
         const busy  = daysFilter.reduce((a, d) =>
-          a + timeSlots.filter(tm => occupancy[room]?.[d]?.[tm]).length, 0);
+          a + timeSlots.filter(tm => occupancy[key]?.[d]?.[tm]).length, 0);
         const free  = total - busy;
         const pct   = total > 0 ? Math.round((free / total) * 100) : 0;
-        return { room, total, busy, free, pct };
+        return { key, display, total, busy, free, pct };
       })
       .sort((a, b) => {
         if (sortBy === 'free') return b.free - a.free;
         if (sortBy === 'busy') return b.busy - a.busy;
-        return a.room.localeCompare(b.room);
+        return a.display.localeCompare(b.display);
       });
-  }, [allRooms, occupancy, days, timeSlots, selDay, search, sortBy]);
+  }, [normalizedRooms, occupancy, days, timeSlots, selDay, search, sortBy]);
 
   // ── Summary ────────────────────────────────────────────────────────────────
   const summary = useMemo(() => {
     const daysFilter = selDay ? [selDay] : days;
-    const total = allRooms.length * daysFilter.length * timeSlots.length;
+    const total = normalizedRooms.length * daysFilter.length * timeSlots.length;
     const busy  = roomStats.reduce((a, r) => a + r.busy, 0);
     return { total, busy, free: total - busy,
       pct: total > 0 ? Math.round(((total - busy) / total) * 100) : 0 };
-  }, [roomStats, allRooms, days, timeSlots, selDay]);
+  }, [roomStats, normalizedRooms, days, timeSlots, selDay]);
 
   const heatColor = (pct) => {
     if (pct >= 70) return { border: '#22c55e', text: '#166534' };
@@ -100,22 +119,33 @@ const EmptyRoomPanel = ({
 
   const daysToShow = selDay ? [selDay] : days;
 
+  // When setting selected room, normalize so filter works regardless of casing
+  const handleSelectRoom = (displayName, currentSelected) => {
+    const normalized = normalizeRoom(displayName);
+    const currentNormalized = normalizeRoom(currentSelected);
+    if (normalized === currentNormalized) {
+      setSelectedRoom('');
+    } else {
+      setSelectedRoom(displayName);
+    }
+  };
+
   return (
     <>
       {/* ── Trigger bar ───────────────────────────────────────────────────── */}
       <div className="erp-trigger-bar">
         <div className="erp-trigger-stats">
-          <span className="erp-stat-pill free">{summary.free} free</span>
+          <span className="erp-stat-pill free">{summary.free} free slots</span>
           <span className="erp-stat-pill busy">{summary.busy} busy</span>
-          <span className="erp-stat-pill rooms">{allRooms.length} rooms</span>
-          {allRooms.length > 0 && currentSlot && isToday && (
+          <span className="erp-stat-pill rooms">{normalizedRooms.length} rooms</span>
+          {normalizedRooms.length > 0 && currentSlot && isToday && (
             <span className="erp-stat-pill now">🚪 {freeNowRooms.length} free now</span>
           )}
         </div>
         <div className="erp-trigger-actions">
           {selectedRoom && (
             <div className="erp-active-filter">
-              {selectedRoom}
+              {normalizeRoom(selectedRoom)}
               <button onClick={() => setSelectedRoom('')} className="erp-clear-btn">✕</button>
             </div>
           )}
@@ -130,16 +160,14 @@ const EmptyRoomPanel = ({
         <div className="erp-overlay" onClick={e => e.target === e.currentTarget && setOpen(false)}>
           <div className="erp-modal">
 
-            {/* Header */}
             <div className="erp-modal-header">
               <div>
                 <div className="erp-modal-title">Room Availability</div>
-                <div className="erp-modal-sub">{allRooms.length} rooms · {summary.pct}% available</div>
+                <div className="erp-modal-sub">{normalizedRooms.length} rooms · {summary.pct}% available</div>
               </div>
               <button className="erp-close-btn" onClick={() => setOpen(false)}>✕</button>
             </div>
 
-            {/* Controls */}
             <div className="erp-modal-controls">
               <input
                 className="erp-search"
@@ -165,8 +193,8 @@ const EmptyRoomPanel = ({
 
             <div className="erp-modal-body">
 
-              {/* ── FREE RIGHT NOW ── kept rich, this is the feature ── */}
-              {allRooms.length > 0 && currentSlot && isToday && (
+              {/* ── FREE RIGHT NOW ──────────────────────────────────────── */}
+              {normalizedRooms.length > 0 && currentSlot && isToday && (
                 <div className="erp-free-now-section">
                   <div className="erp-free-now-header">
                     <span className="erp-free-now-title">🚪 Free right now</span>
@@ -175,12 +203,12 @@ const EmptyRoomPanel = ({
                   <div className="erp-free-now-rooms">
                     {freeNowRooms.length === 0
                       ? <span className="erp-free-now-empty">All rooms currently in use</span>
-                      : freeNowRooms.map(r => (
+                      : freeNowRooms.map(({ key, display }) => (
                         <button
-                          key={r}
-                          className={`erp-now-pill${selectedRoom === r ? ' selected' : ''}`}
-                          onClick={() => { setSelectedRoom(selectedRoom === r ? '' : r); setOpen(false); }}
-                        >{r}</button>
+                          key={key}
+                          className={`erp-now-pill${normalizeRoom(selectedRoom) === key ? ' selected' : ''}`}
+                          onClick={() => { handleSelectRoom(display, selectedRoom); setOpen(false); }}
+                        >{normalizeRoom(display)}</button>
                       ))
                     }
                   </div>
@@ -190,21 +218,20 @@ const EmptyRoomPanel = ({
               {/* ── Two-panel: room list + heatmap ── */}
               <div className="erp-panels">
 
-                {/* Room list */}
                 <div className="erp-room-list">
                   <div className="erp-panel-head">Rooms ({roomStats.length})</div>
-                  {roomStats.map(({ room, free, busy, pct }) => {
+                  {roomStats.map(({ key, display, free, busy, pct }) => {
                     const col        = heatColor(pct);
-                    const isSelected = selectedRoom === room;
+                    const isSelected = normalizeRoom(selectedRoom) === key;
                     return (
                       <div
-                        key={room}
+                        key={key}
                         className={`erp-room-row${isSelected ? ' selected' : ''}`}
                         style={{ borderLeft: `3px solid ${col.border}` }}
-                        onClick={() => { setSelectedRoom(isSelected ? '' : room); setOpen(false); }}
+                        onClick={() => { handleSelectRoom(display, selectedRoom); setOpen(false); }}
                         title="Click to filter schedule by this room"
                       >
-                        <div className="erp-room-name">{room}</div>
+                        <div className="erp-room-name">{normalizeRoom(display)}</div>
                         <div className="erp-room-bar-wrap">
                           <div className="erp-room-bar" style={{ width: `${pct}%`, background: col.border }} />
                         </div>
@@ -214,7 +241,6 @@ const EmptyRoomPanel = ({
                   })}
                 </div>
 
-                {/* Heatmap */}
                 <div className="erp-heatmap-wrap">
                   <div className="erp-panel-head">
                     Heatmap
@@ -239,21 +265,22 @@ const EmptyRoomPanel = ({
                         </tr>
                       </thead>
                       <tbody>
-                        {roomStats.map(({ room, pct }) => {
-                          const rowCol = heatColor(pct);
+                        {roomStats.map(({ key, display, pct }) => {
+                          const rowCol     = heatColor(pct);
+                          const isSelected = normalizeRoom(selectedRoom) === key;
                           return (
                             <tr
-                              key={room}
-                              className={selectedRoom === room ? 'erp-hm-selected' : ''}
-                              onClick={() => { setSelectedRoom(selectedRoom === room ? '' : room); setOpen(false); }}
+                              key={key}
+                              className={isSelected ? 'erp-hm-selected' : ''}
+                              onClick={() => { handleSelectRoom(display, selectedRoom); setOpen(false); }}
                               style={{ cursor: 'pointer' }}
                             >
                               <td className="erp-hm-room" style={{ color: rowCol.text, borderLeft: `3px solid ${rowCol.border}` }}>
-                                {room}
+                                {normalizeRoom(display)}
                               </td>
                               {daysToShow.map(d =>
                                 timeSlots.map(tm => {
-                                  const occ = occupancy[room]?.[d]?.[tm];
+                                  const occ = occupancy[key]?.[d]?.[tm];
                                   const col = cellColor(!!occ);
                                   return (
                                     <td
