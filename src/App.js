@@ -205,15 +205,16 @@ const AppContent = () => {
     },
     divider: { width: 1, height: 18, background: 'var(--border)', flexShrink: 0, margin: '0 2px' },
     sel: {
-      padding: '3px 6px', borderRadius: 6, border: '1px solid var(--border)',
+      padding: '5px 6px', borderRadius: 6, border: '1px solid var(--border)',
       background: 'var(--bg-main)', color: 'var(--text-primary)',
       fontSize: '0.72rem', cursor: 'pointer', fontFamily: 'inherit', outline: 'none',
-      height: 28, flexShrink: 0,
+      alignSelf: "center",
     },
     btn: (bg, color = '#fff') => ({
-      padding: '3px 8px', borderRadius: 6, border: 'none',
+      padding: '5px 8px', borderRadius: 6, border: 'none',
       background: bg, color, fontSize: '0.68rem', fontWeight: 700,
-      cursor: 'pointer', height: 28, flexShrink: 0, whiteSpace: 'nowrap', fontFamily: 'inherit',
+      cursor: 'pointer', flexShrink: 0, whiteSpace: 'nowrap', fontFamily: 'inherit',
+      alignSelf: "center",
     }),
     iconBtn: (active) => ({
       width: 44, minHeight: 50, borderRadius: 11, flexShrink: 0,
