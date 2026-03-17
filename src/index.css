@@ -153,7 +153,7 @@ select:focus, input:focus, textarea:focus {
   box-shadow: 0 0 0 3px var(--primary-light);
 }
 
-/* Dark mode inputs specifically — even lighter bg so text is clearly visible */
+
 body[data-theme="dark"] select,
 body[data-theme="dark"] input[type="text"],
 body[data-theme="dark"] input[type="password"],
