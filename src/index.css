@@ -158,7 +158,7 @@ body[data-theme="dark"] select,
 body[data-theme="dark"] input[type="text"],
 body[data-theme="dark"] input[type="password"],
 body[data-theme="dark"] textarea {
-  background: #355070;          /* darker than card for contrast */
+  background: #355070;          
   color: #f0f5fc;
   border-color: #5a7a9a;
   caret-color: #f0f5fc;
