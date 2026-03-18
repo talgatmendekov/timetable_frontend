@@ -18,6 +18,7 @@ import EmptyRoomPanel from './components/EmptyRoomPanel';
 import AutoScheduler from './components/AutoScheduler';
 import ExamSchedule from './components/ExamSchedule';
 import FeedbackDashboard from './components/FeedbackDashboard';
+import ScheduleSkeleton from './components/ScheduleSkeleton';
 
 import { exportToExcel, importFromExcel } from './utils/excelUtils';
 import { LANGUAGE_OPTIONS } from './data/i18n';
@@ -434,14 +435,26 @@ const AppContent = () => {
                   selectedRoom={selectedRoom} setSelectedRoom={setSelectedRoom}
                 />
               )}
-              <ScheduleTable
+              {scheduleLoading ? (
+                <ScheduleSkeleton days={days.length || 6} groups={groups.length || 5} slots={8} />
+              ) : (
+                <ScheduleTable
+                  selectedDay={selectedDay} selectedTeacher={selectedTeacher}
+                  selectedGroup={selectedGroup} selectedRoom={selectedRoom}
+                  onEditClass={isAuthenticated ? handleEditClass : undefined}
+                  onDeleteGroup={isAuthenticated ? handleDeleteGroup : undefined}
+                  bookings={activeBookings}
+                  onGuestBookCell={(group, day, time) => setGuestBookCell({ group, day, time })}
+                />
+              )}
+              {/* <ScheduleTable
                 selectedDay={selectedDay} selectedTeacher={selectedTeacher}
                 selectedGroup={selectedGroup} selectedRoom={selectedRoom}
                 onEditClass={isAuthenticated ? handleEditClass : undefined}
                 onDeleteGroup={isAuthenticated ? handleDeleteGroup : undefined}
                 bookings={activeBookings}
                 onGuestBookCell={(group, day, time) => setGuestBookCell({ group, day, time })}
-              />
+              /> */}
             </>
           )}
           {activeView === 'mybookings' && <GuestBookingStatus bookings={activeBookings} onRefresh={setActiveBookings} />}
