@@ -2,6 +2,7 @@
 import React, { useState, useCallback } from 'react';
 import { useSchedule } from '../context/ScheduleContext';
 import { useLanguage } from '../context/LanguageContext';
+import AISchedulerTools from './AISchedulerTools';
 import './AutoScheduler.css';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://timetablebackend-production.up.railway.app/api';
