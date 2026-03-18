@@ -1,5 +1,5 @@
 // src/components/ScheduleTable.js
-import React, { useState, useRef, useMemo, useEffect } from 'react';
+import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSchedule } from '../context/ScheduleContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -23,17 +23,14 @@ const MobileView = ({
 }) => {
   const [collapsed, setCollapsed] = useState({});
 
-  const getClass = (group, day, time) => schedule[`${group}-${day}-${time}`] || null;
-
+  const getClass   = (group, day, time) => schedule[`${group}-${day}-${time}`] || null;
   const getBooking = (group, day, time) => {
     const classEntry = schedule[`${group}-${day}-${time}`];
-    if (classEntry?.room) {
+    if (classEntry?.room)
       return bookings.find(b => b.room === classEntry.room && b.day === day && b.start_time === time) || null;
-    }
     return bookings.find(b => b.day === day && b.start_time === time &&
       (b.entity === group || b.name === group)) || null;
   };
-
   const getConflicts = (group, day, time, classData) => {
     if (!classData) return [];
     const out = [];
@@ -44,21 +41,18 @@ const MobileView = ({
     });
     return [...new Set(out)];
   };
-
   const toggleDay = (day) => setCollapsed(c => ({ ...c, [day]: !c[day] }));
 
   return (
     <div>
       {daysToShow.map(day => {
-        const isToday = day === todayName;
+        const isToday    = day === todayName;
         const isCollapsed = collapsed[day];
-
-        const classCount = groupsToShow.reduce((acc, group) => {
-          return acc + timeSlots.filter(time => {
+        const classCount = groupsToShow.reduce((acc, group) =>
+          acc + timeSlots.filter(time => {
             const cls = getClass(group, day, time);
             return cls && !cellsToSkip.has(`${group}-${day}-${time}`);
-          }).length;
-        }, 0);
+          }).length, 0);
 
         return (
           <div key={day} className="mob-day-section">
@@ -76,38 +70,28 @@ const MobileView = ({
             {!isCollapsed && groupsToShow.map(group => {
               const slots = timeSlots.filter(time => !cellsToSkip.has(`${group}-${day}-${time}`));
               if (!slots.length) return null;
-
               if (!isAuthenticated) {
-                const hasContent = slots.some(time => {
-                  const cls = getClass(group, day, time);
-                  const bk  = getBooking(group, day, time);
-                  return cls || bk;
-                });
+                const hasContent = slots.some(time => getClass(group, day, time) || getBooking(group, day, time));
                 if (!hasContent) return null;
               }
-
               return (
                 <div key={group} className="mob-group-block">
                   <div className="mob-group-label">
                     {group}
                     {isAuthenticated && (
-                      <button
-                        className="delete-group-btn"
-                        onClick={e => {
-                          e.stopPropagation();
-                          if (window.confirm(t('confirmDeleteGroup', { group }))) onDeleteGroup(group);
-                        }}
-                      >×</button>
+                      <button className="delete-group-btn" onClick={e => {
+                        e.stopPropagation();
+                        if (window.confirm(t('confirmDeleteGroup', { group }))) onDeleteGroup(group);
+                      }}>×</button>
                     )}
                   </div>
-
                   <div className="mob-slots">
                     {slots.map(time => {
-                      const classData = getClass(group, day, time);
-                      const booking   = getBooking(group, day, time);
-                      const conflicts = getConflicts(group, day, time, classData);
-                      const typeStyle = classData ? getTypeStyle(classData.subjectType) : null;
-                      const duration  = Math.min(6, Math.max(1, parseInt(classData?.duration) || 1));
+                      const classData    = getClass(group, day, time);
+                      const booking      = getBooking(group, day, time);
+                      const conflicts    = getConflicts(group, day, time, classData);
+                      const typeStyle    = classData ? getTypeStyle(classData.subjectType) : null;
+                      const duration     = Math.min(6, Math.max(1, parseInt(classData?.duration) || 1));
                       const durationMins = duration * 40;
 
                       if (normSelectedTeacher && classData &&
@@ -153,7 +137,6 @@ const MobileView = ({
                               <span className="mob-duration-badge">⏱ {durationMins}m</span>
                             )}
                           </div>
-
                           <div className="mob-slot-body">
                             {classData ? (
                               <>
@@ -168,9 +151,7 @@ const MobileView = ({
                                   {classData.room    && <span>🚪 {classData.room}</span>}
                                   {classData.meetingLink && (
                                     <a href={classData.meetingLink} target="_blank" rel="noopener noreferrer"
-                                      className="meeting-link-btn"
-                                      onClick={e => e.stopPropagation()}
-                                    >🔗 Join</a>
+                                      className="meeting-link-btn" onClick={e => e.stopPropagation()}>🔗 Join</a>
                                   )}
                                   {conflicts.length > 0 && (
                                     <span className="mob-conflict-badge">
@@ -207,134 +188,76 @@ const MobileView = ({
   );
 };
 
-// ── Google Calendar-style event detail popup ─────────────────────────────
-const CalEventPopup = ({ event, anchor, onClose, onEdit, isAuthenticated, typeLabels }) => {
+// ── Event detail popup (Google Calendar style) ───────────────────────────
+const GCalPopup = ({ event, anchorRect, onClose, onEdit, isAuthenticated, typeLabels }) => {
   const ref = useRef(null);
-  const typeStyle = event?.classData ? getTypeStyle(event.classData.subjectType) : null;
 
   useEffect(() => {
-    const handler = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) onClose();
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
+    document.addEventListener('mousedown', handler, true);
+    return () => document.removeEventListener('mousedown', handler, true);
   }, [onClose]);
 
-  if (!event || !anchor) return null;
-
+  if (!event) return null;
   const { classData, booking, group, day, time } = event;
 
-  const GCAL_COLORS = {
-    lecture: { header: '#4285f4', light: '#d2e3fc', text: '#174ea6' },
-    lab:     { header: '#34a853', light: '#ceead6', text: '#0d652d' },
-    seminar: { header: '#fbbc04', light: '#fde7c4', text: '#7a4100' },
+  const TYPE_HEADER = {
+    lecture: '#4285f4',
+    lab:     '#34a853',
+    seminar: '#f9ab00',
   };
-  const bookingHeaderColors = {
-    approved: '#34a853', rejected: '#ea4335', pending: '#fbbc04',
-  };
+  const BOOKING_HEADER = { approved: '#34a853', rejected: '#ea4335', pending: '#f9ab00' };
 
   const typeKey    = classData?.subjectType || 'lecture';
-  const colors     = GCAL_COLORS[typeKey] || GCAL_COLORS.lecture;
-  const headerBg   = booking ? (bookingHeaderColors[booking.status] || bookingHeaderColors.pending) : colors.header;
+  const headerBg   = booking
+    ? (BOOKING_HEADER[booking.status] || BOOKING_HEADER.pending)
+    : (TYPE_HEADER[typeKey] || TYPE_HEADER.lecture);
 
-  // Smart popup positioning
-  const vpW = window.innerWidth;
-  const vpH = window.innerHeight;
-  const popupW = 288;
-  const popupH = 280;
-  let left = anchor.right + 12;
-  let top  = anchor.top + window.scrollY;
-  if (left + popupW > vpW - 16)  left = anchor.left - popupW - 12;
-  if (left < 16)                 left = 16;
-  if (top + popupH > vpH + window.scrollY - 16) top = Math.max(window.scrollY + 16, top - popupH + (anchor.bottom - anchor.top));
+  // Smart positioning
+  const PW = 296, PH = 300;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  let left = (anchorRect?.right ?? 0) + 12;
+  let top  = (anchorRect?.top ?? 0) + window.scrollY;
+  if (left + PW > vw - 12)  left = (anchorRect?.left ?? PW + 12) - PW - 12;
+  if (left < 12)             left = 12;
+  if (top  + PH > vh + window.scrollY - 12)
+    top = Math.max(window.scrollY + 12, top - ((top + PH) - (vh + window.scrollY - 12)));
 
   return (
-    <div className="gcal-popup-overlay" onClick={onClose}>
+    <div className="gcpop-overlay" onMouseDown={onClose}>
       <div
         ref={ref}
-        className="gcal-popup"
-        style={{ top, left, '--popup-header': headerBg, '--popup-text': colors.text, '--popup-light': colors.light }}
-        onClick={e => e.stopPropagation()}
+        className="gcpop"
+        style={{ top, left }}
+        onMouseDown={e => e.stopPropagation()}
       >
-        {/* Coloured header band */}
-        <div className="gcal-popup-header">
-          <div className="gcal-popup-type-badge">
-            {booking ? (
-              <>
-                {booking.status === 'approved' ? '✅' : booking.status === 'rejected' ? '❌' : '⏳'}
-                <span>{booking.status}</span>
-              </>
-            ) : typeStyle ? (
-              <>{typeStyle.icon} <span>{typeLabels[typeKey]}</span></>
-            ) : null}
-          </div>
-          <button className="gcal-popup-close-btn" onClick={onClose} aria-label="Close">✕</button>
+        <div className="gcpop-header" style={{ background: headerBg }}>
+          <span className="gcpop-type-label">
+            {booking
+              ? `${booking.status === 'approved' ? '✅' : booking.status === 'rejected' ? '❌' : '⏳'} ${booking.status}`
+              : `${SUBJECT_TYPES.find(s => s.value === typeKey)?.icon || ''} ${typeLabels[typeKey] || typeKey}`}
+          </span>
+          <button className="gcpop-close" onClick={onClose}>✕</button>
         </div>
-
-        {/* Body */}
-        <div className="gcal-popup-body">
-          <div className="gcal-popup-title">
-            {classData?.course || booking?.purpose || '—'}
-          </div>
-
-          <div className="gcal-popup-detail-list">
-            <div className="gcal-popup-detail-row">
-              <span className="gcal-popup-detail-icon">🗓</span>
-              <span>{day} · {time}</span>
-            </div>
-            <div className="gcal-popup-detail-row">
-              <span className="gcal-popup-detail-icon">👥</span>
-              <span className="gcal-popup-detail-group">{group}</span>
-            </div>
-            {classData?.teacher && (
-              <div className="gcal-popup-detail-row">
-                <span className="gcal-popup-detail-icon">👨‍🏫</span>
-                <span>{classData.teacher}</span>
-              </div>
-            )}
-            {classData?.room && (
-              <div className="gcal-popup-detail-row">
-                <span className="gcal-popup-detail-icon">🚪</span>
-                <span>{classData.room}</span>
-              </div>
-            )}
-            {classData?.duration > 1 && (
-              <div className="gcal-popup-detail-row">
-                <span className="gcal-popup-detail-icon">⏱</span>
-                <span>{classData.duration * 40} minutes</span>
-              </div>
-            )}
+        <div className="gcpop-body">
+          <div className="gcpop-title">{classData?.course || booking?.purpose || '—'}</div>
+          <div className="gcpop-rows">
+            <div className="gcpop-row"><span className="gcpop-icon">🗓</span><span>{day} · {time}</span></div>
+            <div className="gcpop-row"><span className="gcpop-icon">👥</span><strong>{group}</strong></div>
+            {classData?.teacher && <div className="gcpop-row"><span className="gcpop-icon">👨‍🏫</span><span>{classData.teacher}</span></div>}
+            {classData?.room    && <div className="gcpop-row"><span className="gcpop-icon">🚪</span><span>{classData.room}</span></div>}
+            {classData?.duration > 1 && <div className="gcpop-row"><span className="gcpop-icon">⏱</span><span>{classData.duration * 40} min</span></div>}
             {classData?.meetingLink && (
-              <div className="gcal-popup-detail-row">
-                <span className="gcal-popup-detail-icon">🔗</span>
-                <a
-                  href={classData.meetingLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="gcal-popup-link"
-                  onClick={e => e.stopPropagation()}
-                >Join meeting</a>
+              <div className="gcpop-row">
+                <span className="gcpop-icon">🔗</span>
+                <a href={classData.meetingLink} target="_blank" rel="noopener noreferrer" className="gcpop-link" onClick={e => e.stopPropagation()}>Join meeting</a>
               </div>
             )}
-            {booking?.guest_name && (
-              <div className="gcal-popup-detail-row">
-                <span className="gcal-popup-detail-icon">👤</span>
-                <span>{booking.guest_name}</span>
-              </div>
-            )}
-            {booking?.purpose && classData && (
-              <div className="gcal-popup-detail-row">
-                <span className="gcal-popup-detail-icon">📋</span>
-                <span>{booking.purpose}</span>
-              </div>
-            )}
+            {booking?.guest_name && <div className="gcpop-row"><span className="gcpop-icon">👤</span><span>{booking.guest_name}</span></div>}
+            {booking?.room       && <div className="gcpop-row"><span className="gcpop-icon">🚪</span><span>{booking.room}</span></div>}
           </div>
-
           {isAuthenticated && (
-            <button
-              className="gcal-popup-edit-btn"
-              onClick={() => { onEdit(); onClose(); }}
-            >
+            <button className="gcpop-edit-btn" onClick={() => { onEdit(); onClose(); }}>
               ✏️ Edit class
             </button>
           )}
@@ -346,7 +269,8 @@ const CalEventPopup = ({ event, anchor, onClose, onEdit, isAuthenticated, typeLa
 
 // ── Google Calendar week view ─────────────────────────────────────────────
 const CalendarView = ({
-  daysToShow, groupsToShow, timeSlots, schedule, todayName,
+  daysToShow, groupsToShow, timeSlots, schedule, days,
+  todayName, weekOffset, onShiftWeek,
   cellsToSkip, occupiedRoomCells, selectedRoom, normSelectedTeacher,
   isAuthenticated, bookings, onEditClass, onGuestBookCell,
   typeLabels, t,
@@ -362,60 +286,104 @@ const CalendarView = ({
       (b.entity === group || b.name === group)) || null;
   };
 
-  // Exact Google Calendar palette
+  // Exact pastel palette from screenshot
   const TYPE_COLORS = {
-    lecture: { bg: '#d2e3fc', text: '#174ea6', border: '#4285f4' },
-    lab:     { bg: '#ceead6', text: '#0d652d', border: '#34a853' },
-    seminar: { bg: '#fde7c4', text: '#7a4100', border: '#fbbc04' },
+    lecture: { bg: '#c8deff', text: '#1a4d8f', border: '#4285f4' },
+    lab:     { bg: '#c4e6c8', text: '#1a5c2a', border: '#34a853' },
+    seminar: { bg: '#fce4b0', text: '#7a4100', border: '#f9ab00' },
   };
   const BOOKING_COLORS = {
-    approved: { bg: '#ceead6', text: '#0d652d', border: '#34a853' },
-    rejected: { bg: '#fce8e6', text: '#c5221f', border: '#ea4335' },
-    pending:  { bg: '#fef9c3', text: '#78350f', border: '#fbbc04' },
+    approved: { bg: '#c4e6c8', text: '#1a5c2a', border: '#34a853' },
+    rejected: { bg: '#fdd9d7', text: '#c5221f', border: '#ea4335' },
+    pending:  { bg: '#fce4b0', text: '#7a4100', border: '#f9ab00' },
   };
 
-  const handleBlockClick = (e, group, day, time, classData, booking) => {
+  // Compute week date labels matching screenshot format "Mon 16", "Tue 17" …
+  const weekDayLabels = useMemo(() => {
+    // Find the Monday of the reference week (use a fixed anchor or today)
+    const now   = new Date();
+    const dow   = now.getDay(); // 0=Sun
+    const diff  = dow === 0 ? -6 : 1 - dow; // shift to Monday
+    const mon   = new Date(now);
+    mon.setDate(now.getDate() + diff + weekOffset * 7);
+
+    return daysToShow.map((dayName, i) => {
+      // Map day name to offset from Monday
+      const dayIndex = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].indexOf(dayName);
+      const offset   = dayIndex >= 0 ? dayIndex : i;
+      const d        = new Date(mon);
+      d.setDate(mon.getDate() + offset);
+      const shortDay = (t(dayName) || dayName).slice(0, 3);
+      return { dayName, label: `${shortDay} ${d.getDate()}`, date: d };
+    });
+  }, [daysToShow, weekOffset, t]);
+
+  // Week range label "16 Mar – 20 Mar"
+  const weekRangeLabel = useMemo(() => {
+    if (!weekDayLabels.length) return '';
+    const fmt = (d) => d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    const first = weekDayLabels[0].date;
+    const last  = weekDayLabels[weekDayLabels.length - 1].date;
+    return `${fmt(first)} – ${fmt(last)}`;
+  }, [weekDayLabels]);
+
+  const handleBlockClick = useCallback((e, group, day, time, classData, booking) => {
     e.stopPropagation();
     const rect = e.currentTarget.getBoundingClientRect();
-    setPopup({
-      event:  { classData, booking, group, day, time },
-      anchor: { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right },
-    });
-  };
+    setPopup({ event: { classData, booking, group, day, time }, anchorRect: rect });
+  }, []);
 
   return (
-    <div className="gcal-outer">
-      {popup && (
-        <CalEventPopup
-          event={popup.event}
-          anchor={popup.anchor}
-          onClose={() => setPopup(null)}
-          onEdit={() => onEditClass(popup.event.group, popup.event.day, popup.event.time)}
-          isAuthenticated={isAuthenticated}
-          typeLabels={typeLabels}
-        />
-      )}
+    <div className="gcal-wrap">
 
-      <div className="gcal-scroll-area">
+      {/* ── Nav bar ── */}
+      <div className="gcal-nav">
+        <button className="gcal-nav-btn" onClick={() => onShiftWeek(-1)}>← prev</button>
+        <span className="gcal-nav-title">{weekRangeLabel}</span>
+        <button className="gcal-nav-btn" onClick={() => onShiftWeek(1)}>next →</button>
+      </div>
+
+      {/* ── Legend ── */}
+      <div className="gcal-legend">
+        {Object.entries({
+          lecture: { color: '#c8deff', label: 'Lecture' },
+          lab:     { color: '#c4e6c8', label: 'Lab'     },
+          seminar: { color: '#fce4b0', label: 'Seminar' },
+        }).map(([key, { color, label }]) => (
+          <div key={key} className="gcal-legend-item">
+            <span className="gcal-legend-swatch" style={{ background: color, border: `1.5px solid ${TYPE_COLORS[key].border}` }} />
+            <span>{label}</span>
+          </div>
+        ))}
+        {bookings.some(b => b.status) && (
+          <div className="gcal-legend-item">
+            <span className="gcal-legend-swatch" style={{ background: '#fdd9d7', border: '1.5px solid #f28b82' }} />
+            <span>Booked</span>
+          </div>
+        )}
+      </div>
+
+      {/* ── Grid ── */}
+      <div className="gcal-grid-scroll">
         <div className="gcal-grid" style={{ '--gcal-cols': daysToShow.length }}>
 
-          {/* ── Day header row ── */}
-          <div className="gcal-header-row">
-            <div className="gcal-gutter-top" />
-            {daysToShow.map(day => (
+          {/* Day header row */}
+          <div className="gcal-head-row">
+            <div className="gcal-head-gutter" />
+            {weekDayLabels.map(({ dayName, label }) => (
               <div
-                key={day}
-                className={`gcal-col-header ${day === todayName ? 'gcal-col-today' : ''}`}
+                key={dayName}
+                className={`gcal-head-cell ${dayName === todayName ? 'gcal-head-today' : ''}`}
               >
-                <span className="gcal-col-day-name">{(t(day) || day).slice(0, 3).toUpperCase()}</span>
+                {label}
               </div>
             ))}
           </div>
 
-          {/* ── Time rows ── */}
+          {/* Time rows */}
           {timeSlots.map(time => (
-            <div key={time} className="gcal-time-row">
-              <div className="gcal-time-label">{time}</div>
+            <div key={time} className="gcal-row">
+              <div className="gcal-time-gutter">{time}</div>
 
               {daysToShow.map(day => {
                 const isToday = day === todayName;
@@ -432,18 +400,12 @@ const CalendarView = ({
                   return [{ group, classData, booking }];
                 });
 
-                const isEmpty = blocks.length === 0;
-
                 return (
                   <div
                     key={day}
-                    className={[
-                      'gcal-cell',
-                      isToday   ? 'gcal-cell-today'  : '',
-                      isEmpty   ? 'gcal-cell-empty'  : '',
-                    ].filter(Boolean).join(' ')}
+                    className={`gcal-cell ${isToday ? 'gcal-cell-today' : ''} ${blocks.length === 0 ? 'gcal-cell-empty' : ''}`}
                     onClick={() => {
-                      if (!isEmpty) return;
+                      if (blocks.length > 0) return;
                       if (isAuthenticated) onEditClass(groupsToShow[0] || '', day, time);
                       else if (onGuestBookCell) onGuestBookCell(groupsToShow[0] || '', day, time);
                     }}
@@ -457,20 +419,12 @@ const CalendarView = ({
                       return (
                         <div
                           key={group}
-                          className={`gcal-event-block ${duration > 1 ? 'gcal-event-multi' : ''}`}
-                          style={{
-                            '--ev-bg':     colors.bg,
-                            '--ev-text':   colors.text,
-                            '--ev-border': colors.border,
-                          }}
+                          className={`gcal-block ${duration > 1 ? 'gcal-block-multi' : ''}`}
+                          style={{ '--blk-bg': colors.bg, '--blk-text': colors.text, '--blk-border': colors.border }}
                           onClick={e => handleBlockClick(e, group, day, time, classData, booking)}
                         >
-                          <span className="gcal-event-title">
-                            {classData?.course || booking?.purpose}
-                          </span>
-                          {classData?.room && (
-                            <span className="gcal-event-sub">{classData.room}</span>
-                          )}
+                          <div className="gcal-block-name">{classData?.course || booking?.purpose}</div>
+                          {classData?.room && <div className="gcal-block-room">{classData.room}</div>}
                         </div>
                       );
                     })}
@@ -481,6 +435,18 @@ const CalendarView = ({
           ))}
         </div>
       </div>
+
+      {/* Popup */}
+      {popup && (
+        <GCalPopup
+          event={popup.event}
+          anchorRect={popup.anchorRect}
+          onClose={() => setPopup(null)}
+          onEdit={() => onEditClass(popup.event.group, popup.event.day, popup.event.time)}
+          isAuthenticated={isAuthenticated}
+          typeLabels={typeLabels}
+        />
+      )}
     </div>
   );
 };
@@ -500,8 +466,9 @@ const ScheduleTable = ({
   const todayName  = getTodayName();
   const daysToShow = selectedDay ? [selectedDay] : days;
 
-  const [showEmpty, setShowEmpty] = useState(false);
-  const [viewMode,  setViewMode]  = useState('table'); // 'table' | 'calendar'
+  const [showEmpty,   setShowEmpty]   = useState(false);
+  const [viewMode,    setViewMode]    = useState('table'); // 'table' | 'calendar'
+  const [weekOffset,  setWeekOffset]  = useState(0);
 
   const bookingGroups = [...new Set(
     bookings
@@ -549,8 +516,8 @@ const ScheduleTable = ({
     return s;
   }, [schedule, selectedRoom]);
 
-  const getClass    = (group, day, time) => schedule[`${group}-${day}-${time}`] || null;
-  const shouldShow  = (classData, day, time) => {
+  const getClass     = (group, day, time) => schedule[`${group}-${day}-${time}`] || null;
+  const shouldShow   = (classData, day, time) => {
     if (normSelectedTeacher && classData && normalizeTeacherName(classData.teacher) !== normSelectedTeacher) return false;
     if (selectedRoom) return !occupiedRoomCells.has(`${day}-${time}`);
     return true;
@@ -596,13 +563,6 @@ const ScheduleTable = ({
     handleDragEnd();
   };
 
-  const sharedCalendarProps = {
-    daysToShow, groupsToShow, timeSlots, schedule, todayName,
-    cellsToSkip, occupiedRoomCells, selectedRoom, normSelectedTeacher,
-    isAuthenticated, bookings, onEditClass, onGuestBookCell,
-    typeLabels, t,
-  };
-
   const Legend = () => (
     <div className="type-legend">
       {SUBJECT_TYPES.map(type => (
@@ -612,31 +572,18 @@ const ScheduleTable = ({
         </div>
       ))}
       {!isAuthenticated && bookings.length > 0 && <>
-        <div className="legend-item"><span className="legend-dot" style={{background:'#eab308'}}/><span className="legend-label">⏳ Pending</span></div>
-        <div className="legend-item"><span className="legend-dot" style={{background:'#22c55e'}}/><span className="legend-label">✅ Approved</span></div>
+        <div className="legend-item"><span className="legend-dot" style={{ background: '#eab308' }} /><span className="legend-label">⏳ Pending</span></div>
+        <div className="legend-item"><span className="legend-dot" style={{ background: '#22c55e' }} /><span className="legend-label">✅ Approved</span></div>
       </>}
       {isAuthenticated && <div className="legend-item legend-drag-hint">↔ {t('dragHint')}</div>}
 
       {/* Segmented view toggle */}
       <div className="view-mode-toggle">
-        <button
-          className={`vmt-btn ${viewMode === 'table' ? 'vmt-active' : ''}`}
-          onClick={() => setViewMode('table')}
-        >
-          ☰ Table
-        </button>
-        <button
-          className={`vmt-btn ${viewMode === 'calendar' ? 'vmt-active' : ''}`}
-          onClick={() => setViewMode('calendar')}
-        >
-          📅 Calendar
-        </button>
+        <button className={`vmt-btn ${viewMode === 'table'    ? 'vmt-active' : ''}`} onClick={() => setViewMode('table')}>☰ Table</button>
+        <button className={`vmt-btn ${viewMode === 'calendar' ? 'vmt-active' : ''}`} onClick={() => setViewMode('calendar')}>📅 Calendar</button>
       </div>
 
-      <button
-        className={`empty-slot-toggle-btn${showEmpty ? ' active' : ''}`}
-        onClick={() => setShowEmpty(s => !s)}
-      >
+      <button className={`empty-slot-toggle-btn${showEmpty ? ' active' : ''}`} onClick={() => setShowEmpty(s => !s)}>
         {showEmpty ? '🙈 Hide empty' : '👁 Show empty'}
       </button>
     </div>
@@ -649,17 +596,23 @@ const ScheduleTable = ({
     typeLabels, t, showEmpty,
   };
 
+  const calProps = {
+    daysToShow, groupsToShow, timeSlots, schedule, days, todayName,
+    weekOffset, onShiftWeek: setWeekOffset,
+    cellsToSkip, occupiedRoomCells, selectedRoom, normSelectedTeacher,
+    isAuthenticated, bookings, onEditClass, onGuestBookCell,
+    typeLabels, t,
+  };
+
   return (
     <div className="schedule-container">
       <Legend />
 
-      {/* ── Mobile card view — always shown on mobile, unaffected by viewMode ── */}
+      {/* ── Mobile card view — always on mobile ── */}
       <MobileView {...mobileProps} />
 
       {/* ── Google Calendar view ── */}
-      {viewMode === 'calendar' && (
-        <CalendarView {...sharedCalendarProps} />
-      )}
+      {viewMode === 'calendar' && <CalendarView {...calProps} />}
 
       {/* ── Desktop table view ── */}
       {viewMode === 'table' && (
@@ -671,10 +624,7 @@ const ScheduleTable = ({
                   {t('groupTime')}{!isAuthenticated && <div className="lock-icon">🔒</div>}
                 </th>
                 {daysToShow.map(day => (
-                  <th key={day}
-                    className={`day-header ${day === todayName ? 'today-col' : ''}`}
-                    colSpan={timeSlots.length}
-                  >
+                  <th key={day} className={`day-header ${day === todayName ? 'today-col' : ''}`} colSpan={timeSlots.length}>
                     {t(day)}{day === todayName && <span className="today-badge"> ★</span>}
                   </th>
                 ))}
@@ -682,9 +632,7 @@ const ScheduleTable = ({
               <tr>
                 <th className="group-header" />
                 {daysToShow.map(day => timeSlots.map(time => (
-                  <th key={`${day}-${time}`}
-                    className={`time-header ${day === todayName ? 'today-time' : ''}`}
-                  >{time}</th>
+                  <th key={`${day}-${time}`} className={`time-header ${day === todayName ? 'today-time' : ''}`}>{time}</th>
                 )))}
               </tr>
             </thead>
@@ -723,16 +671,18 @@ const ScheduleTable = ({
                     let bookingStyle = {};
                     let bookingLabel = null;
                     if (booking) {
-                      bookingStyle = booking.status === 'approved' ? { background:'#dcfce7', borderLeft:'3px solid #22c55e' }
-                        : booking.status === 'rejected' ? { background:'#fee2e2', borderLeft:'3px solid #ef4444' }
-                        : { background:'#fef9c3', borderLeft:'3px solid #eab308' };
+                      bookingStyle = booking.status === 'approved'
+                        ? { background: '#dcfce7', borderLeft: '3px solid #22c55e' }
+                        : booking.status === 'rejected'
+                        ? { background: '#fee2e2', borderLeft: '3px solid #ef4444' }
+                        : { background: '#fef9c3', borderLeft: '3px solid #eab308' };
                       bookingLabel = (
-                        <div style={{fontSize:'0.68rem',marginTop:3,fontWeight:600,
-                          color: booking.status==='approved'?'#166534':booking.status==='rejected'?'#991b1b':'#854d0e',
-                          display:'flex',alignItems:'center',gap:3}}>
-                          {booking.status==='approved'?'✅':booking.status==='rejected'?'❌':'⏳'}
-                          <span>{booking.name||''}</span>
-                          {booking.room && <span style={{opacity:0.7}}>· {booking.room}</span>}
+                        <div style={{ fontSize: '0.68rem', marginTop: 3, fontWeight: 600,
+                          color: booking.status === 'approved' ? '#166534' : booking.status === 'rejected' ? '#991b1b' : '#854d0e',
+                          display: 'flex', alignItems: 'center', gap: 3 }}>
+                          {booking.status === 'approved' ? '✅' : booking.status === 'rejected' ? '❌' : '⏳'}
+                          <span>{booking.name || ''}</span>
+                          {booking.room && <span style={{ opacity: 0.7 }}>· {booking.room}</span>}
                         </div>
                       );
                     }
@@ -741,16 +691,16 @@ const ScheduleTable = ({
                       <td key={cellKey}
                         className={[
                           'schedule-cell',
-                          classData ? 'filled' : '',
+                          classData  ? 'filled'          : '',
                           isAuthenticated ? 'editable' : (!classData && !booking) ? 'guest-bookable' : '',
-                          isToday ? 'today-cell' : '',
+                          isToday    ? 'today-cell'       : '',
                           conflicts.includes('teacher') ? 'conflict-teacher' : '',
                           conflicts.includes('room')    ? 'conflict-room'    : '',
-                          isDragSrc ? 'drag-source' : '',
-                          isDragOvr ? (classData ? 'drag-over-filled' : 'drag-over-empty') : '',
-                          duration > 1 ? 'multi-slot' : '',
+                          isDragSrc  ? 'drag-source'      : '',
+                          isDragOvr  ? (classData ? 'drag-over-filled' : 'drag-over-empty') : '',
+                          duration > 1 ? 'multi-slot'    : '',
                         ].filter(Boolean).join(' ')}
-                        style={booking ? bookingStyle : (classData && typeStyle ? { background: typeStyle.light, borderLeft:`3px solid ${typeStyle.color}` } : {})}
+                        style={booking ? bookingStyle : (classData && typeStyle ? { background: typeStyle.light, borderLeft: `3px solid ${typeStyle.color}` } : {})}
                         colSpan={duration}
                         onClick={() => {
                           if (isAuthenticated && !dragSource) { onEditClass(group, day, time); return; }
@@ -777,9 +727,9 @@ const ScheduleTable = ({
                               </div>
                             )}
                             <div className="course-name">{classData.course}</div>
-                            {duration > 1 && <div className="duration-indicator">⏱ {duration*40}min</div>}
-                            {classData.teacher && <div className={`teacher-name ${conflicts.includes('teacher')?'conflict-text':''}`}>👨‍🏫 {classData.teacher}</div>}
-                            {classData.room    && <div className={`room-number ${conflicts.includes('room')?'conflict-text':''}`}>🚪 {classData.room}</div>}
+                            {duration > 1 && <div className="duration-indicator">⏱ {duration * 40}min</div>}
+                            {classData.teacher && <div className={`teacher-name ${conflicts.includes('teacher') ? 'conflict-text' : ''}`}>👨‍🏫 {classData.teacher}</div>}
+                            {classData.room    && <div className={`room-number   ${conflicts.includes('room')    ? 'conflict-text' : ''}`}>🚪 {classData.room}</div>}
                             {bookingLabel}
                             {isAuthenticated && <div className="drag-handle">⠿</div>}
                           </div>
@@ -793,9 +743,9 @@ const ScheduleTable = ({
                               </div>
                             ) : (
                               <>
-                                {isAuthenticated && <div className="empty-cell">+</div>}
-                                {!isAuthenticated && <div className="guest-book-hint">📅 Click to book</div>}
-                                {isDragOvr && <div className="drop-indicator">Drop here</div>}
+                                {isAuthenticated            && <div className="empty-cell">+</div>}
+                                {!isAuthenticated           && <div className="guest-book-hint">📅 Click to book</div>}
+                                {isDragOvr                  && <div className="drop-indicator">Drop here</div>}
                               </>
                             )}
                           </>
