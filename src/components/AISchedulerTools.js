@@ -446,8 +446,7 @@ export default function AISchedulerTools({ onAddEntries }) {
                     )}
                 </div>
             )}
-            <div className="as-section-label" style={{ marginTop: 28 }}>🤖 AI Tools</div>
-            <AISchedulerTools />
+           
         </div>
     );
 }
