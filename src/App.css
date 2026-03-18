@@ -413,7 +413,7 @@ body {
 }
 
 /* ── Admin ⋯ menu — desktop/mobile toggle ───────────────────────────────── */
-.tb-desktop-only { display: inline-flex !important; }
+/*.tb-desktop-only { display: inline-flex !important; } */
 .tb-mobile-only  { display: none !important; }
 
 @media (max-width: 767px) {

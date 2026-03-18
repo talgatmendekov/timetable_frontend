@@ -202,7 +202,7 @@ const AppContent = () => {
       padding: '10px 10px', flexWrap: 'nowrap',
       position: 'sticky', top: 0, zIndex: 200,
       overflowX: 'auto', overflowY: 'hidden',
-      minHeight: 52, maxHeight: 52,
+      minHeight: 52,
     },
     divider: { width: 1, height: 18, background: 'var(--border)', flexShrink: 0, margin: '0 2px' },
     sel: {
