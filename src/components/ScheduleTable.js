@@ -207,6 +207,158 @@ const MobileView = ({
   );
 };
 
+// ── Calendar / week-grid view ─────────────────────────────────────────────
+const CalendarView = ({
+  daysToShow, groupsToShow, timeSlots, schedule, todayName,
+  cellsToSkip, occupiedRoomCells, selectedRoom, normSelectedTeacher,
+  isAuthenticated, bookings, onEditClass, onGuestBookCell,
+  typeLabels, t,
+}) => {
+  const getClass = (group, day, time) => schedule[`${group}-${day}-${time}`] || null;
+
+  const getBooking = (group, day, time) => {
+    const classEntry = schedule[`${group}-${day}-${time}`];
+    if (classEntry?.room)
+      return bookings.find(b => b.room === classEntry.room && b.day === day && b.start_time === time) || null;
+    return bookings.find(b => b.day === day && b.start_time === time &&
+      (b.entity === group || b.name === group)) || null;
+  };
+
+  return (
+    <div className="cal-view-wrapper">
+      <div className="cal-view" style={{ '--cal-day-count': daysToShow.length }}>
+
+        {/* Column headers: one per day */}
+        <div className="cal-header-row">
+          <div className="cal-time-gutter-header" />
+          {daysToShow.map(day => (
+            <div key={day} className={`cal-day-col-header ${day === todayName ? 'cal-today-hdr' : ''}`}>
+              {t(day) || day}
+              {day === todayName && <span className="today-badge"> ★</span>}
+            </div>
+          ))}
+        </div>
+
+        {/* One row per time-slot */}
+        {timeSlots.map(time => (
+          <div key={time} className="cal-time-row">
+            <div className="cal-time-gutter">{time}</div>
+
+            {daysToShow.map(day => {
+              /* Collect all groups that have content in this day+time slot */
+              const blocks = groupsToShow
+                .map(group => {
+                  const key = `${group}-${day}-${time}`;
+                  if (cellsToSkip.has(key)) return null;
+                  const classData = getClass(group, day, time);
+                  if (normSelectedTeacher && classData &&
+                    normalizeTeacherName(classData.teacher) !== normSelectedTeacher) return null;
+                  if (selectedRoom && occupiedRoomCells.has(`${day}-${time}`)) return null;
+                  const booking = getBooking(group, day, time);
+                  if (!classData && !booking) return null;
+                  return { group, classData, booking };
+                })
+                .filter(Boolean);
+
+              const isEmpty = blocks.length === 0;
+
+              return (
+                <div
+                  key={day}
+                  className={`cal-day-cell ${day === todayName ? 'cal-today-cell' : ''} ${isEmpty ? 'cal-cell-empty' : ''}`}
+                >
+                  {isEmpty ? (
+                    isAuthenticated
+                      ? <span className="cal-add-hint">+</span>
+                      : onGuestBookCell
+                        ? (
+                          <span
+                            className="cal-guest-hint"
+                            onClick={() => onGuestBookCell(groupsToShow[0], day, time)}
+                          >📅</span>
+                        )
+                        : null
+                  ) : (
+                    blocks.map(({ group, classData, booking }) => {
+                      const typeStyle = classData ? getTypeStyle(classData.subjectType) : null;
+                      const duration  = Math.min(6, Math.max(1, parseInt(classData?.duration) || 1));
+
+                      const bookingColor = booking
+                        ? (booking.status === 'approved' ? '#22c55e'
+                          : booking.status === 'rejected' ? '#ef4444'
+                          : '#eab308')
+                        : null;
+
+                      const bgColor = bookingColor
+                        ? (booking.status === 'approved' ? 'rgba(34,197,94,0.15)'
+                          : booking.status === 'rejected' ? 'rgba(239,68,68,0.15)'
+                          : 'rgba(234,179,8,0.15)')
+                        : typeStyle
+                          ? typeStyle.light
+                          : undefined;
+
+                      const borderColor = bookingColor ?? typeStyle?.color;
+
+                      return (
+                        <div
+                          key={group}
+                          className={`cal-block cal-type-${classData?.subjectType || 'lecture'}`}
+                          style={{
+                            background:  bgColor,
+                            borderLeft:  `3px solid ${borderColor || 'transparent'}`,
+                          }}
+                          onClick={() => {
+                            if (isAuthenticated) { onEditClass(group, day, time); return; }
+                            if (!isAuthenticated && !classData && !booking && onGuestBookCell)
+                              onGuestBookCell(group, day, time);
+                          }}
+                        >
+                          {/* Type pill — colour directly on the block */}
+                          {typeStyle && !bookingColor && (
+                            <span
+                              className="cal-type-pill"
+                              style={{ background: typeStyle.color }}
+                            >
+                              {typeStyle.icon} {typeLabels[classData.subjectType || 'lecture']}
+                            </span>
+                          )}
+
+                          {bookingColor && (
+                            <span
+                              className="cal-type-pill"
+                              style={{ background: bookingColor }}
+                            >
+                              {booking.status === 'approved' ? '✅' : booking.status === 'rejected' ? '❌' : '⏳'}
+                              {' '}{booking.status}
+                            </span>
+                          )}
+
+                          <div className="cal-block-course">
+                            {classData?.course || booking?.purpose}
+                          </div>
+
+                          <div className="cal-block-meta">
+                            {classData?.teacher && <span>👨‍🏫 {classData.teacher}</span>}
+                            {classData?.room    && <span>🚪 {classData.room}</span>}
+                            {duration > 1       && (
+                              <span className="cal-duration">⏱ {duration * 40}m</span>
+                            )}
+                            <span className="cal-group-tag">{group}</span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 // ── Main component ────────────────────────────────────────────────────────
 const ScheduleTable = ({
   selectedDay, selectedTeacher, selectedGroup,
@@ -223,6 +375,7 @@ const ScheduleTable = ({
   const daysToShow = selectedDay ? [selectedDay] : days;
 
   const [showEmpty, setShowEmpty] = useState(false);
+  const [viewMode,  setViewMode]  = useState('table'); // 'table' | 'calendar'
 
   const bookingGroups = [...new Set(
     bookings
@@ -317,6 +470,13 @@ const ScheduleTable = ({
     handleDragEnd();
   };
 
+  const sharedCalendarProps = {
+    daysToShow, groupsToShow, timeSlots, schedule, todayName,
+    cellsToSkip, occupiedRoomCells, selectedRoom, normSelectedTeacher,
+    isAuthenticated, bookings, onEditClass, onGuestBookCell,
+    typeLabels, t,
+  };
+
   const Legend = () => (
     <div className="type-legend">
       {SUBJECT_TYPES.map(type => (
@@ -330,6 +490,16 @@ const ScheduleTable = ({
         <div className="legend-item"><span className="legend-dot" style={{background:'#22c55e'}}/><span className="legend-label">✅ Approved</span></div>
       </>}
       {isAuthenticated && <div className="legend-item legend-drag-hint">↔ {t('dragHint')}</div>}
+
+      {/* View mode toggle */}
+      <button
+        className={`view-mode-btn${viewMode === 'calendar' ? ' active' : ''}`}
+        onClick={() => setViewMode(v => v === 'table' ? 'calendar' : 'table')}
+        title={viewMode === 'calendar' ? 'Switch to table view' : 'Switch to calendar view'}
+      >
+        {viewMode === 'calendar' ? '📋 Table view' : '📅 Calendar view'}
+      </button>
+
       <button
         className={`empty-slot-toggle-btn${showEmpty ? ' active' : ''}`}
         onClick={() => setShowEmpty(s => !s)}
@@ -350,155 +520,162 @@ const ScheduleTable = ({
     <div className="schedule-container">
       <Legend />
 
-      {/* ── Mobile card view ── */}
+      {/* ── Mobile card view (always shown on mobile, unaffected by viewMode) ── */}
       <MobileView {...mobileProps} />
 
+      {/* ── Calendar view (desktop) ── */}
+      {viewMode === 'calendar' && (
+        <CalendarView {...sharedCalendarProps} />
+      )}
+
       {/* ── Desktop table view ── */}
-      <div className="table-wrapper">
-        <table className="schedule-table">
-          <thead>
-            <tr>
-              <th className="group-header">
-                {t('groupTime')}{!isAuthenticated && <div className="lock-icon">🔒</div>}
-              </th>
-              {daysToShow.map(day => (
-                <th key={day}
-                  className={`day-header ${day === todayName ? 'today-col' : ''}`}
-                  colSpan={timeSlots.length}
-                >
-                  {t(day)}{day === todayName && <span className="today-badge"> ★</span>}
+      {viewMode === 'table' && (
+        <div className="table-wrapper">
+          <table className="schedule-table">
+            <thead>
+              <tr>
+                <th className="group-header">
+                  {t('groupTime')}{!isAuthenticated && <div className="lock-icon">🔒</div>}
                 </th>
-              ))}
-            </tr>
-            <tr>
-              <th className="group-header" />
-              {daysToShow.map(day => timeSlots.map(time => (
-                <th key={`${day}-${time}`}
-                  className={`time-header ${day === todayName ? 'today-time' : ''}`}
-                >{time}</th>
-              )))}
-            </tr>
-          </thead>
-          <tbody>
-            {groupsToShow.map(group => (
-              <tr key={group}>
-                <td className="group-cell">
-                  <div className="group-cell-content">
-                    <span className="group-name">{group}</span>
-                    {isAuthenticated && (
-                      <button className="delete-group-btn" onClick={() => {
-                        if (window.confirm(t('confirmDeleteGroup', { group }))) onDeleteGroup(group);
-                      }}>×</button>
-                    )}
-                  </div>
-                </td>
-                {daysToShow.map(day => timeSlots.map(time => {
-                  const cellKey   = `${group}-${day}-${time}`;
-                  if (cellsToSkip.has(cellKey)) return null;
-                  const classData = getClass(group, day, time);
-                  const show      = shouldShow(classData, day, time);
-                  const isToday   = day === todayName;
-                  const conflicts = getConflicts(group, day, time, classData);
-                  const isDragSrc = dragSource?.group === group && dragSource?.day === day && dragSource?.time === time;
-                  const isDragOvr = dragOver?.group   === group && dragOver?.day   === day && dragOver?.time   === time;
-                  const typeStyle = classData ? getTypeStyle(classData.subjectType) : null;
-                  const duration  = Math.min(6, Math.max(1, parseInt(classData?.duration) || 1));
-                  const booking   = getBooking(group, day, time);
-
-                  if (!show) return (
-                    <td key={cellKey} className={`schedule-cell filtered-out ${isToday ? 'today-cell' : ''}`} colSpan={duration}>
-                      <div className="filtered-label">{t('filtered')}</div>
-                    </td>
-                  );
-
-                  let bookingStyle = {};
-                  let bookingLabel = null;
-                  if (booking) {
-                    bookingStyle = booking.status === 'approved' ? { background:'#dcfce7', borderLeft:'3px solid #22c55e' }
-                      : booking.status === 'rejected' ? { background:'#fee2e2', borderLeft:'3px solid #ef4444' }
-                      : { background:'#fef9c3', borderLeft:'3px solid #eab308' };
-                    bookingLabel = (
-                      <div style={{fontSize:'0.68rem',marginTop:3,fontWeight:600,
-                        color: booking.status==='approved'?'#166534':booking.status==='rejected'?'#991b1b':'#854d0e',
-                        display:'flex',alignItems:'center',gap:3}}>
-                        {booking.status==='approved'?'✅':booking.status==='rejected'?'❌':'⏳'}
-                        <span>{booking.name||''}</span>
-                        {booking.room && <span style={{opacity:0.7}}>· {booking.room}</span>}
-                      </div>
-                    );
-                  }
-
-                  return (
-                    <td key={cellKey}
-                      className={[
-                        'schedule-cell',
-                        classData ? 'filled' : '',
-                        isAuthenticated ? 'editable' : (!classData && !booking) ? 'guest-bookable' : '',
-                        isToday ? 'today-cell' : '',
-                        conflicts.includes('teacher') ? 'conflict-teacher' : '',
-                        conflicts.includes('room')    ? 'conflict-room'    : '',
-                        isDragSrc ? 'drag-source' : '',
-                        isDragOvr ? (classData ? 'drag-over-filled' : 'drag-over-empty') : '',
-                        duration > 1 ? 'multi-slot' : '',
-                      ].filter(Boolean).join(' ')}
-                      style={booking ? bookingStyle : (classData && typeStyle ? { background: typeStyle.light, borderLeft:`3px solid ${typeStyle.color}` } : {})}
-                      colSpan={duration}
-                      onClick={() => {
-                        if (isAuthenticated && !dragSource) { onEditClass(group, day, time); return; }
-                        if (!isAuthenticated && !classData && !booking && onGuestBookCell) onGuestBookCell(group, day, time);
-                      }}
-                      draggable={isAuthenticated && !!classData}
-                      onDragStart={classData ? (e) => handleDragStart(e, group, day, time) : undefined}
-                      onDragEnd={handleDragEnd}
-                      onDragOver={(e) => handleDragOver(e, group, day, time)}
-                      onDragLeave={handleDragLeave}
-                      onDrop={(e) => handleDrop(e, group, day, time)}
-                    >
-                      {classData ? (
-                        <div className="cell-content">
-                          {typeStyle && (
-                            <div className="type-pill" style={{ background: typeStyle.color }}>
-                              {typeStyle.icon} {typeLabels[classData.subjectType || 'lecture']}
-                            </div>
-                          )}
-                          {(conflicts.includes('teacher') || conflicts.includes('room')) && (
-                            <div className="cell-conflict-icons">
-                              {conflicts.includes('teacher') && <span>⚠️</span>}
-                              {conflicts.includes('room')    && <span>🚪⚠️</span>}
-                            </div>
-                          )}
-                          <div className="course-name">{classData.course}</div>
-                          {duration > 1 && <div className="duration-indicator">⏱ {duration*40}min</div>}
-                          {classData.teacher && <div className={`teacher-name ${conflicts.includes('teacher')?'conflict-text':''}`}>👨‍🏫 {classData.teacher}</div>}
-                          {classData.room    && <div className={`room-number ${conflicts.includes('room')?'conflict-text':''}`}>🚪 {classData.room}</div>}
-                          {bookingLabel}
-                          {isAuthenticated && <div className="drag-handle">⠿</div>}
-                        </div>
-                      ) : (
-                        <>
-                          {booking ? (
-                            <div className="cell-content">
-                              <div className="course-name">{booking.purpose}</div>
-                              <div className="teacher-name">👤 {booking.guest_name}</div>
-                              {bookingLabel}
-                            </div>
-                          ) : (
-                            <>
-                              {isAuthenticated && <div className="empty-cell">+</div>}
-                              {!isAuthenticated && <div className="guest-book-hint">📅 Click to book</div>}
-                              {isDragOvr && <div className="drop-indicator">Drop here</div>}
-                            </>
-                          )}
-                        </>
-                      )}
-                    </td>
-                  );
-                }))}
+                {daysToShow.map(day => (
+                  <th key={day}
+                    className={`day-header ${day === todayName ? 'today-col' : ''}`}
+                    colSpan={timeSlots.length}
+                  >
+                    {t(day)}{day === todayName && <span className="today-badge"> ★</span>}
+                  </th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+              <tr>
+                <th className="group-header" />
+                {daysToShow.map(day => timeSlots.map(time => (
+                  <th key={`${day}-${time}`}
+                    className={`time-header ${day === todayName ? 'today-time' : ''}`}
+                  >{time}</th>
+                )))}
+              </tr>
+            </thead>
+            <tbody>
+              {groupsToShow.map(group => (
+                <tr key={group}>
+                  <td className="group-cell">
+                    <div className="group-cell-content">
+                      <span className="group-name">{group}</span>
+                      {isAuthenticated && (
+                        <button className="delete-group-btn" onClick={() => {
+                          if (window.confirm(t('confirmDeleteGroup', { group }))) onDeleteGroup(group);
+                        }}>×</button>
+                      )}
+                    </div>
+                  </td>
+                  {daysToShow.map(day => timeSlots.map(time => {
+                    const cellKey   = `${group}-${day}-${time}`;
+                    if (cellsToSkip.has(cellKey)) return null;
+                    const classData = getClass(group, day, time);
+                    const show      = shouldShow(classData, day, time);
+                    const isToday   = day === todayName;
+                    const conflicts = getConflicts(group, day, time, classData);
+                    const isDragSrc = dragSource?.group === group && dragSource?.day === day && dragSource?.time === time;
+                    const isDragOvr = dragOver?.group   === group && dragOver?.day   === day && dragOver?.time   === time;
+                    const typeStyle = classData ? getTypeStyle(classData.subjectType) : null;
+                    const duration  = Math.min(6, Math.max(1, parseInt(classData?.duration) || 1));
+                    const booking   = getBooking(group, day, time);
+
+                    if (!show) return (
+                      <td key={cellKey} className={`schedule-cell filtered-out ${isToday ? 'today-cell' : ''}`} colSpan={duration}>
+                        <div className="filtered-label">{t('filtered')}</div>
+                      </td>
+                    );
+
+                    let bookingStyle = {};
+                    let bookingLabel = null;
+                    if (booking) {
+                      bookingStyle = booking.status === 'approved' ? { background:'#dcfce7', borderLeft:'3px solid #22c55e' }
+                        : booking.status === 'rejected' ? { background:'#fee2e2', borderLeft:'3px solid #ef4444' }
+                        : { background:'#fef9c3', borderLeft:'3px solid #eab308' };
+                      bookingLabel = (
+                        <div style={{fontSize:'0.68rem',marginTop:3,fontWeight:600,
+                          color: booking.status==='approved'?'#166534':booking.status==='rejected'?'#991b1b':'#854d0e',
+                          display:'flex',alignItems:'center',gap:3}}>
+                          {booking.status==='approved'?'✅':booking.status==='rejected'?'❌':'⏳'}
+                          <span>{booking.name||''}</span>
+                          {booking.room && <span style={{opacity:0.7}}>· {booking.room}</span>}
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <td key={cellKey}
+                        className={[
+                          'schedule-cell',
+                          classData ? 'filled' : '',
+                          isAuthenticated ? 'editable' : (!classData && !booking) ? 'guest-bookable' : '',
+                          isToday ? 'today-cell' : '',
+                          conflicts.includes('teacher') ? 'conflict-teacher' : '',
+                          conflicts.includes('room')    ? 'conflict-room'    : '',
+                          isDragSrc ? 'drag-source' : '',
+                          isDragOvr ? (classData ? 'drag-over-filled' : 'drag-over-empty') : '',
+                          duration > 1 ? 'multi-slot' : '',
+                        ].filter(Boolean).join(' ')}
+                        style={booking ? bookingStyle : (classData && typeStyle ? { background: typeStyle.light, borderLeft:`3px solid ${typeStyle.color}` } : {})}
+                        colSpan={duration}
+                        onClick={() => {
+                          if (isAuthenticated && !dragSource) { onEditClass(group, day, time); return; }
+                          if (!isAuthenticated && !classData && !booking && onGuestBookCell) onGuestBookCell(group, day, time);
+                        }}
+                        draggable={isAuthenticated && !!classData}
+                        onDragStart={classData ? (e) => handleDragStart(e, group, day, time) : undefined}
+                        onDragEnd={handleDragEnd}
+                        onDragOver={(e) => handleDragOver(e, group, day, time)}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, group, day, time)}
+                      >
+                        {classData ? (
+                          <div className="cell-content">
+                            {typeStyle && (
+                              <div className="type-pill" style={{ background: typeStyle.color }}>
+                                {typeStyle.icon} {typeLabels[classData.subjectType || 'lecture']}
+                              </div>
+                            )}
+                            {(conflicts.includes('teacher') || conflicts.includes('room')) && (
+                              <div className="cell-conflict-icons">
+                                {conflicts.includes('teacher') && <span>⚠️</span>}
+                                {conflicts.includes('room')    && <span>🚪⚠️</span>}
+                              </div>
+                            )}
+                            <div className="course-name">{classData.course}</div>
+                            {duration > 1 && <div className="duration-indicator">⏱ {duration*40}min</div>}
+                            {classData.teacher && <div className={`teacher-name ${conflicts.includes('teacher')?'conflict-text':''}`}>👨‍🏫 {classData.teacher}</div>}
+                            {classData.room    && <div className={`room-number ${conflicts.includes('room')?'conflict-text':''}`}>🚪 {classData.room}</div>}
+                            {bookingLabel}
+                            {isAuthenticated && <div className="drag-handle">⠿</div>}
+                          </div>
+                        ) : (
+                          <>
+                            {booking ? (
+                              <div className="cell-content">
+                                <div className="course-name">{booking.purpose}</div>
+                                <div className="teacher-name">👤 {booking.guest_name}</div>
+                                {bookingLabel}
+                              </div>
+                            ) : (
+                              <>
+                                {isAuthenticated && <div className="empty-cell">+</div>}
+                                {!isAuthenticated && <div className="guest-book-hint">📅 Click to book</div>}
+                                {isDragOvr && <div className="drop-indicator">Drop here</div>}
+                              </>
+                            )}
+                          </>
+                        )}
+                      </td>
+                    );
+                  }))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };
