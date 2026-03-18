@@ -1,5 +1,5 @@
 // src/components/ScheduleTable.js
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useSchedule } from '../context/ScheduleContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -207,15 +207,153 @@ const MobileView = ({
   );
 };
 
-// ── Calendar / week-grid view ─────────────────────────────────────────────
+// ── Google Calendar-style event detail popup ─────────────────────────────
+const CalEventPopup = ({ event, anchor, onClose, onEdit, isAuthenticated, typeLabels }) => {
+  const ref = useRef(null);
+  const typeStyle = event?.classData ? getTypeStyle(event.classData.subjectType) : null;
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) onClose();
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [onClose]);
+
+  if (!event || !anchor) return null;
+
+  const { classData, booking, group, day, time } = event;
+
+  const GCAL_COLORS = {
+    lecture: { header: '#4285f4', light: '#d2e3fc', text: '#174ea6' },
+    lab:     { header: '#34a853', light: '#ceead6', text: '#0d652d' },
+    seminar: { header: '#fbbc04', light: '#fde7c4', text: '#7a4100' },
+  };
+  const bookingHeaderColors = {
+    approved: '#34a853', rejected: '#ea4335', pending: '#fbbc04',
+  };
+
+  const typeKey    = classData?.subjectType || 'lecture';
+  const colors     = GCAL_COLORS[typeKey] || GCAL_COLORS.lecture;
+  const headerBg   = booking ? (bookingHeaderColors[booking.status] || bookingHeaderColors.pending) : colors.header;
+
+  // Smart popup positioning
+  const vpW = window.innerWidth;
+  const vpH = window.innerHeight;
+  const popupW = 288;
+  const popupH = 280;
+  let left = anchor.right + 12;
+  let top  = anchor.top + window.scrollY;
+  if (left + popupW > vpW - 16)  left = anchor.left - popupW - 12;
+  if (left < 16)                 left = 16;
+  if (top + popupH > vpH + window.scrollY - 16) top = Math.max(window.scrollY + 16, top - popupH + (anchor.bottom - anchor.top));
+
+  return (
+    <div className="gcal-popup-overlay" onClick={onClose}>
+      <div
+        ref={ref}
+        className="gcal-popup"
+        style={{ top, left, '--popup-header': headerBg, '--popup-text': colors.text, '--popup-light': colors.light }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Coloured header band */}
+        <div className="gcal-popup-header">
+          <div className="gcal-popup-type-badge">
+            {booking ? (
+              <>
+                {booking.status === 'approved' ? '✅' : booking.status === 'rejected' ? '❌' : '⏳'}
+                <span>{booking.status}</span>
+              </>
+            ) : typeStyle ? (
+              <>{typeStyle.icon} <span>{typeLabels[typeKey]}</span></>
+            ) : null}
+          </div>
+          <button className="gcal-popup-close-btn" onClick={onClose} aria-label="Close">✕</button>
+        </div>
+
+        {/* Body */}
+        <div className="gcal-popup-body">
+          <div className="gcal-popup-title">
+            {classData?.course || booking?.purpose || '—'}
+          </div>
+
+          <div className="gcal-popup-detail-list">
+            <div className="gcal-popup-detail-row">
+              <span className="gcal-popup-detail-icon">🗓</span>
+              <span>{day} · {time}</span>
+            </div>
+            <div className="gcal-popup-detail-row">
+              <span className="gcal-popup-detail-icon">👥</span>
+              <span className="gcal-popup-detail-group">{group}</span>
+            </div>
+            {classData?.teacher && (
+              <div className="gcal-popup-detail-row">
+                <span className="gcal-popup-detail-icon">👨‍🏫</span>
+                <span>{classData.teacher}</span>
+              </div>
+            )}
+            {classData?.room && (
+              <div className="gcal-popup-detail-row">
+                <span className="gcal-popup-detail-icon">🚪</span>
+                <span>{classData.room}</span>
+              </div>
+            )}
+            {classData?.duration > 1 && (
+              <div className="gcal-popup-detail-row">
+                <span className="gcal-popup-detail-icon">⏱</span>
+                <span>{classData.duration * 40} minutes</span>
+              </div>
+            )}
+            {classData?.meetingLink && (
+              <div className="gcal-popup-detail-row">
+                <span className="gcal-popup-detail-icon">🔗</span>
+                <a
+                  href={classData.meetingLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="gcal-popup-link"
+                  onClick={e => e.stopPropagation()}
+                >Join meeting</a>
+              </div>
+            )}
+            {booking?.guest_name && (
+              <div className="gcal-popup-detail-row">
+                <span className="gcal-popup-detail-icon">👤</span>
+                <span>{booking.guest_name}</span>
+              </div>
+            )}
+            {booking?.purpose && classData && (
+              <div className="gcal-popup-detail-row">
+                <span className="gcal-popup-detail-icon">📋</span>
+                <span>{booking.purpose}</span>
+              </div>
+            )}
+          </div>
+
+          {isAuthenticated && (
+            <button
+              className="gcal-popup-edit-btn"
+              onClick={() => { onEdit(); onClose(); }}
+            >
+              ✏️ Edit class
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ── Google Calendar week view ─────────────────────────────────────────────
 const CalendarView = ({
   daysToShow, groupsToShow, timeSlots, schedule, todayName,
   cellsToSkip, occupiedRoomCells, selectedRoom, normSelectedTeacher,
   isAuthenticated, bookings, onEditClass, onGuestBookCell,
   typeLabels, t,
 }) => {
-  const getClass = (group, day, time) => schedule[`${group}-${day}-${time}`] || null;
+  const [popup, setPopup] = useState(null);
 
+  const getClass   = (group, day, time) => schedule[`${group}-${day}-${time}`] || null;
   const getBooking = (group, day, time) => {
     const classEntry = schedule[`${group}-${day}-${time}`];
     if (classEntry?.room)
@@ -224,136 +362,124 @@ const CalendarView = ({
       (b.entity === group || b.name === group)) || null;
   };
 
+  // Exact Google Calendar palette
+  const TYPE_COLORS = {
+    lecture: { bg: '#d2e3fc', text: '#174ea6', border: '#4285f4' },
+    lab:     { bg: '#ceead6', text: '#0d652d', border: '#34a853' },
+    seminar: { bg: '#fde7c4', text: '#7a4100', border: '#fbbc04' },
+  };
+  const BOOKING_COLORS = {
+    approved: { bg: '#ceead6', text: '#0d652d', border: '#34a853' },
+    rejected: { bg: '#fce8e6', text: '#c5221f', border: '#ea4335' },
+    pending:  { bg: '#fef9c3', text: '#78350f', border: '#fbbc04' },
+  };
+
+  const handleBlockClick = (e, group, day, time, classData, booking) => {
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+    setPopup({
+      event:  { classData, booking, group, day, time },
+      anchor: { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right },
+    });
+  };
+
   return (
-    <div className="cal-view-wrapper">
-      <div className="cal-view" style={{ '--cal-day-count': daysToShow.length }}>
+    <div className="gcal-outer">
+      {popup && (
+        <CalEventPopup
+          event={popup.event}
+          anchor={popup.anchor}
+          onClose={() => setPopup(null)}
+          onEdit={() => onEditClass(popup.event.group, popup.event.day, popup.event.time)}
+          isAuthenticated={isAuthenticated}
+          typeLabels={typeLabels}
+        />
+      )}
 
-        {/* Column headers: one per day */}
-        <div className="cal-header-row">
-          <div className="cal-time-gutter-header" />
-          {daysToShow.map(day => (
-            <div key={day} className={`cal-day-col-header ${day === todayName ? 'cal-today-hdr' : ''}`}>
-              {t(day) || day}
-              {day === todayName && <span className="today-badge"> ★</span>}
-            </div>
-          ))}
-        </div>
+      <div className="gcal-scroll-area">
+        <div className="gcal-grid" style={{ '--gcal-cols': daysToShow.length }}>
 
-        {/* One row per time-slot */}
-        {timeSlots.map(time => (
-          <div key={time} className="cal-time-row">
-            <div className="cal-time-gutter">{time}</div>
+          {/* ── Day header row ── */}
+          <div className="gcal-header-row">
+            <div className="gcal-gutter-top" />
+            {daysToShow.map(day => (
+              <div
+                key={day}
+                className={`gcal-col-header ${day === todayName ? 'gcal-col-today' : ''}`}
+              >
+                <span className="gcal-col-day-name">{(t(day) || day).slice(0, 3).toUpperCase()}</span>
+              </div>
+            ))}
+          </div>
 
-            {daysToShow.map(day => {
-              /* Collect all groups that have content in this day+time slot */
-              const blocks = groupsToShow
-                .map(group => {
+          {/* ── Time rows ── */}
+          {timeSlots.map(time => (
+            <div key={time} className="gcal-time-row">
+              <div className="gcal-time-label">{time}</div>
+
+              {daysToShow.map(day => {
+                const isToday = day === todayName;
+
+                const blocks = groupsToShow.flatMap(group => {
                   const key = `${group}-${day}-${time}`;
-                  if (cellsToSkip.has(key)) return null;
+                  if (cellsToSkip.has(key)) return [];
                   const classData = getClass(group, day, time);
                   if (normSelectedTeacher && classData &&
-                    normalizeTeacherName(classData.teacher) !== normSelectedTeacher) return null;
-                  if (selectedRoom && occupiedRoomCells.has(`${day}-${time}`)) return null;
+                    normalizeTeacherName(classData.teacher) !== normSelectedTeacher) return [];
+                  if (selectedRoom && occupiedRoomCells.has(`${day}-${time}`)) return [];
                   const booking = getBooking(group, day, time);
-                  if (!classData && !booking) return null;
-                  return { group, classData, booking };
-                })
-                .filter(Boolean);
+                  if (!classData && !booking) return [];
+                  return [{ group, classData, booking }];
+                });
 
-              const isEmpty = blocks.length === 0;
+                const isEmpty = blocks.length === 0;
 
-              return (
-                <div
-                  key={day}
-                  className={`cal-day-cell ${day === todayName ? 'cal-today-cell' : ''} ${isEmpty ? 'cal-cell-empty' : ''}`}
-                >
-                  {isEmpty ? (
-                    isAuthenticated
-                      ? <span className="cal-add-hint">+</span>
-                      : onGuestBookCell
-                        ? (
-                          <span
-                            className="cal-guest-hint"
-                            onClick={() => onGuestBookCell(groupsToShow[0], day, time)}
-                          >📅</span>
-                        )
-                        : null
-                  ) : (
-                    blocks.map(({ group, classData, booking }) => {
-                      const typeStyle = classData ? getTypeStyle(classData.subjectType) : null;
-                      const duration  = Math.min(6, Math.max(1, parseInt(classData?.duration) || 1));
-
-                      const bookingColor = booking
-                        ? (booking.status === 'approved' ? '#22c55e'
-                          : booking.status === 'rejected' ? '#ef4444'
-                          : '#eab308')
-                        : null;
-
-                      const bgColor = bookingColor
-                        ? (booking.status === 'approved' ? 'rgba(34,197,94,0.15)'
-                          : booking.status === 'rejected' ? 'rgba(239,68,68,0.15)'
-                          : 'rgba(234,179,8,0.15)')
-                        : typeStyle
-                          ? typeStyle.light
-                          : undefined;
-
-                      const borderColor = bookingColor ?? typeStyle?.color;
+                return (
+                  <div
+                    key={day}
+                    className={[
+                      'gcal-cell',
+                      isToday   ? 'gcal-cell-today'  : '',
+                      isEmpty   ? 'gcal-cell-empty'  : '',
+                    ].filter(Boolean).join(' ')}
+                    onClick={() => {
+                      if (!isEmpty) return;
+                      if (isAuthenticated) onEditClass(groupsToShow[0] || '', day, time);
+                      else if (onGuestBookCell) onGuestBookCell(groupsToShow[0] || '', day, time);
+                    }}
+                  >
+                    {blocks.map(({ group, classData, booking }) => {
+                      const duration = Math.min(6, Math.max(1, parseInt(classData?.duration) || 1));
+                      const colors = booking
+                        ? (BOOKING_COLORS[booking.status] || BOOKING_COLORS.pending)
+                        : (TYPE_COLORS[classData?.subjectType] || TYPE_COLORS.lecture);
 
                       return (
                         <div
                           key={group}
-                          className={`cal-block cal-type-${classData?.subjectType || 'lecture'}`}
+                          className={`gcal-event-block ${duration > 1 ? 'gcal-event-multi' : ''}`}
                           style={{
-                            background:  bgColor,
-                            borderLeft:  `3px solid ${borderColor || 'transparent'}`,
+                            '--ev-bg':     colors.bg,
+                            '--ev-text':   colors.text,
+                            '--ev-border': colors.border,
                           }}
-                          onClick={() => {
-                            if (isAuthenticated) { onEditClass(group, day, time); return; }
-                            if (!isAuthenticated && !classData && !booking && onGuestBookCell)
-                              onGuestBookCell(group, day, time);
-                          }}
+                          onClick={e => handleBlockClick(e, group, day, time, classData, booking)}
                         >
-                          {/* Type pill — colour directly on the block */}
-                          {typeStyle && !bookingColor && (
-                            <span
-                              className="cal-type-pill"
-                              style={{ background: typeStyle.color }}
-                            >
-                              {typeStyle.icon} {typeLabels[classData.subjectType || 'lecture']}
-                            </span>
-                          )}
-
-                          {bookingColor && (
-                            <span
-                              className="cal-type-pill"
-                              style={{ background: bookingColor }}
-                            >
-                              {booking.status === 'approved' ? '✅' : booking.status === 'rejected' ? '❌' : '⏳'}
-                              {' '}{booking.status}
-                            </span>
-                          )}
-
-                          <div className="cal-block-course">
+                          <span className="gcal-event-title">
                             {classData?.course || booking?.purpose}
-                          </div>
-
-                          <div className="cal-block-meta">
-                            {classData?.teacher && <span>👨‍🏫 {classData.teacher}</span>}
-                            {classData?.room    && <span>🚪 {classData.room}</span>}
-                            {duration > 1       && (
-                              <span className="cal-duration">⏱ {duration * 40}m</span>
-                            )}
-                            <span className="cal-group-tag">{group}</span>
-                          </div>
+                          </span>
+                          {classData?.room && (
+                            <span className="gcal-event-sub">{classData.room}</span>
+                          )}
                         </div>
                       );
-                    })
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ))}
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -491,14 +617,21 @@ const ScheduleTable = ({
       </>}
       {isAuthenticated && <div className="legend-item legend-drag-hint">↔ {t('dragHint')}</div>}
 
-      {/* View mode toggle */}
-      <button
-        className={`view-mode-btn${viewMode === 'calendar' ? ' active' : ''}`}
-        onClick={() => setViewMode(v => v === 'table' ? 'calendar' : 'table')}
-        title={viewMode === 'calendar' ? 'Switch to table view' : 'Switch to calendar view'}
-      >
-        {viewMode === 'calendar' ? '📋 Table view' : '📅 Calendar view'}
-      </button>
+      {/* Segmented view toggle */}
+      <div className="view-mode-toggle">
+        <button
+          className={`vmt-btn ${viewMode === 'table' ? 'vmt-active' : ''}`}
+          onClick={() => setViewMode('table')}
+        >
+          ☰ Table
+        </button>
+        <button
+          className={`vmt-btn ${viewMode === 'calendar' ? 'vmt-active' : ''}`}
+          onClick={() => setViewMode('calendar')}
+        >
+          📅 Calendar
+        </button>
+      </div>
 
       <button
         className={`empty-slot-toggle-btn${showEmpty ? ' active' : ''}`}
@@ -520,10 +653,10 @@ const ScheduleTable = ({
     <div className="schedule-container">
       <Legend />
 
-      {/* ── Mobile card view (always shown on mobile, unaffected by viewMode) ── */}
+      {/* ── Mobile card view — always shown on mobile, unaffected by viewMode ── */}
       <MobileView {...mobileProps} />
 
-      {/* ── Calendar view (desktop) ── */}
+      {/* ── Google Calendar view ── */}
       {viewMode === 'calendar' && (
         <CalendarView {...sharedCalendarProps} />
       )}
