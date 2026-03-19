@@ -82,7 +82,7 @@ const AppContent = () => {
   const [activeView,        setActiveView]        = useState('schedule');
   const [selectedDay,       setSelectedDay]       = useState(getTodayScheduleDay);
   const [selectedTeacher,   setSelectedTeacher]   = useState('');
-  const [selectedGroup,     setSelectedGroup]     = useState('');
+  const [selectedGroup,     setSelectedGroup]     = useState(() => localStorage.getItem('myGroup') || '');
   const [selectedRoom,      setSelectedRoom]      = useState('');
   const [modalOpen,         setModalOpen]         = useState(false);
   const [currentCell,       setCurrentCell]       = useState({ group:null, day:null, time:null });
@@ -247,9 +247,38 @@ const AppContent = () => {
 
       <input type="file" ref={fileInputRef} accept=".xlsx,.xls" onChange={handleFileChange} style={{ display:'none' }} />
 
-      {(importing || scheduleLoading) && (
+      {importing && (
         <div className="import-overlay">
-          <div className="import-spinner">⏳ {scheduleLoading ? 'Loading…' : 'Importing…'}</div>
+          <div className="import-spinner">⏳ Importing…</div>
+        </div>
+      )}
+      {scheduleLoading && (
+        <div className="skeleton-wrap">
+          <div className="skeleton-topbar" />
+          <div className="skeleton-body">
+            <div className="skeleton-sidebar">
+              {[...Array(6)].map((_,i) => <div key={i} className="skeleton-nav-item" />)}
+            </div>
+            <div className="skeleton-content">
+              <div className="skeleton-legend" />
+              <div className="skeleton-table">
+                <div className="skeleton-header-row">
+                  <div className="skeleton-cell skeleton-group-col" />
+                  {[...Array(6)].map((_,i) => <div key={i} className="skeleton-cell skeleton-day-col" />)}
+                </div>
+                {[...Array(8)].map((_,row) => (
+                  <div key={row} className="skeleton-row">
+                    <div className="skeleton-cell skeleton-group-col" />
+                    {[...Array(6)].map((_,i) => (
+                      <div key={i} className="skeleton-cell">
+                        {Math.random() > 0.6 && <div className="skeleton-block" />}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -285,10 +314,7 @@ const AppContent = () => {
 
         <select value={selectedGroup} onChange={e => {
           setSelectedGroup(e.target.value);
-          if (!isAuthenticated) {
-            if (e.target.value) localStorage.setItem('myGroup', e.target.value);
-            else localStorage.removeItem('myGroup');
-          }
+          if (e.target.value) localStorage.setItem('myGroup', e.target.value);
           else localStorage.removeItem('myGroup');
         }} style={S.sel}>
           <option value="">{t('allGroups')}</option>
@@ -556,7 +582,7 @@ const AppContent = () => {
 
       {showTour && isAuthenticated}
 
-      {showTour && isAuthenticated }
+      {showTour && isAuthenticated}
 
       {/* ── Mobile bottom nav ── */}
       <div className="mob-bottom-nav">
