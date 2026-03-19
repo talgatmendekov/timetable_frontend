@@ -89,7 +89,7 @@ const MobileView = ({
                           style={bkB ? { borderLeft: `3px solid ${bkB}` } : cd && ts ? { borderLeft: `3px solid ${ts.color}` } : {}}
                           onClick={() => { if (isAuthenticated) { onEditClass(group, day, tm); return; } if (!cd && !bk && onGuestBookCell) onGuestBookCell(group, day, tm); }}>
                           <div className={`mob-slot-time ${isToday ? 'today-t' : ''}`}>
-                            {tm}{cd && dur > 1 && <span className="mob-duration-badge">⏱ {dur * 40}m</span>}
+                            {tm}
                           </div>
                           <div className="mob-slot-body">
                             {cd ? (<>

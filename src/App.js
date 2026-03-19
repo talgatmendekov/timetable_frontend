@@ -556,7 +556,7 @@ const AppContent = () => {
 
       {showTour && isAuthenticated}
 
-      {showTour && isAuthenticated}
+      {showTour && isAuthenticated }
 
       {/* ── Mobile bottom nav ── */}
       <div className="mob-bottom-nav">
