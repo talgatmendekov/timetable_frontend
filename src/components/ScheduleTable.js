@@ -353,6 +353,8 @@ const CalendarView = ({
                         onClick={e => openEventPopup(e, first.group, day, time, first.cd, first.bk)}
                       >
                         <div className="gcal-block-name">{first.cd?.course || first.bk?.purpose}</div>
+                        {/* FIX: show group name so users can see which group this belongs to */}
+                        <div className="gcal-block-group">{first.group}</div>
                         {first.cd?.room && <div className="gcal-block-room">{first.cd.room}</div>}
                       </div>
                     )}
