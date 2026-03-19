@@ -210,6 +210,10 @@ const MorePopup = ({ blocks, anchorRect, onClose, onSelectBlock }) => {
   );
 };
 
+// ─── CalendarView ────────────────────────────────────────────────────────────
+// Layout mirrors the table view: groups are rows (sticky label column on left),
+// days are columns, time slots are sub-rows within each group section.
+// ─────────────────────────────────────────────────────────────────────────────
 const CalendarView = ({
   daysToShow, groupsToShow, timeSlots, schedule,
   todayName, weekOffset, onShiftWeek,
@@ -218,9 +222,8 @@ const CalendarView = ({
   typeLabels, t,
 }) => {
   const [eventPopup, setEventPopup] = useState(null);
-  const [morePopup,  setMorePopup]  = useState(null);
 
-  const getClass   = (g, d, tm) => schedule[`${g}-${d}-${tm}`] || null;
+  const getClass = (g, d, tm) => schedule[`${g}-${d}-${tm}`] || null;
   const getBooking = (g, d, tm) => {
     const ce = schedule[`${g}-${d}-${tm}`];
     if (ce?.room) return bookings.find(b => b.room === ce.room && b.day === d && b.start_time === tm) || null;
@@ -261,18 +264,8 @@ const CalendarView = ({
     setEventPopup({ event: { classData: cd, booking: bk, group, day, time }, anchorRect: e.currentTarget.getBoundingClientRect() });
   }, []);
 
-  const openMorePopup = useCallback((e, blocks, day, time) => {
-    e.stopPropagation();
-    setMorePopup({ blocks, anchorRect: e.currentTarget.getBoundingClientRect(), day, time });
-  }, []);
-
-  const handleSelectFromMore = useCallback(({ group, cd, bk }) => {
-    const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
-    setEventPopup({
-      event: { classData: cd, booking: bk, group, day: morePopup?.day, time: morePopup?.time },
-      anchorRect: { top: cy - 150, left: cx - 148, right: cx + 148, bottom: cy + 150 },
-    });
-  }, [morePopup]);
+  // Grid: [group label 140px] + [time gutter 72px] + [N day columns]
+  const gridCols = `140px 72px repeat(${daysToShow.length}, minmax(110px, 1fr))`;
 
   return (
     <div className="gcal-wrap">
@@ -302,73 +295,88 @@ const CalendarView = ({
       </div>
 
       <div className="gcal-grid-scroll">
-        <div className="gcal-grid" style={{ '--gcal-cols': daysToShow.length }}>
-          <div className="gcal-head-row">
-            <div className="gcal-head-gutter" />
-            {weekDayLabels.map(({ dayName, label }) => (
-              <div key={dayName} className={`gcal-head-cell ${dayName === todayName ? 'gcal-head-today' : ''}`}>
-                {label}
-              </div>
-            ))}
-          </div>
 
-          {timeSlots.map(time => (
-            <div key={time} className="gcal-row">
-              <div className="gcal-time-gutter">{time}</div>
-              {daysToShow.map(day => {
-                const isToday = day === todayName;
-                const allBlocks = groupsToShow.flatMap(group => {
-                  const key = `${group}-${day}-${time}`;
-                  if (cellsToSkip.has(key)) return [];
-                  const cd = getClass(group, day, time);
-                  if (normSelectedTeacher && cd && normalizeTeacherName(cd.teacher) !== normSelectedTeacher) return [];
-                  if (selectedRoom && occupiedRoomCells.has(`${day}-${time}`)) return [];
-                  const bk = getBooking(group, day, time);
-                  if (!cd && !bk) return [];
-                  return [{ group, cd, bk }];
-                });
-
-                const first  = allBlocks[0] || null;
-                const extras = allBlocks.slice(1);
-                const isEmpty = allBlocks.length === 0;
-                const fc = first
-                  ? (first.bk ? (BK_COLORS[first.bk.status] || BK_COLORS.pending) : (TYPE_COLORS[first.cd?.subjectType] || TYPE_COLORS.lecture))
-                  : null;
-                const fd = first ? Math.min(6, Math.max(1, parseInt(first.cd?.duration) || 1)) : 1;
-
-                return (
-                  <div
-                    key={day}
-                    className={`gcal-cell ${isToday ? 'gcal-cell-today' : ''} ${isEmpty ? 'gcal-cell-empty' : ''}`}
-                    onClick={() => {
-                      if (!isEmpty) return;
-                      if (isAuthenticated) onEditClass(groupsToShow[0] || '', day, time);
-                      else if (onGuestBookCell) onGuestBookCell(groupsToShow[0] || '', day, time);
-                    }}
-                  >
-                    {first && (
-                      <div
-                        className={`gcal-block${fd > 1 ? ' gcal-block-multi' : ''}`}
-                        style={{ '--blk-bg': fc.bg, '--blk-text': fc.text, '--blk-border': fc.border }}
-                        onClick={e => openEventPopup(e, first.group, day, time, first.cd, first.bk)}
-                      >
-                        <div className="gcal-block-name">{first.cd?.course || first.bk?.purpose}</div>
-                        {/* FIX: show group name so users can see which group this belongs to */}
-                        <div className="gcal-block-group">{first.group}</div>
-                        {first.cd?.room && <div className="gcal-block-room">{first.cd.room}</div>}
-                      </div>
-                    )}
-                    {extras.length > 0 && (
-                      <button className="gcal-more-badge" onClick={e => openMorePopup(e, allBlocks, day, time)}>
-                        +{extras.length} more
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
+        {/* ── Sticky header: corner + time gutter placeholder + day headers ── */}
+        <div className="gcal-group-head-row" style={{ gridTemplateColumns: gridCols }}>
+          <div className="gcal-group-head-corner">Group / Time</div>
+          <div className="gcal-head-gutter" />
+          {weekDayLabels.map(({ dayName, label }) => (
+            <div key={dayName} className={`gcal-head-cell ${dayName === todayName ? 'gcal-head-today' : ''}`}>
+              {label}
             </div>
           ))}
         </div>
+
+        {/* ── One band per group ── */}
+        {groupsToShow.map(group => (
+          <div key={group} className="gcal-group-section">
+            {timeSlots.map((time, ti) => (
+              <div key={time} className="gcal-group-row" style={{ gridTemplateColumns: gridCols }}>
+
+                {/* Group label cell — visible only on first time-slot row */}
+                <div className={`gcal-group-label-cell${ti === 0 ? ' gcal-group-label-first' : ' gcal-group-label-rest'}`}>
+                  {ti === 0 && <div className="gcal-group-label-inner">{group}</div>}
+                </div>
+
+                {/* Time gutter */}
+                <div className="gcal-time-gutter">{time}</div>
+
+                {/* One cell per day */}
+                {daysToShow.map(day => {
+                  const cellKey = `${group}-${day}-${time}`;
+                  const isToday = day === todayName;
+
+                  if (cellsToSkip.has(cellKey)) {
+                    return <div key={day} className={`gcal-cell gcal-cell-skip${isToday ? ' gcal-cell-today' : ''}`} />;
+                  }
+
+                  const cd = getClass(group, day, time);
+
+                  if (normSelectedTeacher && cd && normalizeTeacherName(cd.teacher) !== normSelectedTeacher) {
+                    return <div key={day} className={`gcal-cell${isToday ? ' gcal-cell-today' : ''}`} />;
+                  }
+                  if (selectedRoom && occupiedRoomCells.has(`${day}-${time}`)) {
+                    return <div key={day} className={`gcal-cell${isToday ? ' gcal-cell-today' : ''}`} />;
+                  }
+
+                  const bk = getBooking(group, day, time);
+                  const isEmpty = !cd && !bk;
+                  const dur = cd ? Math.min(6, Math.max(1, parseInt(cd.duration) || 1)) : 1;
+                  const fc = cd
+                    ? (TYPE_COLORS[cd.subjectType] || TYPE_COLORS.lecture)
+                    : bk
+                      ? (BK_COLORS[bk.status] || BK_COLORS.pending)
+                      : null;
+
+                  return (
+                    <div
+                      key={day}
+                      className={`gcal-cell${isToday ? ' gcal-cell-today' : ''}${isEmpty ? ' gcal-cell-empty' : ''}`}
+                      onClick={() => {
+                        if (!isEmpty) return;
+                        if (isAuthenticated) onEditClass(group, day, time);
+                        else if (onGuestBookCell) onGuestBookCell(group, day, time);
+                      }}
+                    >
+                      {(cd || bk) && fc && (
+                        <div
+                          className={`gcal-block${dur > 1 ? ' gcal-block-multi' : ''}`}
+                          style={{ '--blk-bg': fc.bg, '--blk-text': fc.text, '--blk-border': fc.border }}
+                          onClick={e => openEventPopup(e, group, day, time, cd, bk)}
+                        >
+                          <div className="gcal-block-name">{cd?.course || bk?.purpose}</div>
+                          {(cd?.room || bk?.room) && (
+                            <div className="gcal-block-room">{cd?.room || bk?.room}</div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        ))}
       </div>
 
       {eventPopup && (
@@ -377,12 +385,6 @@ const CalendarView = ({
           onClose={() => setEventPopup(null)}
           onEdit={() => onEditClass(eventPopup.event.group, eventPopup.event.day, eventPopup.event.time)}
           isAuthenticated={isAuthenticated} typeLabels={typeLabels}
-        />
-      )}
-      {morePopup && (
-        <MorePopup
-          blocks={morePopup.blocks} anchorRect={morePopup.anchorRect}
-          onClose={() => setMorePopup(null)} onSelectBlock={handleSelectFromMore}
         />
       )}
     </div>
