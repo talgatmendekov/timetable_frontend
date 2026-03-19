@@ -18,7 +18,7 @@ export const translations = {
     allGroups: 'All Groups',
 
     // Topbar admin actions
-    addGroup: '+ Add Group',
+    addGroup: 'Add Group',
     export: 'Export',
     import: 'Import',
     clearAll: 'Clear All',
@@ -906,7 +906,7 @@ export const translations = {
     allTeachers: 'Бардык мугалимдер',
     allGroups: 'Бардык топтор',
 
-    addGroup: '+ Топ кошуу',
+    addGroup: 'Топ кошуу',
     export: 'Экспорт',
     import: 'Импорт',
     clearAll: 'Баарын тазалоо',
