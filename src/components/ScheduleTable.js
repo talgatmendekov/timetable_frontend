@@ -171,48 +171,13 @@ const GCalPopup = ({ event, anchorRect, onClose, onEdit, isAuthenticated, typeLa
   );
 };
 
-const MorePopup = ({ blocks, anchorRect, onClose, onSelectBlock }) => {
-  const ref = useRef(null);
-  useEffect(() => {
-    const h = e => { if (ref.current && !ref.current.contains(e.target)) onClose(); };
-    document.addEventListener('mousedown', h, true);
-    return () => document.removeEventListener('mousedown', h, true);
-  }, [onClose]);
-  const TC = { lecture: { bg: '#c8deff', text: '#1a4d8f', border: '#4285f4' }, lab: { bg: '#c4e6c8', text: '#1a5c2a', border: '#34a853' }, seminar: { bg: '#fce4b0', text: '#7a4100', border: '#f9ab00' } };
-  const BC = { approved: { bg: '#c4e6c8', text: '#1a5c2a', border: '#34a853' }, rejected: { bg: '#fdd9d7', text: '#c5221f', border: '#ea4335' }, pending: { bg: '#fce4b0', text: '#7a4100', border: '#f9ab00' } };
-  const PW = 260, vw = window.innerWidth;
-  let left = (anchorRect?.right ?? 200) + 8, top = (anchorRect?.top ?? 100) + window.scrollY;
-  if (left + PW > vw - 12) left = (anchorRect?.left ?? PW + 12) - PW - 8;
-  if (left < 12) left = 12;
-  return (
-    <div className="gcpop-overlay" onMouseDown={onClose}>
-      <div ref={ref} className="more-popup" style={{ top, left }} onMouseDown={e => e.stopPropagation()}>
-        <div className="more-popup-header">
-          <span>All classes this slot</span>
-          <button className="gcpop-close" style={{ background: 'rgba(0,0,0,0.08)', color: '#333' }} onClick={onClose}>✕</button>
-        </div>
-        <div className="more-popup-list">
-          {blocks.map(({ group, cd, bk }) => {
-            const tk = cd?.subjectType || 'lecture';
-            const c = bk ? (BC[bk.status] || BC.pending) : (TC[tk] || TC.lecture);
-            return (
-              <div key={group} className="more-popup-item"
-                style={{ '--mp-bg': c.bg, '--mp-text': c.text, '--mp-border': c.border }}
-                onClick={() => { onSelectBlock({ group, cd, bk }); onClose(); }}>
-                <div className="more-popup-item-name">{cd?.course || bk?.purpose}</div>
-                <div className="more-popup-item-meta"><span>{group}</span>{cd?.room && <span>· {cd.room}</span>}</div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// ─── CalendarView ────────────────────────────────────────────────────────────
-// Layout mirrors the table view: groups are rows (sticky label column on left),
-// days are columns, time slots are sub-rows within each group section.
+// ─── CalendarView ─────────────────────────────────────────────────────────────
+// Identical structure to the schedule table:
+//   rows    = groups  (sticky dark label column, same style as table)
+//   columns = days    (each day spans N time-slot sub-columns)
+//   sub-row = time slots listed under each day header
+// Rendered as <table> so colSpan, sticky, and borders all work naturally.
+// Light cream (gcal-*) theme to visually distinguish from the dark table view.
 // ─────────────────────────────────────────────────────────────────────────────
 const CalendarView = ({
   daysToShow, groupsToShow, timeSlots, schedule,
@@ -264,17 +229,17 @@ const CalendarView = ({
     setEventPopup({ event: { classData: cd, booking: bk, group, day, time }, anchorRect: e.currentTarget.getBoundingClientRect() });
   }, []);
 
-  // Grid: [group label 140px] + [time gutter 72px] + [N day columns]
-  const gridCols = `140px 72px repeat(${daysToShow.length}, minmax(110px, 1fr))`;
-
   return (
     <div className="gcal-wrap">
+
+      {/* ── Nav ── */}
       <div className="gcal-nav">
         <button className="gcal-nav-btn" onClick={() => onShiftWeek(w => w - 1)}>← prev</button>
         <span className="gcal-nav-title">{weekRangeLabel}</span>
         <button className="gcal-nav-btn" onClick={() => onShiftWeek(w => w + 1)}>next →</button>
       </div>
 
+      {/* ── Legend ── */}
       <div className="gcal-legend">
         {[
           { key: 'lecture', bg: '#c8deff', border: '#4285f4', label: 'Lecture' },
@@ -294,89 +259,120 @@ const CalendarView = ({
         )}
       </div>
 
-      <div className="gcal-grid-scroll">
+      {/* ── Table ── */}
+      <div className="gcal-table-scroll">
+        <table className="gcal-table">
+          <thead>
+            {/* Row 1: corner + day name headers, each spanning all time slots */}
+            <tr>
+              <th className="gcal-th-group">
+                Group
+                {!isAuthenticated && <div className="lock-icon">🔒</div>}
+              </th>
+              {weekDayLabels.map(({ dayName, label }) => (
+                <th
+                  key={dayName}
+                  className={`gcal-th-day${dayName === todayName ? ' gcal-th-day-today' : ''}`}
+                  colSpan={timeSlots.length}
+                >
+                  {label}
+                  {dayName === todayName && <span className="today-badge"> ★</span>}
+                </th>
+              ))}
+            </tr>
+            {/* Row 2: empty group corner + time slot sub-headers */}
+            <tr>
+              <th className="gcal-th-group" />
+              {daysToShow.map(day =>
+                timeSlots.map(tm => (
+                  <th
+                    key={`${day}-${tm}`}
+                    className={`gcal-th-time${day === todayName ? ' gcal-th-time-today' : ''}`}
+                  >
+                    {tm}
+                  </th>
+                ))
+              )}
+            </tr>
+          </thead>
 
-        {/* ── Sticky header: corner + time gutter placeholder + day headers ── */}
-        <div className="gcal-group-head-row" style={{ gridTemplateColumns: gridCols }}>
-          <div className="gcal-group-head-corner">Group / Time</div>
-          <div className="gcal-head-gutter" />
-          {weekDayLabels.map(({ dayName, label }) => (
-            <div key={dayName} className={`gcal-head-cell ${dayName === todayName ? 'gcal-head-today' : ''}`}>
-              {label}
-            </div>
-          ))}
-        </div>
+          <tbody>
+            {groupsToShow.map(group => (
+              <tr key={group}>
+                {/* Sticky group label — mirrors dark table group-cell */}
+                <td className="gcal-td-group">
+                  <span className="gcal-group-name">{group}</span>
+                </td>
 
-        {/* ── One band per group ── */}
-        {groupsToShow.map(group => (
-          <div key={group} className="gcal-group-section">
-            {timeSlots.map((time, ti) => (
-              <div key={time} className="gcal-group-row" style={{ gridTemplateColumns: gridCols }}>
+                {daysToShow.map(day =>
+                  timeSlots.map(tm => {
+                    const cellKey = `${group}-${day}-${tm}`;
+                    if (cellsToSkip.has(cellKey)) return null;
 
-                {/* Group label cell — visible only on first time-slot row */}
-                <div className={`gcal-group-label-cell${ti === 0 ? ' gcal-group-label-first' : ' gcal-group-label-rest'}`}>
-                  {ti === 0 && <div className="gcal-group-label-inner">{group}</div>}
-                </div>
+                    const isToday = day === todayName;
+                    const cd = getClass(group, day, tm);
 
-                {/* Time gutter */}
-                <div className="gcal-time-gutter">{time}</div>
+                    if (normSelectedTeacher && cd && normalizeTeacherName(cd.teacher) !== normSelectedTeacher) {
+                      return <td key={cellKey} className={`gcal-td${isToday ? ' gcal-td-today' : ''}`} />;
+                    }
+                    if (selectedRoom && occupiedRoomCells.has(`${day}-${tm}`)) {
+                      return (
+                        <td key={cellKey} className={`gcal-td gcal-td-filtered${isToday ? ' gcal-td-today' : ''}`}>
+                          <div className="filtered-label">{t('filtered')}</div>
+                        </td>
+                      );
+                    }
 
-                {/* One cell per day */}
-                {daysToShow.map(day => {
-                  const cellKey = `${group}-${day}-${time}`;
-                  const isToday = day === todayName;
+                    const bk = getBooking(group, day, tm);
+                    const isEmpty = !cd && !bk;
+                    const dur = cd ? Math.min(6, Math.max(1, parseInt(cd.duration) || 1)) : 1;
+                    const fc = cd
+                      ? (TYPE_COLORS[cd.subjectType] || TYPE_COLORS.lecture)
+                      : bk
+                        ? (BK_COLORS[bk.status] || BK_COLORS.pending)
+                        : null;
 
-                  if (cellsToSkip.has(cellKey)) {
-                    return <div key={day} className={`gcal-cell gcal-cell-skip${isToday ? ' gcal-cell-today' : ''}`} />;
-                  }
-
-                  const cd = getClass(group, day, time);
-
-                  if (normSelectedTeacher && cd && normalizeTeacherName(cd.teacher) !== normSelectedTeacher) {
-                    return <div key={day} className={`gcal-cell${isToday ? ' gcal-cell-today' : ''}`} />;
-                  }
-                  if (selectedRoom && occupiedRoomCells.has(`${day}-${time}`)) {
-                    return <div key={day} className={`gcal-cell${isToday ? ' gcal-cell-today' : ''}`} />;
-                  }
-
-                  const bk = getBooking(group, day, time);
-                  const isEmpty = !cd && !bk;
-                  const dur = cd ? Math.min(6, Math.max(1, parseInt(cd.duration) || 1)) : 1;
-                  const fc = cd
-                    ? (TYPE_COLORS[cd.subjectType] || TYPE_COLORS.lecture)
-                    : bk
-                      ? (BK_COLORS[bk.status] || BK_COLORS.pending)
-                      : null;
-
-                  return (
-                    <div
-                      key={day}
-                      className={`gcal-cell${isToday ? ' gcal-cell-today' : ''}${isEmpty ? ' gcal-cell-empty' : ''}`}
-                      onClick={() => {
-                        if (!isEmpty) return;
-                        if (isAuthenticated) onEditClass(group, day, time);
-                        else if (onGuestBookCell) onGuestBookCell(group, day, time);
-                      }}
-                    >
-                      {(cd || bk) && fc && (
-                        <div
-                          className={`gcal-block${dur > 1 ? ' gcal-block-multi' : ''}`}
-                          style={{ '--blk-bg': fc.bg, '--blk-text': fc.text, '--blk-border': fc.border }}
-                          onClick={e => openEventPopup(e, group, day, time, cd, bk)}
-                        >
-                          <div className="gcal-block-name">{cd?.course || bk?.purpose}</div>
-                          {(cd?.room || bk?.room) && (
-                            <div className="gcal-block-room">{cd?.room || bk?.room}</div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                    return (
+                      <td
+                        key={cellKey}
+                        colSpan={dur}
+                        className={[
+                          'gcal-td',
+                          isToday  ? 'gcal-td-today'  : '',
+                          isEmpty  ? 'gcal-td-empty'  : 'gcal-td-filled',
+                        ].filter(Boolean).join(' ')}
+                        onClick={() => {
+                          if (!isEmpty) return;
+                          if (isAuthenticated) onEditClass(group, day, tm);
+                          else if (onGuestBookCell) onGuestBookCell(group, day, tm);
+                        }}
+                      >
+                        {(cd || bk) && fc && (
+                          <div
+                            className={`gcal-block${dur > 1 ? ' gcal-block-multi' : ''}`}
+                            style={{ '--blk-bg': fc.bg, '--blk-text': fc.text, '--blk-border': fc.border }}
+                            onClick={e => openEventPopup(e, group, day, tm, cd, bk)}
+                          >
+                            <div className="gcal-block-name">{cd?.course || bk?.purpose}</div>
+                            {(cd?.room || bk?.room) && (
+                              <div className="gcal-block-room">{cd?.room || bk?.room}</div>
+                            )}
+                          </div>
+                        )}
+                        {isEmpty && isAuthenticated && (
+                          <div className="gcal-empty-plus">+</div>
+                        )}
+                        {isEmpty && !isAuthenticated && onGuestBookCell && (
+                          <div className="gcal-empty-book">📅</div>
+                        )}
+                      </td>
+                    );
+                  })
+                )}
+              </tr>
             ))}
-          </div>
-        ))}
+          </tbody>
+        </table>
       </div>
 
       {eventPopup && (
