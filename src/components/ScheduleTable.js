@@ -14,7 +14,6 @@ const getTodayName = () => {
 const getTypeStyle = (subjectType) =>
   SUBJECT_TYPES.find(s => s.value === subjectType) || SUBJECT_TYPES[0];
 
-// Mobile view unchanged from original
 const MobileView = ({
   daysToShow, groupsToShow, timeSlots, schedule, todayName,
   cellsToSkip, occupiedRoomCells, selectedRoom, normSelectedTeacher,
@@ -124,7 +123,6 @@ const MobileView = ({
   );
 };
 
-// Single event detail popup
 const GCalPopup = ({ event, anchorRect, onClose, onEdit, isAuthenticated, typeLabels }) => {
   const ref = useRef(null);
   useEffect(() => {
@@ -148,7 +146,8 @@ const GCalPopup = ({ event, anchorRect, onClose, onEdit, isAuthenticated, typeLa
       <div ref={ref} className="gcpop" style={{ top, left }} onMouseDown={e => e.stopPropagation()}>
         <div className="gcpop-header" style={{ background: hBg }}>
           <span className="gcpop-type-label">
-            {bk ? `${bk.status === 'approved' ? '✅' : bk.status === 'rejected' ? '❌' : '⏳'} ${bk.status}`
+            {bk
+              ? `${bk.status === 'approved' ? '✅' : bk.status === 'rejected' ? '❌' : '⏳'} ${bk.status}`
               : `${SUBJECT_TYPES.find(s => s.value === typeKey)?.icon || ''} ${typeLabels[typeKey] || typeKey}`}
           </span>
           <button className="gcpop-close" onClick={onClose}>✕</button>
@@ -158,8 +157,8 @@ const GCalPopup = ({ event, anchorRect, onClose, onEdit, isAuthenticated, typeLa
           <div className="gcpop-rows">
             <div className="gcpop-row"><span className="gcpop-icon">🗓</span><span>{day} · {time}</span></div>
             <div className="gcpop-row"><span className="gcpop-icon">👥</span><strong>{group}</strong></div>
-            {cd?.teacher   && <div className="gcpop-row"><span className="gcpop-icon">👨‍🏫</span><span>{cd.teacher}</span></div>}
-            {cd?.room      && <div className="gcpop-row"><span className="gcpop-icon">🚪</span><span>{cd.room}</span></div>}
+            {cd?.teacher    && <div className="gcpop-row"><span className="gcpop-icon">👨‍🏫</span><span>{cd.teacher}</span></div>}
+            {cd?.room       && <div className="gcpop-row"><span className="gcpop-icon">🚪</span><span>{cd.room}</span></div>}
             {cd?.duration > 1 && <div className="gcpop-row"><span className="gcpop-icon">⏱</span><span>{cd.duration * 40} min</span></div>}
             {cd?.meetingLink && <div className="gcpop-row"><span className="gcpop-icon">🔗</span><a href={cd.meetingLink} target="_blank" rel="noopener noreferrer" className="gcpop-link" onClick={e => e.stopPropagation()}>Join meeting</a></div>}
             {bk?.guest_name && <div className="gcpop-row"><span className="gcpop-icon">👤</span><span>{bk.guest_name}</span></div>}
@@ -172,7 +171,6 @@ const GCalPopup = ({ event, anchorRect, onClose, onEdit, isAuthenticated, typeLa
   );
 };
 
-// "+N more" list popup
 const MorePopup = ({ blocks, anchorRect, onClose, onSelectBlock }) => {
   const ref = useRef(null);
   useEffect(() => {
@@ -212,16 +210,6 @@ const MorePopup = ({ blocks, anchorRect, onClose, onSelectBlock }) => {
   );
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Google Calendar week grid
-//
-// LAYOUT:  rows = time slots, cols = days (one column per day, NOT per group)
-//
-// THE FIX for the "vertical list" bug:
-//   Each (day × time) cell renders ONLY the FIRST event as a visible block.
-//   All remaining events at that slot appear as a "+N more" clickable badge.
-//   → Cells stay compact → 5 columns always visible → looks like Image 1.
-// ─────────────────────────────────────────────────────────────────────────────
 const CalendarView = ({
   daysToShow, groupsToShow, timeSlots, schedule,
   todayName, weekOffset, onShiftWeek,
@@ -289,15 +277,17 @@ const CalendarView = ({
   return (
     <div className="gcal-wrap">
       <div className="gcal-nav">
-        <button className="gcal-nav-btn" onClick={() => onShiftWeek(-1)}>← prev</button>
+        <button className="gcal-nav-btn" onClick={() => onShiftWeek(w => w - 1)}>← prev</button>
         <span className="gcal-nav-title">{weekRangeLabel}</span>
-        <button className="gcal-nav-btn" onClick={() => onShiftWeek(1)}>next →</button>
+        <button className="gcal-nav-btn" onClick={() => onShiftWeek(w => w + 1)}>next →</button>
       </div>
 
       <div className="gcal-legend">
-        {[{ key: 'lecture', bg: '#c8deff', border: '#4285f4', label: 'Lecture' },
+        {[
+          { key: 'lecture', bg: '#c8deff', border: '#4285f4', label: 'Lecture' },
           { key: 'lab',     bg: '#c4e6c8', border: '#34a853', label: 'Lab'     },
-          { key: 'seminar', bg: '#fce4b0', border: '#f9ab00', label: 'Seminar' }].map(({ key, bg, border, label }) => (
+          { key: 'seminar', bg: '#fce4b0', border: '#f9ab00', label: 'Seminar' },
+        ].map(({ key, bg, border, label }) => (
           <div key={key} className="gcal-legend-item">
             <span className="gcal-legend-swatch" style={{ background: bg, border: `1.5px solid ${border}` }} />
             <span>{label}</span>
@@ -313,8 +303,6 @@ const CalendarView = ({
 
       <div className="gcal-grid-scroll">
         <div className="gcal-grid" style={{ '--gcal-cols': daysToShow.length }}>
-
-          {/* Day header: one cell per day */}
           <div className="gcal-head-row">
             <div className="gcal-head-gutter" />
             {weekDayLabels.map(({ dayName, label }) => (
@@ -324,16 +312,11 @@ const CalendarView = ({
             ))}
           </div>
 
-          {/* Time rows */}
           {timeSlots.map(time => (
             <div key={time} className="gcal-row">
               <div className="gcal-time-gutter">{time}</div>
-
-              {/* One cell per DAY — keeps the 5-column layout */}
               {daysToShow.map(day => {
                 const isToday = day === todayName;
-
-                // Gather all events for this day+time (all groups)
                 const allBlocks = groupsToShow.flatMap(group => {
                   const key = `${group}-${day}-${time}`;
                   if (cellsToSkip.has(key)) return [];
@@ -345,12 +328,9 @@ const CalendarView = ({
                   return [{ group, cd, bk }];
                 });
 
-                // Show ONLY first event + "+N more" badge for the rest
-                // This is what prevents the vertical-list bug
                 const first  = allBlocks[0] || null;
                 const extras = allBlocks.slice(1);
                 const isEmpty = allBlocks.length === 0;
-
                 const fc = first
                   ? (first.bk ? (BK_COLORS[first.bk.status] || BK_COLORS.pending) : (TYPE_COLORS[first.cd?.subjectType] || TYPE_COLORS.lecture))
                   : null;
@@ -376,12 +356,8 @@ const CalendarView = ({
                         {first.cd?.room && <div className="gcal-block-room">{first.cd.room}</div>}
                       </div>
                     )}
-
                     {extras.length > 0 && (
-                      <button
-                        className="gcal-more-badge"
-                        onClick={e => openMorePopup(e, allBlocks, day, time)}
-                      >
+                      <button className="gcal-more-badge" onClick={e => openMorePopup(e, allBlocks, day, time)}>
                         +{extras.length} more
                       </button>
                     )}
@@ -411,7 +387,6 @@ const CalendarView = ({
   );
 };
 
-// Main component
 const ScheduleTable = ({
   selectedDay, selectedTeacher, selectedGroup, selectedRoom,
   onEditClass, onDeleteGroup, bookings = [], onGuestBookCell,
@@ -487,7 +462,7 @@ const ScheduleTable = ({
   const Legend = () => (
     <div className="type-legend">
       {SUBJECT_TYPES.map(type => (<div key={type.value} className="legend-item"><span className="legend-dot" style={{ background: type.color }} /><span className="legend-label">{type.icon} {typeLabels[type.value]}</span></div>))}
-      {!isAuthenticated && bookings.length > 0 && <><div className="legend-item"><span className="legend-dot" style={{ background: '#eab308' }} /><span className="legend-label">⏳ Pending</span></div><div className="legend-item"><span className="legend-dot" style={{ background: '#22c55e' }} /><span className="legend-label">✅ Approved</span></div></>}
+      {!isAuthenticated && bookings.length > 0 && (<><div className="legend-item"><span className="legend-dot" style={{ background: '#eab308' }} /><span className="legend-label">⏳ Pending</span></div><div className="legend-item"><span className="legend-dot" style={{ background: '#22c55e' }} /><span className="legend-label">✅ Approved</span></div></>)}
       {isAuthenticated && <div className="legend-item legend-drag-hint">↔ {t('dragHint')}</div>}
       <div className="view-mode-toggle">
         <button className={`vmt-btn${viewMode === 'table'    ? ' vmt-active' : ''}`} onClick={() => setViewMode('table')}>☰ Table</button>
@@ -502,8 +477,25 @@ const ScheduleTable = ({
   return (
     <div className="schedule-container">
       <Legend />
-      <MobileView daysToShow={daysToShow} groupsToShow={groupsToShow} timeSlots={timeSlots} schedule={schedule} todayName={todayName} cellsToSkip={cellsToSkip} occupiedRoomCells={occupiedRoomCells} selectedRoom={selectedRoom} normSelectedTeacher={normSelectedTeacher} isAuthenticated={isAuthenticated} bookings={bookings} onEditClass={onEditClass} onGuestBookCell={onGuestBookCell} onDeleteGroup={onDeleteGroup} typeLabels={typeLabels} t={t} showEmpty={showEmpty} />
-      {viewMode === 'calendar' && <CalendarView daysToShow={daysToShow} groupsToShow={groupsToShow} timeSlots={timeSlots} schedule={schedule} todayName={todayName} weekOffset={weekOffset} onShiftWeek={setWeekOffset} cellsToSkip={cellsToSkip} occupiedRoomCells={occupiedRoomCells} selectedRoom={selectedRoom} normSelectedTeacher={normSelectedTeacher} isAuthenticated={isAuthenticated} bookings={bookings} onEditClass={onEditClass} onGuestBookCell={onGuestBookCell} typeLabels={typeLabels} t={t} />}
+      <MobileView
+        daysToShow={daysToShow} groupsToShow={groupsToShow} timeSlots={timeSlots}
+        schedule={schedule} todayName={todayName} cellsToSkip={cellsToSkip}
+        occupiedRoomCells={occupiedRoomCells} selectedRoom={selectedRoom}
+        normSelectedTeacher={normSelectedTeacher} isAuthenticated={isAuthenticated}
+        bookings={bookings} onEditClass={onEditClass} onGuestBookCell={onGuestBookCell}
+        onDeleteGroup={onDeleteGroup} typeLabels={typeLabels} t={t} showEmpty={showEmpty}
+      />
+      {viewMode === 'calendar' && (
+        <CalendarView
+          daysToShow={daysToShow} groupsToShow={groupsToShow} timeSlots={timeSlots}
+          schedule={schedule} todayName={todayName} weekOffset={weekOffset}
+          onShiftWeek={setWeekOffset} cellsToSkip={cellsToSkip}
+          occupiedRoomCells={occupiedRoomCells} selectedRoom={selectedRoom}
+          normSelectedTeacher={normSelectedTeacher} isAuthenticated={isAuthenticated}
+          bookings={bookings} onEditClass={onEditClass} onGuestBookCell={onGuestBookCell}
+          typeLabels={typeLabels} t={t}
+        />
+      )}
       {viewMode === 'table' && (
         <div className="table-wrapper">
           <table className="schedule-table">
@@ -562,7 +554,8 @@ const ScheduleTable = ({
                             <div className="course-name">{cd.course}</div>
                             {dur > 1 && <div className="duration-indicator">⏱ {dur * 40}min</div>}
                             {cd.teacher && <div className={`teacher-name ${cf.includes('teacher') ? 'conflict-text' : ''}`}>👨‍🏫 {cd.teacher}</div>}
-                            {cd.room    && <div className={`room-number   ${cf.includes('room')    ? 'conflict-text' : ''}`}>🚪 {cd.room}</div>}
+                            {cd.room    && <div className={`room-number ${cf.includes('room') ? 'conflict-text' : ''}`}>🚪 {cd.room}</div>}
+                            {cd.meetingLink && <a href={cd.meetingLink} target="_blank" rel="noopener noreferrer" className="meeting-link-btn" onClick={e => e.stopPropagation()}>🔗 Join</a>}
                             {bkLabel}
                             {isAuthenticated && <div className="drag-handle">⠿</div>}
                           </div>

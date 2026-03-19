@@ -298,7 +298,7 @@ const AppContent = () => {
               <div onClick={() => setShowAdminMenu(false)} style={{ position: 'fixed', inset: 0, zIndex: 499 }} />
               <div style={{ position: 'fixed', top: 42, right: 8, zIndex: 500, background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 10, boxShadow: '0 4px 20px rgba(0,0,0,0.2)', display: 'flex', flexDirection: 'column', minWidth: 160, overflow: 'hidden' }}>
                 {[
-                  { label: `＋ ${t('addGroup') || 'Add Group'}`, action: handleAddGroup, },
+                  { label: `${t('addGroup') || 'Add Group'}`, action: handleAddGroup, },
                   { label: `📊 ${t('export') || 'Export'}`, action: handleExport, },
                   { label: `📂 ${t('import') || 'Import'}`, action: handleImportClick, },
                   { label: `🗑 ${t('clearAll') || 'Clear All'}`, action: handleClearAll, },
