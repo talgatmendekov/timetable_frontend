@@ -474,7 +474,7 @@ export const translations = {
     allTeachers: 'Все преподаватели',
     allGroups: 'Все группы',
 
-    addGroup: '+ Группа',
+    addGroup: 'Группа',
     export: 'Экспорт',
     import: 'Импорт',
     clearAll: 'Очистить',

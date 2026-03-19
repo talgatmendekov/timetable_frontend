@@ -394,10 +394,23 @@
 
 /* Таблица на десктопе — скрыть мобильные блоки */
 @media (min-width: 768px) {
+  /* Hide ALL mobile elements on desktop */
   .mob-day-section,
   .mob-day-header,
   .mob-group-block,
-  .mob-slots { display: none !important; }
+  .mob-group-label,
+  .mob-slots,
+  .mob-slot,
+  .mob-today-bar,
+  .empty-slot-toggle-btn { display: none !important; }
+
+  /* Ensure toggle buttons are always visible on desktop */
+  .view-mode-toggle { display: inline-flex !important; }
+  .vmt-btn { display: inline-block !important; }
+
+  /* Ensure table/calendar show correctly */
+  .table-wrapper { display: block !important; overflow-x: auto; }
+  .schedule-table { display: table !important; }
 }
 
 /* ── Sticky today indicator (mobile only) ───────────────────────────────── */
@@ -484,12 +497,26 @@
    ══════════════════════════════════════════════════════════════════════════ */
 
 .gcal-wrap {
-  background: #f5f0e8;
+  background: #f5f0e8 !important;
   border-radius: 14px;
-  border: 1px solid #e0d8cc;
+  border: 1px solid #e0d8cc !important;
   overflow: hidden;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #1a1a1a !important;
 }
+/* Force all gcal elements to light theme regardless of app theme */
+.gcal-wrap * { box-sizing: border-box; }
+.gcal-wrap, .gcal-wrap .gcal-nav,
+.gcal-wrap .gcal-grid-scroll { background-color: inherit; }
+.gcal-grid-scroll { background: #fff !important; }
+.gcal-row:nth-child(even) { background: #fdfaf6 !important; }
+.gcal-row:nth-child(odd)  { background: #fff !important; }
+.gcal-head-row { background: #fff !important; }
+.gcal-time-gutter { color: #8a8278 !important; }
+.gcal-head-cell { color: #555 !important; }
+.gcal-head-today { color: #1a73e8 !important; font-weight: 700; }
+.gcal-nav-title { color: #1a1a1a !important; }
+.gcal-legend-item { color: #4a4a4a !important; }
 
 /* Nav bar */
 .gcal-nav { display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #e0d8cc; }
@@ -504,13 +531,14 @@
 .gcal-legend-swatch { width:14px;height:14px;border-radius:3px;flex-shrink:0; }
 
 /* Scroll container */
-.gcal-grid-scroll { overflow-x:auto;-webkit-overflow-scrolling:touch;background:#fff; }
+.gcal-grid-scroll { overflow-x:auto;-webkit-overflow-scrolling:touch;background:#fff;min-width:0; }
 .gcal-grid { display:contents; }
 
 .gcal-head-row,
 .gcal-row {
   display: grid;
-  grid-template-columns: 72px repeat(var(--gcal-cols, 5), 1fr);
+  grid-template-columns: 72px repeat(var(--gcal-cols, 6), minmax(120px, 1fr));
+  min-width: 800px;
 }
 
 /* Day header */
@@ -572,12 +600,36 @@
 .more-popup-item-meta { font-size:0.7rem;opacity:0.78;margin-top:2px;display:flex;gap:6px; }
 
 /* Hide calendar on mobile */
-@media (max-width:767px) { .gcal-wrap { display:none!important; } }
+@media (max-width: 767px) {
+  .gcal-wrap { display: none !important; }
+  .table-wrapper { display: none !important; }
+  .view-mode-toggle { display: none !important; }
+}
 
 /* View mode toggle */
-.view-mode-toggle { display:inline-flex;background:var(--bg-main);border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-left:auto;flex-shrink:0; }
-.vmt-btn { background:none;border:none;padding:5px 14px;font-size:0.78rem;font-weight:600;color:var(--text-secondary);cursor:pointer;font-family:inherit;transition:background 0.15s,color 0.15s;white-space:nowrap;line-height:1.4; }
-.vmt-btn+.vmt-btn { border-left:1px solid var(--border); }
-.vmt-btn:hover { background:var(--bg-hover);color:var(--text-primary); }
-.vmt-btn.vmt-active { background:var(--primary);color:#fff; }
-.empty-slot-toggle-btn { display:none; }
+.view-mode-toggle {
+  display: inline-flex !important;
+  background: var(--bg-main);
+  border: 2px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.vmt-btn {
+  background: none;
+  border: none;
+  padding: 6px 16px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.vmt-btn + .vmt-btn { border-left: 1px solid var(--border); }
+.vmt-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+.vmt-btn.vmt-active { background: var(--primary); color: #fff; font-weight: 700; }
+.empty-slot-toggle-btn { display: none; }

@@ -487,7 +487,7 @@ const ScheduleTable = ({
       />
       {viewMode === 'calendar' && (
         <CalendarView
-          daysToShow={daysToShow} groupsToShow={groupsToShow} timeSlots={timeSlots}
+          daysToShow={days} groupsToShow={groupsToShow} timeSlots={timeSlots}
           schedule={schedule} todayName={todayName} weekOffset={weekOffset}
           onShiftWeek={setWeekOffset} cellsToSkip={cellsToSkip}
           occupiedRoomCells={occupiedRoomCells} selectedRoom={selectedRoom}
