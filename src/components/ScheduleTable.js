@@ -28,7 +28,7 @@ const useWeekDayLabels = (daysToShow) => {
       const idx = ORDER.indexOf(dayName);
       const d = new Date(mon);
       d.setDate(mon.getDate() + (idx >= 0 ? idx : i));
-      map[dayName] = d.getDate(); // just the date number, e.g. 20
+      map[dayName] = `${d.getDate()} ${d.toLocaleDateString('en-GB', { month: 'long' })}`; // e.g. "20 March"
     });
     return map;
   }, [daysToShow]);
