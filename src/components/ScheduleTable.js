@@ -17,7 +17,7 @@ const getTypeStyle = (subjectType) =>
 // Build { dayName → "Mon 20" } labels for the current week
 const useWeekDayLabels = (daysToShow, lang) => {
   return useMemo(() => {
-    const locale = lang === 'ru' ? 'ru-RU' : 'en-GB';
+    const locale = (lang === 'ru' || lang === 'ky') ? 'ru-RU' : 'en-GB';
     const now = new Date();
     const dow = now.getDay();
     const diff = dow === 0 ? -6 : 1 - dow;
