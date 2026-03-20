@@ -15,11 +15,12 @@ const getTypeStyle = (subjectType) =>
   SUBJECT_TYPES.find(s => s.value === subjectType) || SUBJECT_TYPES[0];
 
 // Build { dayName → "Mon 20" } labels for the current week
-const useWeekDayLabels = (daysToShow) => {
+const useWeekDayLabels = (daysToShow, lang) => {
   return useMemo(() => {
+    const locale = lang === 'ru' ? 'ru-RU' : 'en-GB';
     const now = new Date();
     const dow = now.getDay();
-    const diff = dow === 0 ? -6 : 1 - dow;         // offset to Monday
+    const diff = dow === 0 ? -6 : 1 - dow;
     const mon = new Date(now);
     mon.setDate(now.getDate() + diff);
     const ORDER = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
@@ -28,10 +29,10 @@ const useWeekDayLabels = (daysToShow) => {
       const idx = ORDER.indexOf(dayName);
       const d = new Date(mon);
       d.setDate(mon.getDate() + (idx >= 0 ? idx : i));
-      map[dayName] = `${d.getDate()} ${d.toLocaleDateString('en-GB', { month: 'long' })}`; // e.g. "20 March"
+      map[dayName] = `${d.getDate()} ${d.toLocaleDateString(locale, { month: 'long' })}`;
     });
     return map;
-  }, [daysToShow]);
+  }, [daysToShow, lang]);
 };
 
 // ─── Mobile card view ─────────────────────────────────────────────────────────
@@ -156,7 +157,7 @@ const ScheduleTable = ({
 
   const [showEmpty, setShowEmpty] = useState(false);
 
-  const weekDateMap = useWeekDayLabels(daysToShow);
+  const weekDateMap = useWeekDayLabels(daysToShow, lang);
 
   const bookingGroups = [...new Set(bookings.filter(b => ['pending','approved','rejected'].includes(b.status)).map(b => b.entity?.trim() ? b.entity.trim() : b.name).filter(Boolean))];
   const baseGroups    = selectedGroup ? groups.filter(g => g === selectedGroup) : groups;
@@ -256,9 +257,7 @@ const ScheduleTable = ({
               </th>
               {daysToShow.map(day => (
                 <th key={day} className={`day-header ${day === todayName ? 'today-col' : ''}`} colSpan={timeSlots.length}>
-                  <span className="day-header-name">{t(day)}</span>
-                  <span className="day-header-date">{weekDateMap[day]}</span>
-                  {day === todayName && <span className="today-badge"> ★</span>}
+                  {t(day)}, {weekDateMap[day]}{day === todayName && <span className="today-badge"> ★</span>}
                 </th>
               ))}
             </tr>

@@ -50,22 +50,7 @@
   font-size: 0.95rem;
 }
 
-.day-header-name {
-  display: block;
-  font-size: 0.9rem;
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-.day-header-date {
-  display: block;
-  font-size: 0.82rem;
-  font-weight: 700;
-  opacity: 0.85;
-  line-height: 1.2;
-  margin-top: 2px;
-  letter-spacing: 0.01em;
-}
+/* day name and date are rendered inline — no extra classes needed */
 
 /* ── Time header ──────────────────────────────────────────────────────────── */
 .time-header {
