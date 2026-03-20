@@ -40,7 +40,7 @@ const MobileView = ({
   daysToShow, groupsToShow, timeSlots, schedule, todayName,
   cellsToSkip, occupiedRoomCells, selectedRoom, normSelectedTeacher,
   isAuthenticated, bookings, onEditClass, onGuestBookCell, onDeleteGroup,
-  typeLabels, t, showEmpty,
+  typeLabels, t, showEmpty, onToggleEmpty,
 }) => {
   const [collapsed, setCollapsed] = useState({});
   const getClass   = (g, d, tm) => schedule[`${g}-${d}-${tm}`] || null;
@@ -61,7 +61,7 @@ const MobileView = ({
   };
   return (
     <div>
-      <button className={`empty-slot-toggle-btn${showEmpty ? ' active' : ''}`} onClick={() => setShowEmpty(s => !s)}>
+      <button className={`empty-slot-toggle-btn${showEmpty ? ' active' : ''}`} onClick={onToggleEmpty}>
         {showEmpty ? '🙈 Hide empty' : '👁 Show empty'}
       </button>
       {daysToShow.map(day => {
@@ -244,7 +244,7 @@ const ScheduleTable = ({
         occupiedRoomCells={occupiedRoomCells} selectedRoom={selectedRoom}
         normSelectedTeacher={normSelectedTeacher} isAuthenticated={isAuthenticated}
         bookings={bookings} onEditClass={onEditClass} onGuestBookCell={onGuestBookCell}
-        onDeleteGroup={onDeleteGroup} typeLabels={typeLabels} t={t} showEmpty={showEmpty}
+        onDeleteGroup={onDeleteGroup} typeLabels={typeLabels} t={t} showEmpty={showEmpty} onToggleEmpty={() => setShowEmpty(s => !s)}
       />
       <div className="table-wrapper">
         <table className="schedule-table">
