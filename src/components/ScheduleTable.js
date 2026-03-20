@@ -61,6 +61,9 @@ const MobileView = ({
   };
   return (
     <div>
+      <button className={`empty-slot-toggle-btn${showEmpty ? ' active' : ''}`} onClick={() => setShowEmpty(s => !s)}>
+        {showEmpty ? '🙈 Hide empty' : '👁 Show empty'}
+      </button>
       {daysToShow.map(day => {
         const isToday = day === todayName, isCollapsed = collapsed[day];
         const classCount = groupsToShow.reduce((a, g) =>
@@ -229,9 +232,6 @@ const ScheduleTable = ({
         <div className="legend-item"><span className="legend-dot" style={{ background: '#22c55e' }} /><span className="legend-label">✅ Approved</span></div>
       </>)}
       {isAuthenticated && <div className="legend-item legend-drag-hint">↔ {t('dragHint')}</div>}
-      <button className={`empty-slot-toggle-btn${showEmpty ? ' active' : ''}`} onClick={() => setShowEmpty(s => !s)}>
-        {showEmpty ? '🙈 Hide empty' : '👁 Show empty'}
-      </button>
     </div>
   );
 

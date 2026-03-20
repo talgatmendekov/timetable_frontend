@@ -183,16 +183,8 @@
 
 /* ── Show/hide empty toggle ───────────────────────────────────────────────── */
 .empty-slot-toggle-btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 7px 16px;
-  background: var(--bg-card);
-  border: 1.5px solid var(--border); border-radius: 20px;
-  color: var(--text-secondary); font-size: 0.78rem; font-weight: 700;
-  cursor: pointer; font-family: inherit; transition: all 0.15s;
-  white-space: nowrap; margin: 4px 0;
+  display: none; /* mobile only — shown via media query below */
 }
-.empty-slot-toggle-btn:hover  { background: var(--bg-hover); color: var(--text-primary); border-color: var(--primary); }
-.empty-slot-toggle-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 
 /* ── Drag & drop ──────────────────────────────────────────────────────────── */
 .schedule-cell.filled .drag-handle { display: none; position: absolute; top: 3px; left: 3px; font-size: 0.9rem; color: rgba(255,255,255,0.7); cursor: grab; line-height: 1; z-index: 2; }
@@ -248,7 +240,6 @@
 
   /* Hide desktop-only legend */
   .type-legend { display: none; }
-  .empty-slot-toggle-btn { display: none !important; }
 
   .schedule-container { padding: 8px; border-radius: 10px; }
 
@@ -310,6 +301,20 @@
   .mob-slot.conflict-r { border-left: 3px solid #f59e0b; }
 
   .mob-group-label .delete-group-btn { margin-left: auto; width: 20px; height: 20px; font-size: 1rem; }
+
+  .empty-slot-toggle-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 16px;
+    background: var(--bg-card);
+    border: 1.5px solid var(--border); border-radius: 20px;
+    color: var(--text-secondary); font-size: 0.78rem; font-weight: 700;
+    cursor: pointer; font-family: inherit; transition: all 0.15s;
+    white-space: nowrap; margin: 8px 8px 4px;
+    width: calc(100% - 16px);
+    justify-content: center;
+  }
+  .empty-slot-toggle-btn:hover  { background: var(--bg-hover); color: var(--text-primary); border-color: var(--primary); }
+  .empty-slot-toggle-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 }
 
 /* Desktop: hide mobile elements */
