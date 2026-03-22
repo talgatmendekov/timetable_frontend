@@ -621,14 +621,34 @@ body[data-density="spacious"] .mob-slot-course { font-size: 0.95rem !important; 
 }
 
 @media (max-width: 767px) {
-  /* Clip outer content area — inner scrollable elements still work */
+  
   .app-content {
     overflow-x: hidden !important;
   }
-  /* Main flex wrapper must not expand wider than screen */
+  
   .app-content,
   .app-content > * {
     box-sizing: border-box;
+  }
+}
+ 
+
+@media (min-width: 768px) {
+  .app-sidebar {
+    display: flex !important;
+  }
+}
+ 
+/* Mobile: sidebar hidden, content full width */
+@media (max-width: 767px) {
+  .app-sidebar {
+    display: none !important;
+    width: 0 !important;
+  }
+  .app-content {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
   }
 }
  

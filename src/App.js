@@ -542,7 +542,7 @@ const AppContent = () => {
       {/* ── MAIN LAYOUT ── */}
       <div style={{ display:'flex', overflow:'hidden', minWidth:0, width:'100%' }}>
         {/* Vertical icon nav */}
-        <div className="app-sidebar" style={{ width:68, flexShrink:0, background:'var(--bg-card)', borderRight:'1px solid var(--border)', display:'flex', flexDirection:'column', alignItems:'center', padding:'8px 0', gap:4, position:'sticky', top:40, height:'calc(100vh - 40px)', overflowY:'auto' }}>
+        <div className="app-sidebar" style={{ width:68, flexShrink:0, background:'var(--bg-card)', borderRight:'1px solid var(--border)', flexDirection:'column', alignItems:'center', padding:'8px 0', gap:4, position:'sticky', top:40, height:'calc(100vh - 40px)', overflowY:'auto' }}>
           <button onClick={() => setActiveView('schedule')} title="Schedule" style={S.iconBtn(activeView==='schedule')}>
             <TabIcon icon={iconSchedule} label="Schedule" active={activeView==='schedule'} />
             <span style={S.iconLabel}>{t('navSchedule') || 'Schedule'}</span>

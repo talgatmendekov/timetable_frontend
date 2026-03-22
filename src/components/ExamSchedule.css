@@ -421,23 +421,24 @@ body[data-theme="dark"] .es-wrap .es-group-pill { background: #25336a; color: #a
    MOBILE  (≤ 700px)
    ══════════════════════════════════════════════════════════ */
 @media (max-width: 700px) {
-  /* Wrapper: keep centering, prevent outer horizontal overflow */
+  /* Wrapper: full width, small padding, no overflow */
   .es-wrap {
+    max-width: 100% !important;
+    width: 100% !important;
     padding: 0 4px 80px 4px;
-    overflow-x: hidden;
+    box-sizing: border-box;
   }
-  /* Inner table scroll wrapper must still scroll */
+  /* Inner table scroll wrapper scrolls horizontally */
   .es-wrap .es-table-wrap {
-    overflow-x: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-  }
-  .es-wrap .es-table {
-    min-width: 560px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
   }
   /* Filters scroll horizontally */
   .es-wrap .es-filters {
     overflow-x: auto;
     flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Header: tighter */
