@@ -248,12 +248,18 @@ const AppContent = () => {
   React.useEffect(() => { fetchExamSetting(); }, [fetchExamSetting]);
 
   const fetchActiveBookings = React.useCallback(() => {
-    const tk = localStorage.getItem('scheduleToken') || '';
+    // Try both token keys — admins use 'token', guests use 'scheduleToken'
+    const tk = localStorage.getItem('token') || localStorage.getItem('scheduleToken') || '';
     if (!tk) return;
     fetch(`${API_URL}/booking-requests`, { headers: { Authorization: `Bearer ${tk}` } })
       .then(r => r.json()).then(d => { if (d.success) setActiveBookings(d.data || []); }).catch(() => {});
   }, []);
-  React.useEffect(() => { fetchActiveBookings(); }, [fetchActiveBookings]);
+  React.useEffect(() => {
+    fetchActiveBookings();
+    // Poll every 30s so badge stays fresh without manual refresh
+    const interval = setInterval(fetchActiveBookings, 30000);
+    return () => clearInterval(interval);
+  }, [fetchActiveBookings]);
 
   // Count pending bookings for notification badge
   const pendingCount = React.useMemo(() =>
@@ -297,13 +303,15 @@ const AppContent = () => {
 
   // Called when booking is deleted from BookingDetailModal
   const handleBookingDeleted = (deletedBooking) => {
-    // Remove from activeBookings so it disappears from the schedule instantly
-    setActiveBookings(prev => prev.filter(b => b.id !== deletedBooking.id));
-    // Also remove from local schedule state
     const group = (deletedBooking.entity && deletedBooking.entity.trim())
       ? deletedBooking.entity.trim()
       : deletedBooking.name;
+    // Remove from activeBookings state instantly
+    setActiveBookings(prev => prev.filter(b => b.id !== deletedBooking.id));
+    // Remove the schedule slot
     deleteClass(group, deletedBooking.day, deletedBooking.start_time);
+    // Delete the group row too — booking-created groups should vanish with the booking
+    deleteGroup(group);
   };
 
   const handleShare = () => {
