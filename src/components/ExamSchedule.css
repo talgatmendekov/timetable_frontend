@@ -56,7 +56,7 @@
   box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
 }
 
-/* ── Header — identical to .as-header ───────────────────────────────────── */
+/* ── Header ───────────────────────────────────────────────────────────────── */
 .es-wrap .es-header {
   display: flex;
   align-items: center;
@@ -161,7 +161,7 @@
   color: rgba(255,255,255,.85); white-space: nowrap;
 }
 
-/* ── Filters bar — card style like .as-card ──────────────────────────────── */
+/* ── Filters bar ─────────────────────────────────────────────────────────── */
 .es-wrap .es-filters {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
   padding: 14px 18px;
@@ -177,7 +177,7 @@
   font-weight: 600; margin-left: auto; white-space: nowrap;
 }
 
-/* ── Section label — identical to .as-section-label ─────────────────────── */
+/* ── Section label ───────────────────────────────────────────────────────── */
 .es-section-label {
   font-size: 0.7rem;
   font-weight: 700;
@@ -208,7 +208,7 @@
   line-height: 1.6;
 }
 
-/* ── Add / Edit form — card style ────────────────────────────────────────── */
+/* ── Add / Edit form ─────────────────────────────────────────────────────── */
 .es-wrap .es-form-wrap {
   background: var(--bg-card, #fff);
   border: 1.5px solid #6366f1;
@@ -249,6 +249,7 @@
 }
 .es-wrap .es-form-actions {
   display: flex; gap: 10px; justify-content: flex-end; margin-top: 14px;
+  flex-wrap: wrap;
 }
 
 /* ── Group picker ────────────────────────────────────────────────────────── */
@@ -324,7 +325,7 @@ body[data-theme="dark"] .es-wrap .es-gp-pill { background: #25336a; color: #a5b4
   box-shadow: 0 2px 8px rgba(0,0,0,.04);
 }
 
-/* ── Table — card style like .as-table-wrap ──────────────────────────────── */
+/* ── Table ───────────────────────────────────────────────────────────────── */
 .es-wrap .es-table-wrap {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
@@ -357,7 +358,6 @@ body[data-theme="dark"] .es-wrap .es-gp-pill { background: #25336a; color: #a5b4
 .es-wrap .es-table tr:nth-child(even) td { background: var(--bg-main, #fafafa); }
 .es-wrap .es-table tbody tr:hover td { background: #eef2ff; }
 
-/* Date separator row */
 .es-wrap .es-date-row td {
   background: linear-gradient(90deg, rgba(99,102,241,.08), var(--bg-card));
   color: #4f46e5; font-weight: 800; font-size: 0.82rem;
@@ -365,11 +365,9 @@ body[data-theme="dark"] .es-wrap .es-gp-pill { background: #25336a; color: #a5b4
 }
 body[data-theme="dark"] .es-wrap .es-date-row td { color: #a5b4fc; }
 
-/* Conflict row */
 .es-wrap .es-row-conflict td { background: rgba(239,68,68,.05); }
 .es-wrap .es-row-conflict:hover td { background: rgba(239,68,68,.09) !important; }
 
-/* Cell types */
 .es-wrap .es-td-date    { font-size: 0.78rem; color: var(--text-secondary); white-space: nowrap; }
 .es-wrap .es-td-time    { white-space: nowrap; font-weight: 700; font-size: 0.82rem; }
 .es-wrap .es-td-dur     {
@@ -403,7 +401,6 @@ body[data-theme="dark"] .es-wrap .es-group-pill { background: #25336a; color: #a
   overflow: hidden; text-overflow: ellipsis;
 }
 
-/* Action buttons — identical sizing to .as-icon-btn */
 .es-wrap .es-td-actions { display: flex; gap: 4px; align-items: center; }
 .es-wrap .es-action-btn {
   width: 30px !important; height: 30px !important;
@@ -420,19 +417,65 @@ body[data-theme="dark"] .es-wrap .es-group-pill { background: #25336a; color: #a
 .es-wrap .es-action-btn.tg:hover   { background: #e0f2fe; border-color: #bae6fd; color: #0284c7; }
 .es-wrap .es-action-btn:disabled   { opacity: .5; cursor: not-allowed; }
 
-/* ── Mobile ──────────────────────────────────────────────────────────────── */
+/* ══════════════════════════════════════════════════════════
+   MOBILE  (≤ 700px)
+   ══════════════════════════════════════════════════════════ */
 @media (max-width: 700px) {
-  .es-wrap .es-header { padding: 14px 16px; }
-  .es-wrap .es-header-icon { width: 38px; height: 38px; font-size: 1.1rem; }
-  .es-wrap .es-title { font-size: 0.95rem; }
-  .es-wrap .es-header-actions { gap: 6px; }
-  .es-wrap .es-filters { padding: 10px 12px; gap: 6px; }
-  .es-wrap .es-filters .es-select { max-width: 130px; }
-  .es-wrap .es-form-wrap { padding: 14px; }
-  .es-wrap .es-form-grid { grid-template-columns: 1fr; }
-  .es-wrap .es-table th,
-  .es-wrap .es-table td { padding: 7px 8px; font-size: 0.75rem; }
-  .es-wrap .es-td-notes { max-width: 80px; }
+  /* Wrapper: full width, no side padding bleed */
+  .es-wrap {
+    padding: 0 0 80px 0;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Header: tighter */
+  .es-wrap .es-header {
+    padding: 12px 14px;
+    border-radius: 12px;
+    margin-bottom: 10px;
+    gap: 8px;
+  }
+  .es-wrap .es-header-icon { width: 36px; height: 36px; font-size: 1rem; border-radius: 10px; }
+  .es-wrap .es-title { font-size: 0.9rem; }
+  .es-wrap .es-sub   { font-size: 0.7rem; }
+  .es-wrap .es-header-actions { gap: 5px; }
   .es-wrap .es-btn-add,
-  .es-wrap .es-btn-print { font-size: 0.78rem !important; padding: 6px 10px !important; }
+  .es-wrap .es-btn-print { font-size: 0.75rem !important; padding: 6px 10px !important; }
+
+  /* Toggle label hidden on mobile */
+  .es-wrap .es-toggle-label { display: none; }
+
+  /* Filters: scrollable row */
+  .es-wrap .es-filters {
+    padding: 8px 10px;
+    gap: 6px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 10px;
+    margin-bottom: 8px;
+  }
+  .es-wrap .es-filters::-webkit-scrollbar { display: none; }
+  .es-wrap .es-filters .es-select { max-width: 120px; flex-shrink: 0; }
+  .es-wrap .es-count { display: none; }
+
+  /* Form: single column */
+  .es-wrap .es-form-wrap { padding: 12px; border-radius: 10px; }
+  .es-wrap .es-form-grid { grid-template-columns: 1fr; gap: 8px; }
+  .es-wrap .es-form-actions { justify-content: stretch; }
+  .es-wrap .es-form-actions button { flex: 1; }
+
+  /* Table: horizontally scrollable, compact cells */
+  .es-wrap .es-table-wrap {
+    border-radius: 10px;
+    /* allow horizontal scroll on the table only */
+    overflow-x: auto;
+  }
+  .es-wrap .es-table { min-width: 600px; }
+  .es-wrap .es-table th,
+  .es-wrap .es-table td { padding: 7px 8px; font-size: 0.73rem; }
+  .es-wrap .es-td-notes { max-width: 80px; }
+
+  /* Group picker chips: wrap tightly */
+  .es-wrap .es-gp-grid { max-height: 110px; }
 }

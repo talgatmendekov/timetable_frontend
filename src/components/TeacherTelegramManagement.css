@@ -1,6 +1,6 @@
 /* ── TeacherTelegramManagement.css ─────────────────────────────────────────── */
 
-/* LIGHT MODE — default (data-theme="light" or no attribute) */
+/* LIGHT MODE */
 .ttm {
   --bg:             #ffffff;
   --bg-subtle:      #f8fafc;
@@ -39,7 +39,7 @@
   --btn-del-bg:     #fff1f2;  --btn-del-txt:     #be123c;  --btn-del-brd:     #fecdd3;
 }
 
-/* DARK MODE — activated via data-theme="dark" prop */
+/* DARK MODE */
 .ttm[data-theme="dark"] {
   --bg:             #0f172a;
   --bg-subtle:      #1e293b;
@@ -88,6 +88,7 @@
   color: var(--text);
   background: var(--bg);
   border-radius: 12px;
+  box-sizing: border-box;
 }
 
 /* ── Header ─────────────────────────────────────────────────────────────────── */
@@ -96,6 +97,8 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 .ttm-title {
   margin: 0;
@@ -119,6 +122,7 @@
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   transition: color 0.15s, transform 0.2s;
+  flex-shrink: 0;
 }
 .ttm-ico-btn:hover { color: var(--text-strong); transform: rotate(80deg); }
 
@@ -131,6 +135,7 @@
   padding: 18px 20px;
   margin-bottom: 28px;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .stat-item {
   flex: 1;
@@ -139,7 +144,7 @@
   align-items: center;
   padding: 0 18px;
   border-right: 1px solid var(--stat-border);
-  min-width: 90px;
+  min-width: 80px;
 }
 .stat-item:last-child { border-right: none; }
 .stat-val {
@@ -166,7 +171,11 @@
   gap: 2px;
   border-bottom: 2px solid var(--border);
   margin-bottom: 24px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
+.ttm-tabs::-webkit-scrollbar { display: none; }
 .ttm-tab {
   padding: 10px 22px;
   border: none;
@@ -178,6 +187,8 @@
   border-bottom: 2px solid transparent;
   margin-bottom: -2px;
   transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .ttm-tab:hover { color: var(--text); }
 .ttm-tab.active {
@@ -199,11 +210,13 @@
   align-items: center;
   gap: 14px;
   margin-bottom: 14px;
+  flex-wrap: wrap;
 }
 .ttm-search-box {
   position: relative;
   flex: 1;
   max-width: 300px;
+  min-width: 140px;
 }
 .ttm-search-icon {
   position: absolute;
@@ -266,9 +279,10 @@
   color: var(--hint-code);
 }
 
-/* ── Table ───────────────────────────────────────────────────────────────────── */
+/* ── Table — scrollable wrapper ──────────────────────────────────────────────── */
 .ttm-scroll {
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   border-radius: 12px;
   border: 1px solid var(--border);
 }
@@ -276,6 +290,7 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 0.93rem;
+  min-width: 560px; /* ensures horizontal scroll on narrow screens */
 }
 .ttm-tbl thead tr { background: var(--tbl-head-bg); }
 .ttm-tbl th {
@@ -300,7 +315,7 @@
 .ttm-tbl tbody tr.tr-linked:hover td { background: var(--linked-hover); }
 
 /* ── Name cell ───────────────────────────────────────────────────────────────── */
-.td-name { min-width: 170px; }
+.td-name { min-width: 140px; }
 .teacher-name {
   font-weight: 600;
   font-size: 0.95rem;
@@ -308,7 +323,7 @@
 }
 
 /* ── ID cell ─────────────────────────────────────────────────────────────────── */
-.td-id { min-width: 160px; }
+.td-id { min-width: 130px; }
 .id-chip {
   display: inline-block;
   font-family: 'SF Mono', 'Fira Code', monospace;
@@ -350,19 +365,18 @@
   outline: none;
   box-shadow: 0 0 0 3px rgba(99,102,241,.12);
 }
-.ttm-input-id   { width: 170px; }
-.ttm-input-name { width: 210px; }
+.ttm-input-id   { width: 140px; }
+.ttm-input-name { width: 180px; }
 
-/* ── Action buttons — ALWAYS ONE ROW, no wrapping ───────────────────────────── */
-.td-actions { min-width: 240px; width: 240px; }
+/* ── Action buttons ──────────────────────────────────────────────────────────── */
+.td-actions { min-width: 200px; }
 .act-row {
   display: flex;
   gap: 4px;
   align-items: center;
-  flex-wrap: nowrap;   /* ← NEVER wrap, always one line */
+  flex-wrap: nowrap;
   white-space: nowrap;
 }
-
 .act {
   padding: 5px 10px;
   border-radius: 6px;
@@ -371,7 +385,7 @@
   font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  flex-shrink: 0;      /* ← buttons never shrink */
+  flex-shrink: 0;
   transition: opacity 0.12s, transform 0.1s, filter 0.1s;
 }
 .act:hover  { opacity: 0.82; transform: translateY(-1px); filter: brightness(1.08); }
@@ -461,3 +475,60 @@
   transition: opacity 0.15s;
 }
 .schedule-cell.guest-bookable:hover .guest-book-hint { opacity: 1; }
+
+/* ══════════════════════════════════════════════════════════
+   MOBILE  (≤ 767px)
+   ══════════════════════════════════════════════════════════ */
+@media (max-width: 767px) {
+  /* Base: full width, controlled padding, bottom nav clearance */
+  .ttm {
+    max-width: 100%;
+    padding: 12px 10px 80px;
+    border-radius: 0;
+    font-size: 14px;
+    overflow-x: hidden;
+  }
+
+  /* Header: compact */
+  .ttm-head { margin-bottom: 14px; }
+  .ttm-title { font-size: 1.3rem; }
+  .ttm-sub   { font-size: 0.78rem; }
+
+  /* Stats: horizontally scrollable, smaller numbers */
+  .ttm-stats {
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    gap: 0;
+  }
+  .stat-item { padding: 0 12px; min-width: 70px; }
+  .stat-val  { font-size: 1.5rem; }
+  .stat-lbl  { font-size: 0.62rem; }
+
+  /* Tabs: single scrollable row, no wrapping */
+  .ttm-tabs { margin-bottom: 14px; }
+  .ttm-tab  { padding: 8px 14px; font-size: 0.82rem; }
+
+  /* Toolbar: stack search + count */
+  .ttm-toolbar { gap: 8px; }
+  .ttm-search-box { max-width: 100%; }
+
+  /* Hint: smaller text */
+  .ttm-hint { font-size: 0.8rem; padding: 8px 12px; }
+
+  /* Table: horizontal scroll, compact cells */
+  .ttm-scroll { border-radius: 8px; }
+  .ttm-tbl    { min-width: 520px; font-size: 0.8rem; }
+  .ttm-tbl th { padding: 8px 10px; font-size: 0.65rem; }
+  .ttm-tbl td { padding: 10px 10px; }
+
+  /* Shrink input fields */
+  .ttm-input-id   { width: 110px; }
+  .ttm-input-name { width: 140px; }
+
+  /* Action buttons: tighter */
+  .act { padding: 4px 8px; font-size: 0.7rem; }
+  .td-actions { min-width: 160px; }
+
+  /* Footer note */
+  .ttm-footer-note { font-size: 0.78rem; padding: 9px 12px; }
+}
