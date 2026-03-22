@@ -420,7 +420,7 @@ body[data-theme="dark"] .es-wrap .es-group-pill { background: #25336a; color: #a
 /* ══════════════════════════════════════════════════════════
    MOBILE  (≤ 700px)
    ══════════════════════════════════════════════════════════ */
-@media (max-width: 700px) {
+@media (max-width: 767px) {
   /* Wrapper: full width, small padding, no overflow */
   .es-wrap {
     max-width: 100% !important;

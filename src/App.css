@@ -651,4 +651,28 @@ body[data-density="spacious"] .mob-slot-course { font-size: 0.95rem !important; 
     box-sizing: border-box !important;
   }
 }
+
+
+@media (min-width: 768px) {
+  .app-sidebar {
+    display: flex !important;
+  }
+  .app-content {
+    padding: 8px 16px;
+  }
+}
+ 
+/* Mobile */
+@media (max-width: 767px) {
+  .app-sidebar {
+    display: none !important;
+    width: 0 !important;
+  }
+  .app-content {
+    padding: 6px 4px 70px 4px;
+    overflow-x: hidden;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}
  

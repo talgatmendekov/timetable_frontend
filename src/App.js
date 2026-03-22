@@ -560,7 +560,7 @@ const AppContent = () => {
         </div>
 
         {/* Content */}
-        <div className="app-content" style={{ flex:1, minWidth:0, padding:'8px 16px', overflowX:'hidden' }}>
+        <div className="app-content" style={{ flex:1, minWidth:0, overflowX:'hidden' }}>
           {activeView === 'schedule' && (
             <>
               <AnnouncementBanner isAdmin={isAuthenticated} />
