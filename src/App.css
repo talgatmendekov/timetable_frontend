@@ -619,4 +619,16 @@ body[data-density="spacious"] .mob-slot-course { font-size: 0.95rem !important; 
     overflow-x: clip !important;
   }
 }
+
+@media (max-width: 767px) {
+  /* Clip outer content area — inner scrollable elements still work */
+  .app-content {
+    overflow-x: hidden !important;
+  }
+  /* Main flex wrapper must not expand wider than screen */
+  .app-content,
+  .app-content > * {
+    box-sizing: border-box;
+  }
+}
  

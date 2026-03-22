@@ -480,12 +480,25 @@
    MOBILE  (≤ 767px)
    ══════════════════════════════════════════════════════════ */
 @media (max-width: 767px) {
-  /* Base: keep max-width centering, fix padding and clip overflow */
+  /* Base: keep centering, prevent outer horizontal overflow */
   .ttm {
     padding: 12px 10px 80px;
     border-radius: 8px;
     font-size: 14px;
-    overflow-x: clip;
+    overflow-x: hidden;
+  }
+  /* Inner table scroll wrapper must still scroll */
+  .ttm-scroll {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .ttm-tbl {
+    min-width: 500px;
+  }
+  /* Stats bar scrolls horizontally */
+  .ttm-stats {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Header: compact */

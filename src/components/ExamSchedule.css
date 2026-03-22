@@ -421,10 +421,23 @@ body[data-theme="dark"] .es-wrap .es-group-pill { background: #25336a; color: #a
    MOBILE  (≤ 700px)
    ══════════════════════════════════════════════════════════ */
 @media (max-width: 700px) {
-  /* Wrapper: keep max-width centering, just fix padding and clip overflow */
+  /* Wrapper: keep centering, prevent outer horizontal overflow */
   .es-wrap {
     padding: 0 4px 80px 4px;
-    overflow-x: clip;
+    overflow-x: hidden;
+  }
+  /* Inner table scroll wrapper must still scroll */
+  .es-wrap .es-table-wrap {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  .es-wrap .es-table {
+    min-width: 560px;
+  }
+  /* Filters scroll horizontally */
+  .es-wrap .es-filters {
+    overflow-x: auto;
+    flex-wrap: nowrap;
   }
 
   /* Header: tighter */
