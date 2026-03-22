@@ -110,8 +110,14 @@ const MobileView = ({
                       }
                       return (
                         <div key={tm}
-                          className={['mob-slot', cf.includes('teacher') ? 'conflict-t' : '', cf.includes('room') ? 'conflict-r' : '', !cd && !bk ? 'mob-slot-empty-row' : '', dur > 1 ? 'mob-slot-multi' : ''].filter(Boolean).join(' ')}
-                          style={bkB ? { borderLeft: `3px solid ${bkB}` } : cd && ts ? { borderLeft: `3px solid ${ts.color}` } : {}}
+                          className={['mob-slot',
+                            cf.includes('teacher') ? 'conflict-t' : '',
+                            cf.includes('room') ? 'conflict-r' : '',
+                            !cd && !bk ? 'mob-slot-empty-row' : '',
+                            dur > 1 ? 'mob-slot-multi' : '',
+                            bk && !cd ? (bk.status === 'approved' ? 'booked-approved' : 'booked-pending') : '',
+                          ].filter(Boolean).join(' ')}
+                          style={cd && ts ? { borderLeft: `3px solid ${ts.color}` } : bk && !cd ? { borderLeft: `3px solid ${bk.status === 'approved' ? '#22c55e' : '#eab308'}` } : { borderLeft: '3px solid var(--border)' }}
                           onClick={() => { if (isAuthenticated) { onEditClass(group, day, tm); return; } if (!cd && !bk && onGuestBookCell) onGuestBookCell(group, day, tm); }}>
                           <div className={`mob-slot-time ${isToday ? 'today-t' : ''}`}>{tm}</div>
                           <div className="mob-slot-body">
@@ -297,25 +303,29 @@ const ScheduleTable = ({
                       <div className="filtered-label">{t('filtered')}</div>
                     </td>
                   );
-                  let bkStyle = {}, bkLabel = null;
+                  let bkLabel = null;
                   if (bk) {
-                    bkStyle = bk.status === 'approved'
-                      ? { background: '#dcfce7', borderLeft: '3px solid #22c55e' }
-                      : bk.status === 'rejected'
-                        ? { background: '#fee2e2', borderLeft: '3px solid #ef4444' }
-                        : { background: '#fef9c3', borderLeft: '3px solid #eab308' };
                     bkLabel = (
-                      <div style={{ fontSize: '0.68rem', marginTop: 3, fontWeight: 600, color: bk.status === 'approved' ? '#166534' : bk.status === 'rejected' ? '#991b1b' : '#854d0e', display: 'flex', alignItems: 'center', gap: 3 }}>
-                        {bk.status === 'approved' ? '✅' : bk.status === 'rejected' ? '❌' : '⏳'}
-                        <span>{bk.name || ''}</span>
-                        {bk.room && <span style={{ opacity: 0.7 }}>· {bk.room}</span>}
+                      <div className={`booking-badge ${bk.status === 'approved' ? 'booking-badge-approved' : 'booking-badge-pending'}`}>
+                        {bk.status === 'approved' ? '✅' : '⏳'} {bk.status === 'approved' ? 'Booked' : 'Pending'}
+                        {(bk.guest_name || bk.name) && <span style={{ opacity:0.8 }}> · {bk.guest_name || bk.name}</span>}
                       </div>
                     );
                   }
                   return (
                     <td key={cellKey}
-                      className={['schedule-cell', cd ? 'filled' : '', isAuthenticated ? 'editable' : (!cd && !bk) ? 'guest-bookable' : '', isToday ? 'today-cell' : '', cf.includes('teacher') ? 'conflict-teacher' : '', cf.includes('room') ? 'conflict-room' : '', isDragSrc ? 'drag-source' : '', isDragOvr ? (cd ? 'drag-over-filled' : 'drag-over-empty') : '', dur > 1 ? 'multi-slot' : ''].filter(Boolean).join(' ')}
-                      style={bk ? bkStyle : (cd && ts ? { background: ts.light, borderLeft: `3px solid ${ts.color}` } : {})}
+                      className={['schedule-cell',
+                        cd ? 'filled' : '',
+                        isAuthenticated ? 'editable' : (!cd && !bk) ? 'guest-bookable' : '',
+                        isToday ? 'today-cell' : '',
+                        cf.includes('teacher') ? 'conflict-teacher' : '',
+                        cf.includes('room') ? 'conflict-room' : '',
+                        isDragSrc ? 'drag-source' : '',
+                        isDragOvr ? (cd ? 'drag-over-filled' : 'drag-over-empty') : '',
+                        dur > 1 ? 'multi-slot' : '',
+                        bk && !cd ? (bk.status === 'approved' ? 'booked-approved' : 'booked-pending') : '',
+                      ].filter(Boolean).join(' ')}
+                      style={cd && ts ? { background: ts.light, borderLeft: `3px solid ${ts.color}` } : {}}
                       colSpan={dur}
                       onClick={() => { if (isAuthenticated && !dragSource) { onEditClass(group, day, tm); return; } if (!isAuthenticated && !cd && !bk && onGuestBookCell) onGuestBookCell(group, day, tm); }}
                       draggable={isAuthenticated && !!cd}

@@ -255,6 +255,11 @@ const AppContent = () => {
   }, []);
   React.useEffect(() => { fetchActiveBookings(); }, [fetchActiveBookings]);
 
+  // Count pending bookings for notification badge
+  const pendingCount = React.useMemo(() =>
+    activeBookings.filter(b => b.status === 'pending').length
+  , [activeBookings]);
+
   const conflictCount = React.useMemo(() => {
     const entries = Object.values(schedule); let count = 0; const seen = new Set();
     days.forEach(day => { timeSlots.forEach(time => {
@@ -333,7 +338,7 @@ const AppContent = () => {
       { id:'print',     icon: iconSchedule, label:'Print'                          },
       { id:'dashboard', icon: iconStats,    label:'Stats'                          },
       { id:'conflicts', icon: '⚠️',         label:'Conflicts', badge: conflictCount },
-      { id:'bookings',  icon: iconBooking,  label:'Bookings'                       },
+      { id:'bookings',  icon: iconBooking,  label:'Bookings', badge: pendingCount   },
       { id:'autosched', icon: iconAuto,     label:'Auto'                           },
       { id:'exams',     icon: iconExams,    label:'Exams'                          },
       { id:'feedback',  icon: iconFeedback, label:'Feedback',  badge: feedbackCount },

@@ -209,6 +209,48 @@
 .guest-book-hint { font-size: 0.72rem; color: #92400e; text-align: center; padding: 4px 0; opacity: 0; transition: opacity 0.15s; }
 .schedule-cell.guest-bookable:hover .guest-book-hint { opacity: 1; }
 
+/* ── Booked slot — desktop table ─────────────────────────────────────────── */
+/* Pending booking — yellow striped */
+.schedule-cell.booked-pending {
+  background: repeating-linear-gradient(
+    45deg,
+    #fef9c3,
+    #fef9c3 6px,
+    #fef3c7 6px,
+    #fef3c7 12px
+  ) !important;
+  border-left: 3px solid #eab308 !important;
+}
+/* Approved booking — green solid */
+.schedule-cell.booked-approved {
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0) !important;
+  border-left: 3px solid #22c55e !important;
+}
+.schedule-cell.booked-pending .course-name,
+.schedule-cell.booked-approved .course-name { color: #1a1a1a !important; }
+
+.booking-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.62rem; font-weight: 700; padding: 2px 7px;
+  border-radius: 10px; margin-bottom: 4px; width: fit-content;
+}
+.booking-badge-pending  { background: #fde68a; color: #92400e; }
+.booking-badge-approved { background: #bbf7d0; color: #14532d; }
+
+/* ── Booked slot — mobile card ────────────────────────────────────────────── */
+.mob-slot.booked-pending {
+  background: repeating-linear-gradient(
+    45deg,
+    #fef9c3,
+    #fef9c3 5px,
+    #fef3c7 5px,
+    #fef3c7 10px
+  ) !important;
+}
+.mob-slot.booked-approved {
+  background: linear-gradient(135deg, #dcfce7, #d1fae5) !important;
+}
+
 /* ── Meeting link button ──────────────────────────────────────────────────── */
 .meeting-link-btn {
   display: inline-flex; align-items: center; gap: 3px;
