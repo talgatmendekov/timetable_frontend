@@ -170,7 +170,7 @@ const ScheduleTable = ({
 
   const bookingGroups = [...new Set(bookings.filter(b => ['pending','approved','rejected'].includes(b.status)).map(b => b.entity?.trim() ? b.entity.trim() : b.name).filter(Boolean))];
   const baseGroups    = selectedGroup ? groups.filter(g => g === selectedGroup) : groups;
-  const groupsToShow  = [...bookingGroups.filter(g => !baseGroups.includes(g)), ...baseGroups];
+  const groupsToShow  = [...baseGroups, ...bookingGroups.filter(g => !baseGroups.includes(g))];
   const typeLabels    = SUBJECT_TYPE_LABELS[lang] || SUBJECT_TYPE_LABELS.en;
   const normSelectedTeacher = useMemo(() => selectedTeacher ? normalizeTeacherName(selectedTeacher) : '', [selectedTeacher]);
 

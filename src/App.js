@@ -338,19 +338,19 @@ const AppContent = () => {
 
   const navTabs = [
     ...(!isAuthenticated ? [
-      { id:'mybookings', icon: iconBooking,  label:'My Bookings' },
-      ...(showExamsToGuests ? [{ id:'exams', icon: iconExams, label:'Exams' }] : []),
-      { id:'feedback',   icon: iconFeedback, label:'Feedback' },
+      { id:'mybookings', icon: iconBooking,  label: t('navMyBookings') || 'My Bookings' },
+      ...(showExamsToGuests ? [{ id:'exams', icon: iconExams, label: t('navExams') || 'Exams' }] : []),
+      { id:'feedback',   icon: iconFeedback, label: t('navFeedback') || 'Feedback' },
     ] : []),
     ...(isAuthenticated ? [
-      { id:'print',     icon: iconSchedule, label:'Print'                          },
-      { id:'dashboard', icon: iconStats,    label:'Stats'                          },
-      { id:'conflicts', icon: '⚠️',         label:'Conflicts', badge: conflictCount },
-      { id:'bookings',  icon: iconBooking,  label:'Bookings', badge: pendingCount   },
-      { id:'autosched', icon: iconAuto,     label:'Auto'                           },
-      { id:'exams',     icon: iconExams,    label:'Exams'                          },
-      { id:'feedback',  icon: iconFeedback, label:'Feedback',  badge: feedbackCount },
-      { id:'telegram',  icon: iconTelegram, label:'Telegram'                       },
+      { id:'print',     icon: iconSchedule, label: t('navPrint')     || 'Print'                          },
+      { id:'dashboard', icon: iconStats,    label: t('navStats')     || 'Stats'                          },
+      { id:'conflicts', icon: '⚠️',         label: t('navConflicts') || 'Conflicts', badge: conflictCount },
+      { id:'bookings',  icon: iconBooking,  label: t('navBookings')  || 'Bookings',  badge: pendingCount  },
+      { id:'autosched', icon: iconAuto,     label: t('navAuto')      || 'Auto'                           },
+      { id:'exams',     icon: iconExams,    label: t('navExams')     || 'Exams'                          },
+      { id:'feedback',  icon: iconFeedback, label: t('navFeedback')  || 'Feedback',  badge: feedbackCount },
+      { id:'telegram',  icon: iconTelegram, label: 'Telegram'                                            },
     ] : []),
   ];
 
@@ -528,7 +528,7 @@ const AppContent = () => {
           <span style={{ fontSize:'0.68rem', color:'var(--text-secondary)', whiteSpace:'nowrap', flexShrink:0 }}>👤 {user?.username}</span>
           <button onClick={() => { logout(); setActiveView('schedule'); }}
             style={{ ...S.btn('transparent', 'var(--text-secondary)'), border:'1px solid var(--border)', fontSize:'0.65rem' }}>
-            <span className="tb-lbl">{t('logout')}</span>⏻
+            <span className="tb-lbl">{t('logout') || 'Logout'}</span>⏻
           </button>
         </>) : (
           <button onClick={() => setShowLoginModal(true)} style={S.btn('var(--primary)')}>🔐 {t('loginBtn') || 'Login'}</button>
@@ -545,7 +545,7 @@ const AppContent = () => {
         <div className="app-sidebar" style={{ width:54, flexShrink:0, background:'var(--bg-card)', borderRight:'1px solid var(--border)', display:'flex', flexDirection:'column', alignItems:'center', padding:'8px 0', gap:4, position:'sticky', top:40, height:'calc(100vh - 40px)', overflowY:'auto' }}>
           <button onClick={() => setActiveView('schedule')} title="Schedule" style={S.iconBtn(activeView==='schedule')}>
             <TabIcon icon={iconSchedule} label="Schedule" active={activeView==='schedule'} />
-            <span style={S.iconLabel}>Schedule</span>
+            <span style={S.iconLabel}>{t('navSchedule') || 'Schedule'}</span>
           </button>
           <div style={{ width:32, height:1, background:'var(--border)', margin:'2px 0' }} />
           {navTabs.map(tab => (
@@ -599,8 +599,8 @@ const AppContent = () => {
       {/* ── BOTTOM NAV (mobile) ── */}
       <nav className="app-bottom-nav">
         <button className={`app-bottom-nav-btn ${activeView==='schedule' ? 'active' : ''}`} onClick={() => setActiveView('schedule')}>
-          <TabIcon icon={iconSchedule} label="Schedule" active={activeView==='schedule'} />
-          <span className="app-bottom-nav-btn-label">Schedule</span>
+          <TabIcon icon={iconSchedule} label={t('navSchedule') || 'Schedule'} active={activeView==='schedule'} />
+          <span className="app-bottom-nav-btn-label">{t('bnSchedule') || 'Schedule'}</span>
         </button>
         {navTabs.map(tab => (
           <button key={tab.id} className={`app-bottom-nav-btn ${activeView===tab.id ? 'active' : ''}`} onClick={() => setActiveView(tab.id)}>
@@ -642,42 +642,42 @@ const AppContent = () => {
 
       <div className="mob-bottom-nav">
         <button className={`mob-nav-btn ${activeView==='schedule'?'active':''}`} onClick={() => setActiveView('schedule')}>
-          <span>📅</span><span>Schedule</span>
+          <span>📅</span><span>{t('bnSchedule') || 'Schedule'}</span>
         </button>
         {isAuthenticated ? (<>
           <button className={`mob-nav-btn ${activeView==='bookings'?'active':''}`} onClick={() => setActiveView('bookings')}>
-            <span>📋</span><span>Bookings</span>
+            <span>📋</span><span>{t('bnBookings') || 'Bookings'}</span>
           </button>
           <button className={`mob-nav-btn ${activeView==='print'?'active':''}`} onClick={() => setActiveView('print')}>
-            <span>🖨️</span><span>Print</span>
+            <span>🖨️</span><span>{t('bnPrint') || 'Print'}</span>
           </button>
         </>) : (
           <button className={`mob-nav-btn ${activeView==='mybookings'?'active':''}`} onClick={() => setActiveView('mybookings')}>
-            <span>📋</span><span>My Books</span>
+            <span>📋</span><span>{t('bnMyBooks') || 'My Books'}</span>
           </button>
         )}
         <button className={`mob-nav-btn ${activeView==='exams'?'active':''}`} onClick={() => setActiveView('exams')}>
-          <span>🎓</span><span>Exams</span>
+          <span>🎓</span><span>{t('bnExams') || 'Exams'}</span>
         </button>
         <button className={`mob-nav-btn ${activeView==='feedback'?'active':''}`} onClick={() => setActiveView('feedback')}>
-          <span>💬</span><span>Feedback</span>
+          <span>💬</span><span>{t('bnFeedback') || 'Feedback'}</span>
         </button>
         {isAuthenticated ? (
           <button className="mob-nav-btn" onClick={() => { logout(); setActiveView('schedule'); }}>
-            <span>⏻</span><span>Logout</span>
+            <span>⏻</span><span>{t('bnLogout') || 'Logout'}</span>
           </button>
         ) : (
           <button className="mob-nav-btn" onClick={() => setShowLoginModal(true)}>
-            <span>🔐</span><span>Login</span>
+            <span>🔐</span><span>{t('bnLogin') || 'Login'}</span>
           </button>
         )}
       </div>
 
       <footer className="app-author-credit">
         <span className="app-author-logo">🏛</span>
-        <span>Developed by <strong>Talgat Mendekov</strong></span>
+        <span>{t('footerDeveloped') || 'Developed by'} <strong>{t('footerDeveloper') || 'Talgat Mendekov'}</strong></span>
         <span className="app-author-sep">·</span>
-        <span>Alatoo International University</span>
+        <span>{t('footerUniversity') || 'Alatoo International University'}</span>
         <span className="app-author-sep">·</span>
         <span>{new Date().getFullYear()}</span>
       </footer>
