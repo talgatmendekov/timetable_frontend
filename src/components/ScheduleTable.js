@@ -168,9 +168,27 @@ const ScheduleTable = ({
 
   const weekDateMap = useWeekDayLabels(daysToShow, lang);
 
-  const bookingGroups = [...new Set(bookings.filter(b => ['pending','approved','rejected'].includes(b.status)).map(b => b.entity?.trim() ? b.entity.trim() : b.name).filter(Boolean))];
-  const baseGroups    = selectedGroup ? groups.filter(g => g === selectedGroup) : groups;
-  const groupsToShow  = [...baseGroups, ...bookingGroups.filter(g => !baseGroups.includes(g))];
+  // All group names that originate from bookings (entity or booker name)
+  const bookingGroupNames = new Set(
+    bookings
+      .filter(b => ['pending','approved','rejected'].includes(b.status))
+      .map(b => (b.entity && b.entity.trim()) ? b.entity.trim() : b.name)
+      .filter(Boolean)
+  );
+
+  const baseGroups = selectedGroup
+    ? groups.filter(g => g === selectedGroup)
+    : groups;
+
+  // Separate booking-created groups from real academic groups
+  // Booking groups go to the END regardless of where they are in the DB groups list
+  const regularGroups = baseGroups.filter(g => !bookingGroupNames.has(g));
+  const bookingGroups = [
+    ...baseGroups.filter(g => bookingGroupNames.has(g)),
+    ...[...bookingGroupNames].filter(g => !baseGroups.includes(g)),
+  ];
+
+  const groupsToShow = [...regularGroups, ...bookingGroups];
   const typeLabels    = SUBJECT_TYPE_LABELS[lang] || SUBJECT_TYPE_LABELS.en;
   const normSelectedTeacher = useMemo(() => selectedTeacher ? normalizeTeacherName(selectedTeacher) : '', [selectedTeacher]);
 
