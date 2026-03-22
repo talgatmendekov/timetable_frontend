@@ -296,9 +296,17 @@ const ScheduleTable = ({
             </tr>
           </thead>
           <tbody>
-            {groupsToShow.map(group => (
+            {groupsToShow.map((group, idx) => (<>
+              {/* Separator row before the first booking group */}
+              {idx === regularGroups.length && bookingGroups.length > 0 && (
+                <tr key="__booking-separator__" className="booking-separator-row">
+                  <td colSpan={1 + daysToShow.length * timeSlots.length} className="booking-separator-cell">
+                    🏫 {t('labBookings') || 'Lab Bookings'}
+                  </td>
+                </tr>
+              )}
               <tr key={group}>
-                <td className="group-cell">
+                <td className={`group-cell${bookingGroupNames.has(group) ? ' group-cell-booking' : ''}`}>
                   <div className="group-cell-content">
                     <span className="group-name">{group}</span>
                     {isAuthenticated && (
@@ -382,6 +390,7 @@ const ScheduleTable = ({
                   );
                 }))}
               </tr>
+            </>
             ))}
           </tbody>
         </table>

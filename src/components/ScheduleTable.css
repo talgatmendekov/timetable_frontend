@@ -209,6 +209,32 @@
 .guest-book-hint { font-size: 0.72rem; color: #92400e; text-align: center; padding: 4px 0; opacity: 0; transition: opacity 0.15s; }
 .schedule-cell.guest-bookable:hover .guest-book-hint { opacity: 1; }
 
+/* ── Lab bookings separator row ──────────────────────────────────────────── */
+.booking-separator-row { height: 36px; }
+
+.booking-separator-cell {
+  background: linear-gradient(135deg, #1e3a5f, #1e293b) !important;
+  color: #f8c948 !important;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0 16px !important;
+  border-top: 3px solid #f59e0b !important;
+  border-bottom: 2px solid #f59e0b !important;
+  text-align: left !important;
+}
+
+/* Booking group label cell — slightly different from regular dark group cell */
+.group-cell.group-cell-booking {
+  background: linear-gradient(135deg, #1e3a5f, #0f2744) !important;
+  border-right: 3px solid #f59e0b !important;
+}
+.group-cell.group-cell-booking .group-name {
+  color: #fbbf24 !important;
+  font-style: italic;
+}
+
 /* ── Booked slot — desktop table ─────────────────────────────────────────── */
 /* Must use !important to override .filled, .today-cell, and inline styles */
 
