@@ -3,7 +3,6 @@ import React, { useState, useRef } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ScheduleProvider, useSchedule } from './context/ScheduleContext';
 import { LanguageProvider, useLanguage } from './context/LanguageContext';
-
 import Login                     from './components/Login';
 import ScheduleTable             from './components/ScheduleTable';
 import ClassModal                from './components/ClassModal';
@@ -18,23 +17,18 @@ import EmptyRoomPanel            from './components/EmptyRoomPanel';
 import AutoScheduler             from './components/AutoScheduler';
 import ExamSchedule              from './components/ExamSchedule';
 import FeedbackDashboard         from './components/FeedbackDashboard';
-
 import { exportToExcel, importFromExcel } from './utils/excelUtils';
 import { LANGUAGE_OPTIONS }               from './data/i18n';
-
 import logo         from './assets/logo.png';
 import iconAuto     from './assets/auto.png';
 import iconBooking  from './assets/booking.png';
-// exams.avif may have limited browser support — using emoji fallback
-// import iconExams from './assets/exam.jpeg';
 const iconExams = '🗓';
 import iconFeedback from './assets/feedback.png';
 import iconSchedule from './assets/schedule.png';
 import iconStats    from './assets/stats.jpeg';
 import iconTelegram from './assets/telegram.jpeg';
-
 import './App.css';
-import OnboardingTour    from './components/OnboardingTour';
+import OnboardingTour     from './components/OnboardingTour';
 import AnnouncementBanner from './components/AnnouncementBanner';
 
 const API_URL    = process.env.REACT_APP_API_URL    || 'https://timetablebackend-production.up.railway.app/api';
@@ -50,32 +44,146 @@ if (!localStorage.getItem('scheduleTheme')) {
   document.body.setAttribute('data-theme', 'light');
 }
 
-// ── Render a tab icon — image asset or emoji ──────────────────────────────────
 const TabIcon = ({ icon, label, active }) => {
-  // Anything that isn't a pure emoji string gets rendered as <img>
-  // Webpack resolves imported assets to a URL string like "/static/media/auto.abc123.webp"
   const isEmoji = typeof icon === 'string' && /^(\p{Emoji}|[\u2600-\u27BF])/u.test(icon) && icon.length <= 4;
   if (!isEmoji && icon) {
     const src = (typeof icon === 'object' && icon.default) ? icon.default : icon;
     return (
-      <img
-        src={src}
-        alt={label}
+      <img src={src} alt={label}
         style={{ width:22, height:22, objectFit:'contain', borderRadius:4,
-          filter: 'none',
-          opacity: active ? 1 : 0.7,
+          filter:'none', opacity: active ? 1 : 0.7,
           transform: active ? 'scale(1.1)' : 'scale(1)' }}
-        onError={e => { e.target.style.display='none'; e.target.nextSibling && (e.target.nextSibling.style.display='inline'); }}
+        onError={e => { e.target.style.display='none'; }}
       />
     );
   }
   return <span style={{ fontSize:'1.1rem', lineHeight:1 }}>{icon}</span>;
 };
 
+// ── Booking Detail Modal — shown when admin clicks an approved booking slot ──
+const BookingDetailModal = ({ booking, onClose, onDeleted }) => {
+  const [deleting, setDeleting] = useState(false);
+
+  if (!booking) return null;
+
+  const handleDelete = async () => {
+    if (!window.confirm('Delete this booking and remove it from the schedule?')) return;
+    setDeleting(true);
+    try {
+      const tk = localStorage.getItem('token') || localStorage.getItem('scheduleToken') || '';
+      const res = await fetch(`${API_URL}/booking-requests/${booking.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${tk}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        onDeleted(booking);
+        onClose();
+      } else {
+        alert(data.error || 'Failed to delete booking');
+      }
+    } catch {
+      alert('Network error — please try again');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const statusColor = booking.status === 'approved' ? '#16a34a'
+    : booking.status === 'rejected' ? '#dc2626' : '#ca8a04';
+  const statusIcon = booking.status === 'approved' ? '✅'
+    : booking.status === 'rejected' ? '❌' : '⏳';
+
+  return (
+    <div
+      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+      style={{
+        position:'fixed', inset:0, background:'rgba(0,0,0,0.55)',
+        zIndex:1000, display:'flex', alignItems:'center',
+        justifyContent:'center', padding:16,
+      }}
+    >
+      <div style={{
+        background:'#fff', borderRadius:16, padding:'24px 24px 20px',
+        width:'100%', maxWidth:440,
+        boxShadow:'0 20px 60px rgba(0,0,0,0.25)',
+        fontFamily:"'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+      }}>
+        {/* Header */}
+        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:18 }}>
+          <div>
+            <div style={{ fontSize:'0.72rem', fontWeight:700, color:'#94a3b8', textTransform:'uppercase', letterSpacing:'0.05em', marginBottom:4 }}>
+              Lab Booking
+            </div>
+            <h2 style={{ margin:0, fontSize:'1.1rem', fontWeight:800, color:'#0f172a' }}>
+              {booking.purpose}
+            </h2>
+          </div>
+          <button onClick={onClose} style={{
+            background:'none', border:'none', fontSize:'1.4rem',
+            cursor:'pointer', color:'#94a3b8', lineHeight:1, padding:4,
+          }}>×</button>
+        </div>
+
+        {/* Status badge */}
+        <div style={{
+          display:'inline-flex', alignItems:'center', gap:6,
+          background: booking.status === 'approved' ? '#dcfce7' : booking.status === 'rejected' ? '#fee2e2' : '#fef9c3',
+          color: statusColor,
+          borderRadius:20, padding:'4px 12px', fontSize:'0.8rem', fontWeight:700,
+          marginBottom:16,
+        }}>
+          {statusIcon} {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
+        </div>
+
+        {/* Details */}
+        <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:20 }}>
+          {[
+            { icon:'👤', label:'Booked by',  value: booking.guest_name || booking.name },
+            { icon:'📧', label:'Email',       value: booking.email },
+            { icon:'📞', label:'Phone',       value: booking.phone || '—' },
+            { icon:'🏢', label:'Entity',      value: booking.entity || '—' },
+            { icon:'🗓', label:'Day',         value: booking.day },
+            { icon:'⏰', label:'Time',        value: `${booking.start_time} — ${booking.end_time}` },
+            { icon:'🚪', label:'Room',        value: booking.room },
+          ].map(({ icon, label, value }) => (
+            <div key={label} style={{ display:'flex', gap:10, fontSize:'0.85rem' }}>
+              <span style={{ width:20, textAlign:'center', flexShrink:0 }}>{icon}</span>
+              <span style={{ color:'#94a3b8', fontWeight:600, minWidth:80, flexShrink:0 }}>{label}</span>
+              <span style={{ color:'#0f172a', fontWeight:500 }}>{value}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Actions */}
+        <div style={{ display:'flex', gap:10 }}>
+          <button onClick={onClose} style={{
+            flex:1, padding:'10px', background:'#f1f5f9',
+            border:'1px solid #e2e8f0', borderRadius:10,
+            fontSize:'0.9rem', fontWeight:600, cursor:'pointer',
+            color:'#475569', fontFamily:'inherit',
+          }}>
+            Close
+          </button>
+          <button onClick={handleDelete} disabled={deleting} style={{
+            flex:1, padding:'10px',
+            background: deleting ? '#94a3b8' : '#ef4444',
+            border:'none', borderRadius:10,
+            fontSize:'0.9rem', fontWeight:700, cursor: deleting ? 'not-allowed' : 'pointer',
+            color:'#fff', fontFamily:'inherit',
+          }}>
+            {deleting ? '⏳ Deleting...' : '🗑 Delete Booking'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 const AppContent = () => {
   const { isAuthenticated, loading: authLoading, logout, user } = useAuth();
-  const { addGroup, clearSchedule, importSchedule, deleteGroup, schedule, groups, teachers, timeSlots, days, loading: scheduleLoading, error } = useSchedule();
+  const { addGroup, clearSchedule, importSchedule, deleteClass, deleteGroup, schedule, groups, teachers, timeSlots, days, loading: scheduleLoading, error } = useSchedule();
   const { t, lang, changeLang } = useLanguage();
 
   const [showLoginModal,    setShowLoginModal]    = useState(false);
@@ -94,18 +202,18 @@ const AppContent = () => {
   const [feedbackCount,     setFeedbackCount]     = useState(0);
   const [shareToast,        setShareToast]        = useState('');
   const [showAdminMenu,     setShowAdminMenu]     = useState(false);
-  const [showTour,          setShowTour]          = useState(() => !localStorage.getItem('tourDone') && false); // auto-show for new admins
+  const [showTour,          setShowTour]          = useState(() => !localStorage.getItem('tourDone') && false);
   const [density,           setDensity]           = useState(() => localStorage.getItem('scheduleDensity') || 'comfortable');
   const [theme,             setTheme]             = useState(localStorage.getItem('scheduleTheme') || 'light');
   const [dept,              setDept]              = useState(localStorage.getItem('scheduleDept') || '');
 
+  // ── Booking detail modal state ─────────────────────────────────────────────
+  const [bookingDetail,     setBookingDetail]     = useState(null);
+
   const fileInputRef = useRef(null);
   const todayName = getTodayName();
 
-  React.useEffect(() => {
-    document.body.setAttribute('data-density', density);
-    localStorage.setItem('scheduleDensity', density);
-  }, [density]);
+  React.useEffect(() => { document.body.setAttribute('data-density', density); localStorage.setItem('scheduleDensity', density); }, [density]);
   React.useEffect(() => { document.body.setAttribute('data-theme', theme); localStorage.setItem('scheduleTheme', theme); }, [theme]);
   React.useEffect(() => {
     if (dept) document.body.setAttribute('data-dept', dept);
@@ -158,12 +266,42 @@ const AppContent = () => {
     }); }); return count;
   }, [schedule, days, timeSlots]);
 
-  const handleEditClass   = (group, day, time) => { setCurrentCell({ group, day, time }); setModalOpen(true); };
+  // ── Smart edit handler — opens BookingDetailModal for bookings, ClassModal for classes ──
+  const handleEditClass = (group, day, time) => {
+    // Check if this cell has an active booking
+    const booking = activeBookings.find(b => {
+      const bGroup = (b.entity && b.entity.trim()) ? b.entity.trim() : b.name;
+      return bGroup === group && b.day === day && b.start_time === time;
+    });
+
+    if (booking) {
+      // It's a booking slot — show booking detail modal with delete option
+      setBookingDetail(booking);
+      return;
+    }
+
+    // Regular class — open ClassModal as usual
+    setCurrentCell({ group, day, time });
+    setModalOpen(true);
+  };
+
   const handleCloseModal  = () => { setModalOpen(false); setCurrentCell({ group:null, day:null, time:null }); };
   const handleJumpToCell  = (group, day, time) => { setActiveView('schedule'); setSelectedDay(day); setSelectedGroup(group); setTimeout(() => { setCurrentCell({ group, day, time }); setModalOpen(true); }, 150); };
   const handleAddGroup    = () => { const n = prompt(t('enterGroupName')); if (n?.trim()) addGroup(n.trim()); };
   const handleDeleteGroup = async (g) => { await deleteGroup(g); setActiveBookings(prev => prev.filter(b => b.entity!==g && b.name!==g)); };
-  const handleShare       = () => {
+
+  // Called when booking is deleted from BookingDetailModal
+  const handleBookingDeleted = (deletedBooking) => {
+    // Remove from activeBookings so it disappears from the schedule instantly
+    setActiveBookings(prev => prev.filter(b => b.id !== deletedBooking.id));
+    // Also remove from local schedule state
+    const group = (deletedBooking.entity && deletedBooking.entity.trim())
+      ? deletedBooking.entity.trim()
+      : deletedBooking.name;
+    deleteClass(group, deletedBooking.day, deletedBooking.start_time);
+  };
+
+  const handleShare = () => {
     const group = selectedGroup || (groups[0] || '');
     const url = group ? `${PUBLIC_URL}/schedule/${encodeURIComponent(group)}` : `${PUBLIC_URL}/schedule`;
     navigator.clipboard?.writeText(url).then(() => { setShareToast('✓'); setTimeout(() => setShareToast(''), 2000); }).catch(() => prompt('Copy:', url));
@@ -244,12 +382,10 @@ const AppContent = () => {
 
   return (
     <div className="app" style={{ padding:0 }}>
-
       <input type="file" ref={fileInputRef} accept=".xlsx,.xls" onChange={handleFileChange} style={{ display:'none' }} />
-
       {importing && (
         <div className="import-overlay">
-          <div className="import-spinner">⏳ Importing…</div>
+          <div className="import-spinner">⏳ Importing...</div>
         </div>
       )}
       {scheduleLoading && (
@@ -293,25 +429,15 @@ const AppContent = () => {
         </div>
       )}
 
-      {/* ── TOPBAR — single compact row, scrollable ── */}
+      {/* ── TOPBAR ── */}
       <div style={S.bar} className="app-topbar">
-
-        {/* Logo + name */}
         <img src={logo} alt="" style={{ height:22, width:22, objectFit:'contain', borderRadius:4, flexShrink:0 }} />
-        <span style={{ fontWeight:800, fontSize:'0.75rem', color:'var(--text-primary)', whiteSpace:'nowrap', flexShrink:0 }}>
-          Alatoo
-        </span>
-
+        <span style={{ fontWeight:800, fontSize:'0.75rem', color:'var(--text-primary)', whiteSpace:'nowrap', flexShrink:0 }}>Alatoo</span>
         <div style={S.divider} />
-
-        {/* Filters */}
         <select value={selectedDay} onChange={e => setSelectedDay(e.target.value)} style={S.sel}>
           <option value="">{t('allDays')}</option>
-          {days.map(day => (
-            <option key={day} value={day}>{t(day)}{day===todayName ? ' ★' : ''}</option>
-          ))}
+          {days.map(day => <option key={day} value={day}>{t(day)}{day===todayName ? ' ★' : ''}</option>)}
         </select>
-
         <select value={selectedGroup} onChange={e => {
           setSelectedGroup(e.target.value);
           if (e.target.value) localStorage.setItem('myGroup', e.target.value);
@@ -320,57 +446,32 @@ const AppContent = () => {
           <option value="">{t('allGroups')}</option>
           {groups.map(g => <option key={g} value={g}>{g}</option>)}
         </select>
-
         <select value={selectedTeacher} onChange={e => setSelectedTeacher(e.target.value)} style={S.sel}>
           <option value="">{t('allTeachers')}</option>
           {teachers.map(tc => <option key={tc} value={tc}>{tc}</option>)}
         </select>
-
         <div style={S.divider} />
-
-        {/* Admin actions — inline, same row */}
         {isAuthenticated && (<>
-          {/* Desktop: full buttons */}
-          <button onClick={handleAddGroup}    style={S.btn('var(--primary)')} className="tb-admin-btn tb-desktop-only">＋ {t('addGroup')}</button>
-          <button onClick={handleExport}      style={S.btn('#059669')}        className="tb-admin-btn tb-desktop-only" title={t('export')}>📊 {t('export')}</button>
-          <button onClick={handleImportClick} style={S.btn('#0891b2')}        className="tb-admin-btn tb-desktop-only" title={t('import')}>📂 {t('import')}</button>
-          <button onClick={handleClearAll}    style={S.btn('var(--error)')}   className="tb-admin-btn tb-desktop-only" title={t('clearAll')}>🗑 {t('clearAll')}</button>
-
-          {/* Mobile: ⋯ menu */}
+          <button onClick={handleAddGroup}    style={S.btn('var(--primary)')} className="tb-admin-btn tb-desktop-only">+ {t('addGroup')}</button>
+          <button onClick={handleExport}      style={S.btn('#059669')}        className="tb-admin-btn tb-desktop-only">📊 {t('export')}</button>
+          <button onClick={handleImportClick} style={S.btn('#0891b2')}        className="tb-admin-btn tb-desktop-only">📂 {t('import')}</button>
+          <button onClick={handleClearAll}    style={S.btn('var(--error)')}   className="tb-admin-btn tb-desktop-only">🗑 {t('clearAll')}</button>
           <div className="tb-more-wrap tb-mobile-only" style={{ position:'relative', flexShrink:0 }}>
-            <button
-              style={S.btn('var(--bg-hover)', 'var(--text-primary)')}
-              onClick={() => setShowAdminMenu(m => !m)}
-              title="Admin actions"
-            >⋯</button>
+            <button style={S.btn('var(--bg-hover)', 'var(--text-primary)')} onClick={() => setShowAdminMenu(m => !m)}>⋯</button>
             {showAdminMenu && (
               <>
-                <div
-                  onClick={() => setShowAdminMenu(false)}
-                  style={{ position:'fixed', inset:0, zIndex:499 }}
-                />
-                <div style={{
-                  position:'fixed', top:42, right:8, zIndex:500,
-                  background:'var(--bg-card)', border:'1px solid var(--border)',
-                  borderRadius:10, boxShadow:'0 4px 20px rgba(0,0,0,0.2)',
-                  display:'flex', flexDirection:'column', minWidth:160, overflow:'hidden',
-                }}>
+                <div onClick={() => setShowAdminMenu(false)} style={{ position:'fixed', inset:0, zIndex:499 }} />
+                <div style={{ position:'fixed', top:42, right:8, zIndex:500, background:'var(--bg-card)', border:'1px solid var(--border)', borderRadius:10, boxShadow:'0 4px 20px rgba(0,0,0,0.2)', display:'flex', flexDirection:'column', minWidth:160, overflow:'hidden' }}>
                   {[
-                    { label:`${t('addGroup')}`, action: handleAddGroup,    bg:'var(--primary)' },
+                    { label:`${t('addGroup')}`,    action: handleAddGroup,    bg:'var(--primary)' },
                     { label:`📊 ${t('export')}`,   action: handleExport,      bg:'#059669' },
                     { label:`📂 ${t('import')}`,   action: handleImportClick, bg:'#0891b2' },
                     { label:`🗑 ${t('clearAll')}`, action: handleClearAll,    bg:'var(--error)' },
-                    { label:'🎓 Restart Tour',          action: () => { localStorage.removeItem('tourDone'); setShowTour(true); }, bg:'#6366f1' },
+                    { label:'🎓 Restart Tour',     action: () => { localStorage.removeItem('tourDone'); setShowTour(true); }, bg:'#6366f1' },
                   ].map(item => (
                     <button key={item.label}
                       onClick={() => { item.action(); setShowAdminMenu(false); }}
-                      style={{
-                        padding:'12px 16px', background:'transparent',
-                        border:'none', borderBottom:'1px solid var(--border)',
-                        color:'var(--text-primary)', fontSize:'0.85rem',
-                        fontWeight:600, cursor:'pointer', textAlign:'left',
-                        fontFamily:'inherit',
-                      }}
+                      style={{ padding:'12px 16px', background:'transparent', border:'none', borderBottom:'1px solid var(--border)', color:'var(--text-primary)', fontSize:'0.85rem', fontWeight:600, cursor:'pointer', textAlign:'left', fontFamily:'inherit' }}
                       onMouseEnter={e => e.target.style.background='var(--bg-hover)'}
                       onMouseLeave={e => e.target.style.background='transparent'}
                     >{item.label}</button>
@@ -379,35 +480,19 @@ const AppContent = () => {
               </>
             )}
           </div>
-
           <div style={S.divider} className="tb-desktop-only" />
         </>)}
-
-        {/* Guest book button */}
         {!isAuthenticated && (
-          <button onClick={() => setShowBooking(true)} style={S.btn('var(--primary)')}>
-            🏫 {t('bookLab') || 'Book'}
-          </button>
+          <button onClick={() => setShowBooking(true)} style={S.btn('var(--primary)')}>🏫 {t('bookLab') || 'Book'}</button>
         )}
-
-        {/* Spacer pushes right-side items to the end */}
         <div style={{ flex:1, minWidth:8 }} />
-
-{/* Department theme picker */}
-        <select
-          value={dept}
-          onChange={e => setDept(e.target.value)}
-          style={{ ...S.sel, maxWidth:90 }}
-          title="Department color theme"
-        >
+        <select value={dept} onChange={e => setDept(e.target.value)} style={{ ...S.sel, maxWidth:90 }}>
           <option value="">🎨 Theme</option>
           <option value="cs">💻 CS</option>
           <option value="math">📐 Math</option>
           <option value="ie">⚙️ IE</option>
           <option value="ee">⚡ EE</option>
         </select>
-
-                {/* Language */}
         {LANGUAGE_OPTIONS.map(opt => (
           <button key={opt.code} onClick={() => changeLang(opt.code)}
             style={{ ...S.btn(lang===opt.code ? 'var(--primary)' : 'transparent', lang===opt.code ? '#fff' : 'var(--text-secondary)'),
@@ -416,58 +501,40 @@ const AppContent = () => {
             {opt.flag} {opt.code.toUpperCase()}
           </button>
         ))}
-
-{/* Density toggle */}
-        <select value={density} onChange={e => setDensity(e.target.value)} style={{ ...S.sel, maxWidth:100 }} title="Display density">
+        <select value={density} onChange={e => setDensity(e.target.value)} style={{ ...S.sel, maxWidth:100 }}>
           <option value="compact">⬛ Compact</option>
           <option value="comfortable">▪️ Normal</option>
           <option value="spacious">🔲 Spacious</option>
         </select>
-
-        {/* Theme toggle */}
         <button onClick={() => setTheme(th => th==='light' ? 'dark' : 'light')}
           style={{ ...S.btn('transparent', 'var(--text-primary)'), border:'1px solid var(--border)', fontSize:'0.85rem', padding:'3px 7px' }}>
           {theme==='light' ? '🌙' : '☀️'}
         </button>
-
         <div style={S.divider} />
-
-        {/* User / login */}
         {isAuthenticated ? (<>
-          <span style={{ fontSize:'0.68rem', color:'var(--text-secondary)', whiteSpace:'nowrap', flexShrink:0 }}>
-            👤 {user?.username}
-          </span>
+          <span style={{ fontSize:'0.68rem', color:'var(--text-secondary)', whiteSpace:'nowrap', flexShrink:0 }}>👤 {user?.username}</span>
           <button onClick={() => { logout(); setActiveView('schedule'); }}
-            style={{ ...S.btn('transparent', 'var(--text-secondary)'), border:'1px solid var(--border)', fontSize:'0.65rem' }}
-            className="tb-btn-label" title={t('logout')}>
+            style={{ ...S.btn('transparent', 'var(--text-secondary)'), border:'1px solid var(--border)', fontSize:'0.65rem' }}>
             <span className="tb-lbl">{t('logout')}</span>⏻
           </button>
         </>) : (
-          <button onClick={() => setShowLoginModal(true)} style={S.btn('var(--primary)')}>
-            🔐 {t('loginBtn') || 'Login'}
-          </button>
+          <button onClick={() => setShowLoginModal(true)} style={S.btn('var(--primary)')}>🔐 {t('loginBtn') || 'Login'}</button>
         )}
       </div>
 
       {error && (
-        <div className="error-banner">
-          ⚠️ {error}. <button onClick={() => window.location.reload()}>Retry</button>
-        </div>
+        <div className="error-banner">⚠️ {error}. <button onClick={() => window.location.reload()}>Retry</button></div>
       )}
 
       {/* ── MAIN LAYOUT ── */}
       <div style={{ display:'flex' }}>
-
         {/* Vertical icon nav */}
         <div className="app-sidebar" style={{ width:54, flexShrink:0, background:'var(--bg-card)', borderRight:'1px solid var(--border)', display:'flex', flexDirection:'column', alignItems:'center', padding:'8px 0', gap:4, position:'sticky', top:40, height:'calc(100vh - 40px)', overflowY:'auto' }}>
-
           <button onClick={() => setActiveView('schedule')} title="Schedule" style={S.iconBtn(activeView==='schedule')}>
             <TabIcon icon={iconSchedule} label="Schedule" active={activeView==='schedule'} />
             <span style={S.iconLabel}>Schedule</span>
           </button>
-
           <div style={{ width:32, height:1, background:'var(--border)', margin:'2px 0' }} />
-
           {navTabs.map(tab => (
             <button key={tab.id} onClick={() => setActiveView(tab.id)} title={tab.label} style={S.iconBtn(activeView===tab.id)}>
               <TabIcon icon={tab.icon} label={tab.label} active={activeView===tab.id} />
@@ -483,36 +550,14 @@ const AppContent = () => {
         <div className="app-content" style={{ flex:1, minWidth:0, padding:'8px 16px' }}>
           {activeView === 'schedule' && (
             <>
-              {/* Global announcements */}
               <AnnouncementBanner isAdmin={isAuthenticated} />
-
-              {/* Global announcements */}
-              
-
-              {/* Global announcements */}
-              
-
-              {/* Personal timetable banner for guests */}
               {!isAuthenticated && selectedGroup && (
-                <div style={{
-                  display:'flex', alignItems:'center', gap:10,
-                  background:'linear-gradient(135deg, var(--primary-light), var(--bg-card))',
-                  border:'1px solid var(--primary)', borderRadius:10,
-                  padding:'8px 14px', marginBottom:8, flexWrap:'wrap',
-                }}>
+                <div style={{ display:'flex', alignItems:'center', gap:10, background:'linear-gradient(135deg, var(--primary-light), var(--bg-card))', border:'1px solid var(--primary)', borderRadius:10, padding:'8px 14px', marginBottom:8, flexWrap:'wrap' }}>
                   <span style={{ fontSize:'1.1rem' }}>📌</span>
-                  <span style={{ fontWeight:700, color:'var(--text-primary)', fontSize:'0.85rem' }}>
-                    My Group: <span style={{ color:'var(--primary)' }}>{selectedGroup}</span>
-                  </span>
-                  <span style={{ fontSize:'0.72rem', color:'var(--text-secondary)' }}>
-                    — saved for your next visit
-                  </span>
+                  <span style={{ fontWeight:700, color:'var(--text-primary)', fontSize:'0.85rem' }}>My Group: <span style={{ color:'var(--primary)' }}>{selectedGroup}</span></span>
+                  <span style={{ fontSize:'0.72rem', color:'var(--text-secondary)' }}>— saved for your next visit</span>
                   <button onClick={() => { setSelectedGroup(''); localStorage.removeItem('myGroup'); }}
-                    style={{ marginLeft:'auto', background:'transparent', border:'1px solid var(--border)',
-                      borderRadius:6, padding:'2px 8px', fontSize:'0.7rem', cursor:'pointer',
-                      color:'var(--text-secondary)', fontFamily:'inherit' }}>
-                    ✕ Clear
-                  </button>
+                    style={{ marginLeft:'auto', background:'transparent', border:'1px solid var(--border)', borderRadius:6, padding:'2px 8px', fontSize:'0.7rem', cursor:'pointer', color:'var(--text-secondary)', fontFamily:'inherit' }}>✕ Clear</button>
                 </div>
               )}
               <EmptyRoomPanel allRooms={allRooms} schedule={schedule} days={days} timeSlots={timeSlots} selectedRoom={selectedRoom} setSelectedRoom={setSelectedRoom} />
@@ -538,32 +583,22 @@ const AppContent = () => {
         </div>
       </div>
 
-      {/* ── BOTTOM NAV (mobile only) ── */}
+      {/* ── BOTTOM NAV (mobile) ── */}
       <nav className="app-bottom-nav">
-        <button
-          className={`app-bottom-nav-btn ${activeView==='schedule' ? 'active' : ''}`}
-          onClick={() => setActiveView('schedule')}
-          title="Schedule"
-        >
+        <button className={`app-bottom-nav-btn ${activeView==='schedule' ? 'active' : ''}`} onClick={() => setActiveView('schedule')}>
           <TabIcon icon={iconSchedule} label="Schedule" active={activeView==='schedule'} />
           <span className="app-bottom-nav-btn-label">Schedule</span>
         </button>
         {navTabs.map(tab => (
-          <button
-            key={tab.id}
-            className={`app-bottom-nav-btn ${activeView===tab.id ? 'active' : ''}`}
-            onClick={() => setActiveView(tab.id)}
-            title={tab.label}
-          >
+          <button key={tab.id} className={`app-bottom-nav-btn ${activeView===tab.id ? 'active' : ''}`} onClick={() => setActiveView(tab.id)}>
             <TabIcon icon={tab.icon} label={tab.label} active={activeView===tab.id} />
             <span className="app-bottom-nav-btn-label">{tab.label}</span>
-            {tab.badge > 0 && (
-              <span className="app-bottom-nav-badge">{tab.badge}</span>
-            )}
+            {tab.badge > 0 && <span className="app-bottom-nav-badge">{tab.badge}</span>}
           </button>
         ))}
       </nav>
 
+      {/* ── MODALS ── */}
       {!isAuthenticated && (
         <GuestBooking
           isOpen={showBooking || !!guestBookCell}
@@ -573,60 +608,25 @@ const AppContent = () => {
         />
       )}
 
-      <ClassModal isOpen={modalOpen} onClose={handleCloseModal} group={currentCell.group} day={currentCell.day} time={currentCell.time} />
+      {/* Class modal — for regular schedule slots */}
+      <ClassModal
+        isOpen={modalOpen} onClose={handleCloseModal}
+        group={currentCell.group} day={currentCell.day} time={currentCell.time}
+      />
 
-      {/* ── Onboarding Tour ── */}
+      {/* Booking detail modal — for approved booking slots */}
+      {bookingDetail && (
+        <BookingDetailModal
+          booking={bookingDetail}
+          onClose={() => setBookingDetail(null)}
+          onDeleted={handleBookingDeleted}
+        />
+      )}
+
       {showTour && isAuthenticated && (
         <OnboardingTour onFinish={() => setShowTour(false)} />
       )}
 
-      {showTour && isAuthenticated}
-
-      {showTour && isAuthenticated}
-
-      {/* ── Mobile bottom nav ── */}
-      <div className="mob-bottom-nav">
-        <button className={`mob-nav-btn ${activeView==='schedule'?'active':''}`} onClick={() => setActiveView('schedule')}>
-          <span>📅</span><span>Schedule</span>
-        </button>
-        {isAuthenticated && (
-          <button className={`mob-nav-btn ${activeView==='bookings'?'active':''}`} onClick={() => setActiveView('bookings')}>
-            <span>📋</span><span>Bookings</span>
-          </button>
-        )}
-        {!isAuthenticated && (
-          <button className={`mob-nav-btn ${activeView==='mybookings'?'active':''}`} onClick={() => setActiveView('mybookings')}>
-            <span>📋</span><span>My Books</span>
-          </button>
-        )}
-        <button className={`mob-nav-btn ${activeView==='exams'?'active':''}`} onClick={() => setActiveView('exams')}>
-          <span>🎓</span><span>Exams</span>
-        </button>
-        {isAuthenticated && (
-          <button className={`mob-nav-btn ${activeView==='print'?'active':''}`} onClick={() => setActiveView('print')}>
-            <span>🖨️</span><span>Print</span>
-          </button>
-        )}
-        <button className={`mob-nav-btn ${activeView==='feedback'?'active':''}`} onClick={() => setActiveView('feedback')}>
-          <span>💬</span><span>Feedback</span>
-        </button>
-        {isAuthenticated ? (
-          <button className="mob-nav-btn" onClick={() => { logout(); setActiveView('schedule'); }}>
-            <span>⏻</span><span>Logout</span>
-          </button>
-        ) : (
-          <button className="mob-nav-btn" onClick={() => setShowLoginModal(true)}>
-            <span>🔐</span><span>Login</span>
-          </button>
-        )}
-      </div>
-
-      {/* ── Onboarding Tour ── */}
-      {showTour && isAuthenticated}
-
-      {showTour && isAuthenticated}
-
-      {/* ── Mobile bottom nav ── */}
       <div className="mob-bottom-nav">
         <button className={`mob-nav-btn ${activeView==='schedule'?'active':''}`} onClick={() => setActiveView('schedule')}>
           <span>📅</span><span>Schedule</span>
