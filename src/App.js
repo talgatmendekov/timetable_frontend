@@ -381,16 +381,16 @@ const AppContent = () => {
       fontFamily:'inherit',
     }),
     iconBtn: (active) => ({
-      width:44, minHeight:50, borderRadius:11, flexShrink:0,
+      width:60, minHeight:54, borderRadius:11, flexShrink:0,
       border: active ? '2px solid var(--primary)' : '1px solid var(--border)',
       background: active ? 'var(--primary)' : 'transparent',
       color: active ? '#fff' : 'var(--text-secondary)',
       cursor:'pointer', display:'flex', flexDirection:'column',
       alignItems:'center', justifyContent:'center', gap:2,
-      padding:'5px 2px', position:'relative', transition:'all 0.15s',
+      padding:'5px 3px', position:'relative', transition:'all 0.15s',
       fontSize:'1rem',
     }),
-    iconLabel: { fontSize:'0.46rem', fontWeight:700, lineHeight:1, textAlign:'center', whiteSpace:'nowrap' },
+    iconLabel: { fontSize:'0.46rem', fontWeight:700, lineHeight:1.2, textAlign:'center', whiteSpace:'normal', wordBreak:'break-word', maxWidth:56 },
   };
 
   return (
@@ -542,7 +542,7 @@ const AppContent = () => {
       {/* ── MAIN LAYOUT ── */}
       <div style={{ display:'flex' }}>
         {/* Vertical icon nav */}
-        <div className="app-sidebar" style={{ width:54, flexShrink:0, background:'var(--bg-card)', borderRight:'1px solid var(--border)', display:'flex', flexDirection:'column', alignItems:'center', padding:'8px 0', gap:4, position:'sticky', top:40, height:'calc(100vh - 40px)', overflowY:'auto' }}>
+        <div className="app-sidebar" style={{ width:68, flexShrink:0, background:'var(--bg-card)', borderRight:'1px solid var(--border)', display:'flex', flexDirection:'column', alignItems:'center', padding:'8px 0', gap:4, position:'sticky', top:40, height:'calc(100vh - 40px)', overflowY:'auto' }}>
           <button onClick={() => setActiveView('schedule')} title="Schedule" style={S.iconBtn(activeView==='schedule')}>
             <TabIcon icon={iconSchedule} label="Schedule" active={activeView==='schedule'} />
             <span style={S.iconLabel}>{t('navSchedule') || 'Schedule'}</span>
@@ -596,7 +596,7 @@ const AppContent = () => {
         </div>
       </div>
 
-      {/* ── BOTTOM NAV (mobile) ── */}
+      {/* ── BOTTOM NAV (mobile only) ── */}
       <nav className="app-bottom-nav">
         <button className={`app-bottom-nav-btn ${activeView==='schedule' ? 'active' : ''}`} onClick={() => setActiveView('schedule')}>
           <TabIcon icon={iconSchedule} label={t('navSchedule') || 'Schedule'} active={activeView==='schedule'} />
@@ -609,6 +609,17 @@ const AppContent = () => {
             {tab.badge > 0 && <span className="app-bottom-nav-badge">{tab.badge}</span>}
           </button>
         ))}
+        {isAuthenticated ? (
+          <button className="app-bottom-nav-btn" onClick={() => { logout(); setActiveView('schedule'); }}>
+            <span style={{ fontSize:'1.1rem' }}>⏻</span>
+            <span className="app-bottom-nav-btn-label">{t('bnLogout') || 'Logout'}</span>
+          </button>
+        ) : (
+          <button className="app-bottom-nav-btn" onClick={() => setShowLoginModal(true)}>
+            <span style={{ fontSize:'1.1rem' }}>🔐</span>
+            <span className="app-bottom-nav-btn-label">{t('bnLogin') || 'Login'}</span>
+          </button>
+        )}
       </nav>
 
       {/* ── MODALS ── */}
@@ -640,38 +651,7 @@ const AppContent = () => {
         <OnboardingTour onFinish={() => setShowTour(false)} />
       )}
 
-      <div className="mob-bottom-nav">
-        <button className={`mob-nav-btn ${activeView==='schedule'?'active':''}`} onClick={() => setActiveView('schedule')}>
-          <span>📅</span><span>{t('bnSchedule') || 'Schedule'}</span>
-        </button>
-        {isAuthenticated ? (<>
-          <button className={`mob-nav-btn ${activeView==='bookings'?'active':''}`} onClick={() => setActiveView('bookings')}>
-            <span>📋</span><span>{t('bnBookings') || 'Bookings'}</span>
-          </button>
-          <button className={`mob-nav-btn ${activeView==='print'?'active':''}`} onClick={() => setActiveView('print')}>
-            <span>🖨️</span><span>{t('bnPrint') || 'Print'}</span>
-          </button>
-        </>) : (
-          <button className={`mob-nav-btn ${activeView==='mybookings'?'active':''}`} onClick={() => setActiveView('mybookings')}>
-            <span>📋</span><span>{t('bnMyBooks') || 'My Books'}</span>
-          </button>
-        )}
-        <button className={`mob-nav-btn ${activeView==='exams'?'active':''}`} onClick={() => setActiveView('exams')}>
-          <span>🎓</span><span>{t('bnExams') || 'Exams'}</span>
-        </button>
-        <button className={`mob-nav-btn ${activeView==='feedback'?'active':''}`} onClick={() => setActiveView('feedback')}>
-          <span>💬</span><span>{t('bnFeedback') || 'Feedback'}</span>
-        </button>
-        {isAuthenticated ? (
-          <button className="mob-nav-btn" onClick={() => { logout(); setActiveView('schedule'); }}>
-            <span>⏻</span><span>{t('bnLogout') || 'Logout'}</span>
-          </button>
-        ) : (
-          <button className="mob-nav-btn" onClick={() => setShowLoginModal(true)}>
-            <span>🔐</span><span>{t('bnLogin') || 'Login'}</span>
-          </button>
-        )}
-      </div>
+
 
       <footer className="app-author-credit">
         <span className="app-author-logo">🏛</span>
