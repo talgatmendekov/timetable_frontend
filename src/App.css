@@ -614,3 +614,9 @@ body[data-density="spacious"] .mob-slot-course { font-size: 0.95rem !important; 
   }
 }
  
+@media (max-width: 767px) {
+  .app-content {
+    overflow-x: clip !important;
+  }
+}
+ 

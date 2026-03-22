@@ -421,11 +421,10 @@ body[data-theme="dark"] .es-wrap .es-group-pill { background: #25336a; color: #a
    MOBILE  (≤ 700px)
    ══════════════════════════════════════════════════════════ */
 @media (max-width: 700px) {
-  /* Wrapper: full width, no side padding bleed */
+  /* Wrapper: keep max-width centering, just fix padding and clip overflow */
   .es-wrap {
-    padding: 0 0 80px 0;
-    max-width: 100%;
-    overflow-x: hidden;
+    padding: 0 4px 80px 4px;
+    overflow-x: clip;
   }
 
   /* Header: tighter */

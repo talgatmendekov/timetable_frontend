@@ -200,8 +200,7 @@ export default function ExamSchedule({ readOnly = false, showExamsToGuests = fal
   const hasFilters   = filterGrp || filterSubj || filterDate;
 
   return (
-    // ↓ overflowX:hidden stops the component from pushing page width wider than viewport
-    <div className="es-wrap" style={{ overflowX:'hidden', maxWidth:'100%', boxSizing:'border-box' }}>
+    <div className="es-wrap">
 
       {/* Header */}
       <div className="es-header">

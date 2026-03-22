@@ -480,13 +480,12 @@
    MOBILE  (≤ 767px)
    ══════════════════════════════════════════════════════════ */
 @media (max-width: 767px) {
-  /* Base: full width, controlled padding, bottom nav clearance */
+  /* Base: keep max-width centering, fix padding and clip overflow */
   .ttm {
-    max-width: 100%;
     padding: 12px 10px 80px;
-    border-radius: 0;
+    border-radius: 8px;
     font-size: 14px;
-    overflow-x: hidden;
+    overflow-x: clip;
   }
 
   /* Header: compact */

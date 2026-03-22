@@ -225,8 +225,7 @@ const TeacherTelegramManagement = ({ isDark = false }) => {
   if (loading) return <div className="ttm-loading">{t('loadingData') || 'Loading…'}</div>;
 
   return (
-    // ↓ overflowX:hidden stops the component from pushing page width wider than viewport on mobile
-    <div className="ttm" data-theme={isDark ? "dark" : "light"} style={{ overflowX:'hidden', maxWidth:'100%', boxSizing:'border-box' }}>
+    <div className="ttm" data-theme={isDark ? "dark" : "light"}>
 
       {/* HEADER */}
       <div className="ttm-head">
