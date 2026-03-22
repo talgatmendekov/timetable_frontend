@@ -599,3 +599,18 @@ body[data-density="spacious"] .mob-slot-course { font-size: 0.95rem !important; 
   .skeleton-group-col { flex: 0 0 80px; }
   .skeleton-content { padding: 8px; }
 }
+
+@media (max-width: 767px) {
+  .app-content {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+    box-sizing: border-box !important;
+  }
+ 
+  /* Ensure all direct children of app-content are bounded */
+  .app-content > * {
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+ 
